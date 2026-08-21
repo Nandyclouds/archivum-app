@@ -1,0 +1,408 @@
+import datetime
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.database import Base, get_session
+from app.main import app
+from app.models import Archivo, Fandom, Fic, Lectura, Resena, Ship
+
+
+@pytest.fixture()
+def db_session():
+    # StaticPool: el TestClient corre los requests en otro hilo, y una DB
+    # ":memory:" es por conexión -> sin esto, ese hilo ve una DB vacía sin
+    # tablas. StaticPool fuerza que todos los hilos compartan una sola
+    # conexión/DB real.
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    TestSessionLocal = sessionmaker(bind=engine)
+    session = TestSessionLocal()
+
+    def override_get_session():
+        try:
+            yield session
+        finally:
+            pass
+
+    app.dependency_overrides[get_session] = override_get_session
+    yield session
+    app.dependency_overrides.clear()
+    session.close()
+
+
+@pytest.fixture()
+def client(db_session):
+    return TestClient(app)
+
+
+def _crear_fic(db: Session, *, ao3_id="1", titulo="Un fic", fandom="Fandom A", complete=True, ship=None) -> Fic:
+    fandom_obj = db.query(Fandom).filter_by(nombre=fandom).one_or_none()
+    if fandom_obj is None:
+        fandom_obj = Fandom(nombre=fandom)
+        db.add(fandom_obj)
+    fic = Fic(
+        ao3_id=ao3_id,
+        titulo=titulo,
+        autor="autora",
+        url=f"https://archiveofourown.org/works/{ao3_id}",
+        word_count=1000,
+        chapters_published=1,
+        chapters_total=1,
+        complete=complete,
+        restricted=False,
+    )
+    fic.fandoms.append(fandom_obj)
+    if ship:
+        ship_obj = db.query(Ship).filter_by(nombre=ship).one_or_none()
+        if ship_obj is None:
+            ship_obj = Ship(nombre=ship, tipo="romantico")
+            db.add(ship_obj)
+        fic.ships.append(ship_obj)
+    db.add(fic)
+    db.commit()
+    db.refresh(fic)
+    return fic
+
+
+def test_health(client):
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    assert r.json() == {"status": "ok"}
+
+
+def test_listar_fics_vacio(client):
+    r = client.get("/api/fics")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_listar_y_obtener_fic(client, db_session):
+    fic = _crear_fic(db_session)
+
+    r = client.get("/api/fics")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["titulo"] == "Un fic"
+    assert data[0]["fandoms"][0]["nombre"] == "Fandom A"
+
+    r = client.get(f"/api/fics/{fic.id}")
+    assert r.status_code == 200
+    assert r.json()["ao3_id"] == "1"
+
+
+def test_obtener_fic_404(client):
+    r = client.get("/api/fics/999")
+    assert r.status_code == 404
+
+
+def test_categorias_warnings_se_parsean_como_lista(client, db_session):
+    fic = _crear_fic(db_session)
+    fic.categorias = "F/M|Multi"
+    fic.warnings = "No Archive Warnings Apply"
+    db_session.commit()
+
+    r = client.get(f"/api/fics/{fic.id}")
+    body = r.json()
+    assert body["categorias"] == ["F/M", "Multi"]
+    assert body["warnings"] == ["No Archive Warnings Apply"]
+
+
+def test_filtrar_fics_por_fandom(client, db_session):
+    _crear_fic(db_session, ao3_id="1", titulo="A", fandom="Fandom A")
+    _crear_fic(db_session, ao3_id="2", titulo="B", fandom="Fandom B")
+
+    r = client.get("/api/fics", params={"fandom": "Fandom A"})
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["titulo"] == "A"
+
+
+def test_filtrar_fics_por_ship(client, db_session):
+    _crear_fic(db_session, ao3_id="1", titulo="A", ship="Ship A/Ship B")
+    _crear_fic(db_session, ao3_id="2", titulo="B", ship="Ship C/Ship D")
+
+    r = client.get("/api/fics", params={"ship": "Ship A/Ship B"})
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["titulo"] == "A"
+
+
+def test_filtrar_fics_por_completo(client, db_session):
+    _crear_fic(db_session, ao3_id="1", titulo="Completo", complete=True)
+    _crear_fic(db_session, ao3_id="2", titulo="WIP", complete=False)
+
+    r = client.get("/api/fics", params={"completo": True})
+    data = r.json()
+    assert [f["titulo"] for f in data] == ["Completo"]
+
+    r = client.get("/api/fics", params={"completo": False})
+    data = r.json()
+    assert [f["titulo"] for f in data] == ["WIP"]
+
+
+def test_filtrar_fics_por_busqueda(client, db_session):
+    _crear_fic(db_session, ao3_id="1", titulo="El Peso de las Estrellas", fandom="F")
+    _crear_fic(db_session, ao3_id="2", titulo="Ley de Gravedad", fandom="F")
+
+    r = client.get("/api/fics", params={"q": "estrellas"})
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["titulo"] == "El Peso de las Estrellas"
+
+
+def test_fics_borrados_se_excluyen_por_defecto(client, db_session):
+    fic = _crear_fic(db_session)
+    fic.deleted_detected_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    db_session.commit()
+
+    assert client.get("/api/fics").json() == []
+    assert len(client.get("/api/fics", params={"incluir_borrados": True}).json()) == 1
+
+
+def test_crear_actualizar_borrar_lectura(client, db_session):
+    fic = _crear_fic(db_session)
+
+    r = client.post(f"/api/fics/{fic.id}/lecturas", json={"estado": "leyendo"})
+    assert r.status_code == 201
+    lectura_id = r.json()["id"]
+
+    r = client.get(f"/api/fics/{fic.id}")
+    assert r.json()["estado_actual"] == "leyendo"
+
+    r = client.patch(
+        f"/api/fics/{fic.id}/lecturas/{lectura_id}",
+        json={"estado": "leido", "fecha_fin": "2026-08-01"},
+    )
+    assert r.status_code == 200
+    assert r.json()["estado"] == "leido"
+
+    r = client.delete(f"/api/fics/{fic.id}/lecturas/{lectura_id}")
+    assert r.status_code == 204
+    assert client.get(f"/api/fics/{fic.id}").json()["lecturas"] == []
+
+
+def test_crear_lectura_estado_invalido(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.post(f"/api/fics/{fic.id}/lecturas", json={"estado": "en_curso"})
+    assert r.status_code == 422
+
+
+def test_crear_lectura_fic_inexistente(client):
+    r = client.post("/api/fics/999/lecturas", json={"estado": "leyendo"})
+    assert r.status_code == 404
+
+
+def test_crear_resena(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.post(
+        f"/api/fics/{fic.id}/resenas",
+        json={"rating": 4.5, "texto": "Muy bueno", "contiene_spoilers": False},
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["rating"] == 4.5
+    assert body["fecha"] == datetime.date.today().isoformat()
+
+
+def test_crear_resena_rating_fuera_de_rango(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 6})
+    assert r.status_code == 422
+
+
+def test_colecciones_crud_y_fics(client, db_session):
+    fic = _crear_fic(db_session)
+
+    r = client.post("/api/colecciones", json={"nombre": "Comfort reads", "color": "#ff0000"})
+    assert r.status_code == 201
+    coleccion = r.json()
+    assert coleccion["tipo"] == "personalizada"
+    assert coleccion["cantidad_fics"] == 0
+
+    r = client.put(f"/api/colecciones/{coleccion['id']}/fics/{fic.id}")
+    assert r.status_code == 204
+
+    r = client.get("/api/colecciones")
+    assert r.json()[0]["cantidad_fics"] == 1
+
+    # agregar de nuevo no duplica
+    client.put(f"/api/colecciones/{coleccion['id']}/fics/{fic.id}")
+    assert client.get("/api/colecciones").json()[0]["cantidad_fics"] == 1
+
+    r = client.delete(f"/api/colecciones/{coleccion['id']}/fics/{fic.id}")
+    assert r.status_code == 204
+    assert client.get("/api/colecciones").json()[0]["cantidad_fics"] == 0
+
+    r = client.patch(f"/api/colecciones/{coleccion['id']}", json={"nombre": "Comfort reads 2"})
+    assert r.json()["nombre"] == "Comfort reads 2"
+
+    r = client.delete(f"/api/colecciones/{coleccion['id']}")
+    assert r.status_code == 204
+    assert client.get("/api/colecciones").json() == []
+
+
+def test_obtener_coleccion_individual(client, db_session):
+    fic = _crear_fic(db_session)
+    coleccion = client.post("/api/colecciones", json={"nombre": "Favoritos"}).json()
+    client.put(f"/api/colecciones/{coleccion['id']}/fics/{fic.id}")
+
+    r = client.get(f"/api/colecciones/{coleccion['id']}")
+    assert r.status_code == 200
+    assert r.json()["nombre"] == "Favoritos"
+    assert r.json()["cantidad_fics"] == 1
+
+    assert client.get("/api/colecciones/999").status_code == 404
+
+
+def test_filtrar_fics_por_coleccion(client, db_session):
+    fic1 = _crear_fic(db_session, ao3_id="1", titulo="A")
+    _crear_fic(db_session, ao3_id="2", titulo="B")
+    coleccion = client.post("/api/colecciones", json={"nombre": "Favoritos"}).json()
+    client.put(f"/api/colecciones/{coleccion['id']}/fics/{fic1.id}")
+
+    r = client.get("/api/fics", params={"coleccion": coleccion["id"]})
+    data = r.json()
+    assert [f["titulo"] for f in data] == ["A"]
+
+
+def test_etiquetas_personales_crear_listar_filtrar_borrar(client, db_session):
+    fic1 = _crear_fic(db_session, ao3_id="1", titulo="A")
+    fic2 = _crear_fic(db_session, ao3_id="2", titulo="B")
+
+    r = client.post(f"/api/fics/{fic1.id}/etiquetas", json={"nombre": "para releer"})
+    assert r.status_code == 201
+    etiqueta = r.json()
+
+    # la misma etiqueta en otro fic reutiliza la fila, no duplica
+    client.post(f"/api/fics/{fic2.id}/etiquetas", json={"nombre": "para releer"})
+    assert client.get("/api/etiquetas").json() == [{"id": etiqueta["id"], "nombre": "para releer"}]
+
+    r = client.get(f"/api/fics/{fic1.id}")
+    assert r.json()["etiquetas_personales"] == [etiqueta]
+
+    r = client.get("/api/fics", params={"etiqueta": "para releer"})
+    assert {f["titulo"] for f in r.json()} == {"A", "B"}
+
+    # quitar de un fic no la borra del otro
+    r = client.delete(f"/api/fics/{fic1.id}/etiquetas/{etiqueta['id']}")
+    assert r.status_code == 204
+    assert client.get(f"/api/fics/{fic1.id}").json()["etiquetas_personales"] == []
+    assert len(client.get(f"/api/fics/{fic2.id}").json()["etiquetas_personales"]) == 1
+
+    # borrar la etiqueta entera la saca de todos lados
+    r = client.delete(f"/api/etiquetas/{etiqueta['id']}")
+    assert r.status_code == 204
+    assert client.get("/api/etiquetas").json() == []
+    assert client.get(f"/api/fics/{fic2.id}").json()["etiquetas_personales"] == []
+
+
+def test_etiqueta_nombre_vacio_rechazado(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.post(f"/api/fics/{fic.id}/etiquetas", json={"nombre": "   "})
+    assert r.status_code == 422
+
+
+def test_fic_detail_incluye_colecciones(client, db_session):
+    fic = _crear_fic(db_session)
+    coleccion = client.post("/api/colecciones", json={"nombre": "Favoritos"}).json()
+    client.put(f"/api/colecciones/{coleccion['id']}/fics/{fic.id}")
+
+    r = client.get(f"/api/fics/{fic.id}")
+    assert r.json()["colecciones"] == [
+        {"id": coleccion["id"], "nombre": "Favoritos", "tipo": "personalizada"}
+    ]
+
+
+def test_stats_resumen(client, db_session):
+    fic = _crear_fic(db_session)
+    db_session.add(Lectura(fic_id=fic.id, estado="leido", fecha_fin=datetime.date(2026, 8, 1)))
+    db_session.commit()
+
+    r = client.get("/api/stats/resumen")
+    body = r.json()
+    assert body["total_fics"] == 1
+    assert body["total_palabras_leidas"] == 1000
+    assert body["racha_dias"] == 1
+
+
+def test_stats_estado_lectura(client, db_session):
+    fic = _crear_fic(db_session)
+    db_session.add(Lectura(fic_id=fic.id, estado="leyendo"))
+    db_session.commit()
+
+    r = client.get("/api/stats/estado-lectura")
+    assert r.json() == {"leyendo": 1}
+
+
+def test_import_log_vacio(client):
+    r = client.get("/api/import-log")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_archivos_vacio(client):
+    r = client.get("/api/archivos")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_contenido_archivo_html_se_sirve_inline(client, db_session, tmp_path):
+    fic = _crear_fic(db_session)
+    ruta = tmp_path / "1.html"
+    ruta.write_text("<html><body>copia archivada</body></html>", encoding="utf-8")
+    archivo = Archivo(
+        fic_id=fic.id, formato="html", ruta_local=str(ruta), hash_sha256="x", tamano=10,
+    )
+    db_session.add(archivo)
+    db_session.commit()
+
+    r = client.get(f"/api/archivos/{archivo.id}/contenido")
+    assert r.status_code == 200
+    assert "copia archivada" in r.text
+    assert "content-disposition" not in {k.lower() for k in r.headers.keys()}
+
+
+def test_contenido_archivo_epub_se_descarga_como_attachment(client, db_session, tmp_path):
+    fic = _crear_fic(db_session)
+    ruta = tmp_path / "1.epub"
+    ruta.write_bytes(b"contenido epub falso")
+    archivo = Archivo(
+        fic_id=fic.id, formato="epub", ruta_local=str(ruta), hash_sha256="x", tamano=10,
+    )
+    db_session.add(archivo)
+    db_session.commit()
+
+    r = client.get(f"/api/archivos/{archivo.id}/contenido")
+    assert r.status_code == 200
+    assert r.content == b"contenido epub falso"
+    assert "attachment" in r.headers["content-disposition"]
+
+
+def test_contenido_archivo_inexistente(client):
+    r = client.get("/api/archivos/999/contenido")
+    assert r.status_code == 404
+
+
+def test_contenido_archivo_borrado_del_disco(client, db_session, tmp_path):
+    fic = _crear_fic(db_session)
+    archivo = Archivo(
+        fic_id=fic.id,
+        formato="epub",
+        ruta_local=str(tmp_path / "no-existe.epub"),
+        hash_sha256="x",
+        tamano=10,
+    )
+    db_session.add(archivo)
+    db_session.commit()
+
+    r = client.get(f"/api/archivos/{archivo.id}/contenido")
+    assert r.status_code == 410

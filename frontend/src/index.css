@@ -1,0 +1,273 @@
+@import url("https://fonts.googleapis.com/css2?family=Caprasimo&family=Manrope:wght@400;500;600;700&display=swap");
+
+:root {
+  --color-bg: #f5ead8;
+  --color-surface: #fffbf3;
+  --color-surface-2: #efe0c8;
+  --color-text: #2b2118;
+  --color-text-muted: #6f6153;
+  --color-border: #e3d3b6;
+  --color-accent: #c05a3f;
+  --color-accent-2: #7c8c56;
+  --color-accent-soft: #f0d9c8;
+  --color-accent-2-soft: #e2e8cf;
+  --font-display: "Caprasimo", "Georgia", serif;
+  --font-body: "Manrope", system-ui, -apple-system, sans-serif;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 2px 10px rgba(43, 33, 24, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.arv-app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.arv-topbar {
+  padding: 24px 24px 12px;
+}
+
+.arv-topbar h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  margin: 0 0 12px;
+  color: var(--color-accent);
+}
+
+.arv-scrollnav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.arv-scrollnav::-webkit-scrollbar {
+  display: none;
+}
+
+.arv-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.arv-tab.active {
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.arv-main {
+  flex: 1;
+  padding: 12px 24px 100px;
+  overflow-y: auto;
+}
+
+.arv-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 14px;
+}
+
+.arv-card h2,
+.arv-card h3 {
+  margin-top: 0;
+}
+
+.arv-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.arv-stat {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.arv-stat .label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.arv-stat .value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--color-accent);
+}
+
+.arv-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+}
+.arv-tag-accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.arv-tag-accent-2 {
+  background: var(--color-accent-2-soft);
+  color: var(--color-accent-2);
+}
+
+.arv-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.arv-bar-track {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.arv-bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+}
+
+.arv-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+  gap: 10px;
+}
+.arv-list-item:last-child {
+  border-bottom: none;
+}
+
+.arv-btn {
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  font-size: 14px;
+}
+.arv-btn-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.arv-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arv-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+
+.arv-muted {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.arv-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--color-text-muted);
+}
+
+.arv-stars {
+  color: var(--color-accent);
+  letter-spacing: 1px;
+}
+
+.arv-row-link {
+  /* sin `display` a propósito: cada fila (arv-bar-row/arv-list-item = flex,
+     arv-stat = grid item) ya define el suyo; si esta clase lo pisa con
+     `block` rompe esos layouts. */
+  text-decoration: none;
+  color: inherit;
+}
+
+.arv-fic-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+  text-decoration: none;
+  color: inherit;
+}
+.arv-fic-row:last-child {
+  border-bottom: none;
+}
+.arv-fic-row .fandom {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent-2);
+  font-weight: 700;
+}
+.arv-fic-row .titulo {
+  font-weight: 600;
+}
+.arv-fic-row .meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

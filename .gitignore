@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/*.db
+data/*.db-journal
+data/archivo/*
+!data/archivo/.gitkeep
+*.egg-info/
+.pytest_cache/
+
+# Mockups de diseño de referencia, no hacen falta para correr la app
+Archivum - standalone.html
+Archivum App - standalone.html
