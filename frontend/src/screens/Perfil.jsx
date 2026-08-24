@@ -129,9 +129,12 @@ function Graficos() {
 
   return (
     <div className="arv-card">
-      <h3>Gráficos</h3>
+      <h3 style={{ marginBottom: 2 }}>Gráficos</h3>
 
-      <p className="arv-muted" style={{ marginBottom: 4 }}>Palabras leídas por año</p>
+      <div className="arv-graf-divider">
+        <span>Palabras leídas por año</span>
+        <span className="line" />
+      </div>
       {porAnio.loading && <Cargando />}
       {porAnio.data?.map((p) => (
         <div className="arv-bar-row" key={p.periodo}>
@@ -144,7 +147,10 @@ function Graficos() {
       ))}
       {porAnio.data?.length === 0 && <p className="arv-muted">Sin datos todavía.</p>}
 
-      <p className="arv-muted" style={{ margin: "16px 0 4px" }}>Distribución por longitud</p>
+      <div className="arv-graf-divider">
+        <span>Distribución por longitud</span>
+        <span className="line" />
+      </div>
       {longitud.loading && <Cargando />}
       {longitud.data?.map(({ bucket, total }) => (
         <div className="arv-bar-row" key={bucket}>
@@ -158,29 +164,30 @@ function Graficos() {
         </div>
       ))}
 
-      <p className="arv-muted" style={{ margin: "16px 0 4px" }}>Completos vs. WIP</p>
+      <div className="arv-graf-divider">
+        <span>Completos vs. WIP</span>
+        <span className="line" />
+      </div>
       {wipCompletos.data && totalWipCompletos > 0 && (
-        <div className="arv-bar-row">
-          <span style={{ flex: "0 0 35%" }}>Completos</span>
-          <div className="arv-bar-track">
-            <div
-              className="arv-bar-fill"
-              style={{ width: `${(wipCompletos.data.completos / totalWipCompletos) * 100}%` }}
-            />
+        <div className="arv-graf-split">
+          <div
+            style={{
+              flex: wipCompletos.data.completos,
+              background: "var(--color-accent)",
+              color: "var(--color-surface)",
+            }}
+          >
+            {wipCompletos.data.completos > 0 && `${wipCompletos.data.completos} completos`}
           </div>
-          <span className="arv-muted">{wipCompletos.data.completos}</span>
-        </div>
-      )}
-      {wipCompletos.data && totalWipCompletos > 0 && (
-        <div className="arv-bar-row">
-          <span style={{ flex: "0 0 35%" }}>WIP</span>
-          <div className="arv-bar-track">
-            <div
-              className="arv-bar-fill"
-              style={{ width: `${(wipCompletos.data.wip / totalWipCompletos) * 100}%` }}
-            />
+          <div
+            style={{
+              flex: wipCompletos.data.wip,
+              background: "var(--color-accent-2-soft)",
+              color: "var(--color-accent-2)",
+            }}
+          >
+            {wipCompletos.data.wip > 0 && wipCompletos.data.wip}
           </div>
-          <span className="arv-muted">{wipCompletos.data.wip}</span>
         </div>
       )}
     </div>
