@@ -113,9 +113,31 @@ export const api = {
   importLog: {
     list: (limit = 20) => request(`/import-log?limit=${limit}`),
   },
+  perfil: {
+    get: () => request("/perfil"),
+    imagenUrl: (tipo) => {
+      const token = getToken();
+      const query = token ? `?token=${encodeURIComponent(token)}` : "";
+      return `${API_BASE}/perfil/imagen/${tipo}${query}`;
+    },
+    subirImagen: async (tipo, archivo) => {
+      const formData = new FormData();
+      formData.append("archivo", archivo);
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/perfil/${tipo}`, {
+        method: "POST",
+        headers: token ? { "X-Archivum-Token": token } : {},
+        body: formData,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(`${response.status}: ${body.detail ?? response.statusText}`);
+      }
+      return response.json();
+    },
+  },
   stats: {
     resumen: (anio) => request(`/stats/resumen${anio ? `?anio=${anio}` : ""}`),
-    ficMasLargo: (anio) => request(`/stats/fic-mas-largo${anio ? `?anio=${anio}` : ""}`),
     topFandoms: (limite = 10, anio) =>
       request(`/stats/top-fandoms?${new URLSearchParams({ limite, ...(anio ? { anio } : {}) })}`),
     topShips: (limite = 10, tipo, anio) =>

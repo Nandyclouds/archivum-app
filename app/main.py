@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routers import ao3_import, archivos, colecciones, etiquetas, fics, import_log, stats, sync
+from app.api.routers import ao3_import, archivos, colecciones, etiquetas, fics, import_log, perfil, stats, sync
 from app.config import settings
 
 app = FastAPI(title="Archivum API", version="0.1.0")
@@ -92,6 +92,7 @@ app.include_router(import_log.router, prefix="/api")
 app.include_router(ao3_import.router, prefix="/api")
 app.include_router(etiquetas.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
+app.include_router(perfil.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

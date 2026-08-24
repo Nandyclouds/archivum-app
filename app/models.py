@@ -327,3 +327,18 @@ class ImportLog(Base):
     # pero sin esto no hay forma de diagnosticar un import de horas que
     # terminó con errores > 0.
     errores_detalle: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class PerfilConfig(Base):
+    """Fila única (id=1) con la personalización del perfil: avatar y portada.
+
+    No hay usuarios/cuentas (ver Tarea 1) — esto es "cómo se ve mi copia de
+    la app", no un perfil social. Los archivos en sí viven en
+    data/perfil/, esta tabla solo guarda las rutas.
+    """
+
+    __tablename__ = "perfil_config"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    avatar_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -49,5 +49,9 @@ class Settings(BaseSettings):
     def archivo_dir(self) -> Path:
         return BASE_DIR / "data" / "archivo"
 
+    @property
+    def perfil_dir(self) -> Path:
+        return BASE_DIR / "data" / "perfil"
+
 
 settings = Settings()

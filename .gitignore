@@ -7,6 +7,8 @@ data/*.db
 data/*.db-journal
 data/archivo/*
 !data/archivo/.gitkeep
+data/perfil/*
+!data/perfil/.gitkeep
 *.egg-info/
 .pytest_cache/
 
