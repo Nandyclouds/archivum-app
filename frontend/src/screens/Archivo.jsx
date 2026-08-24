@@ -1,7 +1,7 @@
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
-import { abrirEnNavegadorExterno } from "../lib/abrirExterno";
+import { abrirEnNavegadorExterno, descargarArchivo } from "../lib/abrirExterno";
 import { InfoPopover } from "../components/InfoPopover";
 
 const FORMATO_LABEL = { html: "Ver copia", epub: "Descargar EPUB" };
@@ -11,6 +11,14 @@ export function Archivo() {
 
   if (archivos.loading) return <Cargando />;
   if (archivos.error) return <ErrorCarga error={archivos.error} onReintentar={archivos.reload} />;
+
+  async function descargarHtml(a) {
+    try {
+      await descargarArchivo(api.archivos.contenidoUrl(a.id), `${a.fic_titulo}.html`);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
 
   return (
     <div>
@@ -36,7 +44,7 @@ export function Archivo() {
                 guardado {new Date(a.fecha_descarga).toLocaleDateString()}
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, width: 130 }}>
               <span
                 className={`arv-tag ${a.fic_deleted_detected_at ? "arv-tag-accent" : "arv-tag-accent-2"}`}
                 style={{ justifyContent: "center" }}
@@ -49,6 +57,11 @@ export function Archivo() {
               >
                 {FORMATO_LABEL[a.formato] ?? a.formato}
               </button>
+              {a.formato === "html" && (
+                <button className="arv-btn arv-btn-secondary" onClick={() => descargarHtml(a)}>
+                  Descargar
+                </button>
+              )}
             </div>
           </div>
         ))}

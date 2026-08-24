@@ -167,7 +167,7 @@ function Favoritos() {
         <h3 style={{ marginBottom: 0 }}>Favoritos</h3>
         {coleccionId && total > 4 && (
           <Link to={`/colecciones/${coleccionId}`} className="arv-muted" style={{ fontSize: 12.5 }}>
-            ver los {total} →
+            ver los {total}
           </Link>
         )}
       </div>

@@ -126,6 +126,37 @@ def test_ingest_fic_con_bookmark_tags_crea_lectura(client, con_sync_secret, db_s
     assert fic.lecturas[0].estado == "leido"
 
 
+def test_ingest_fic_sin_html_actualiza_tags_de_fic_existente(client, con_sync_secret, db_session):
+    """El runner manda esto para un fic YA conocido — no vuelve a pedir/
+    mandar el HTML entero, solo re-aplica los tags actuales del bookmark."""
+    client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "1", "html": _read("work_page.html")},
+    )
+
+    response = client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "1", "bookmark_tags": ["por leer"]},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ao3_id": "1", "es_nuevo": False}
+
+    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
+    assert len(fic.lecturas) == 1
+    assert fic.lecturas[0].estado == "pendiente"
+
+
+def test_ingest_fic_sin_html_ni_fic_existente_da_404(client, con_sync_secret):
+    response = client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "no-existe", "bookmark_tags": ["por leer"]},
+    )
+    assert response.status_code == 404
+
+
 def test_ingest_epub_rechaza_sin_secreto(client):
     response = client.post(
         "/api/sync/ingest-epub", json={"ao3_id": "1", "content_base64": "AAAA"}

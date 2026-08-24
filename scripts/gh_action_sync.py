@@ -73,8 +73,10 @@ def _login(client: RateLimitedClient) -> None:
         sys.exit(1)
 
 
-def _ingest_fic(base_url: str, headers: dict, ao3_id: str, html: str, *, tags=None, bookmarked_at=None) -> None:
-    payload = {"ao3_id": ao3_id, "html": html}
+def _ingest_fic(base_url: str, headers: dict, ao3_id: str, html: str | None = None, *, tags=None, bookmarked_at=None) -> None:
+    payload = {"ao3_id": ao3_id}
+    if html:
+        payload["html"] = html
     if tags:
         payload["bookmark_tags"] = tags
     if bookmarked_at:
@@ -126,21 +128,27 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
     while True:
         try:
             for item in _walk_bookmark_items(client, username, start_page=start_page):
-                if item.work_id in conocidos:
-                    continue
+                ya_conocido = item.work_id in conocidos
                 try:
-                    fic_response = client.get(WORK_URL.format(ao3_id=item.work_id))
-                    fic_response.raise_for_status()
-                    _ingest_fic(
-                        base_url,
-                        headers,
-                        item.work_id,
-                        fic_response.text,
-                        tags=item.tags,
-                        bookmarked_at=item.bookmarked_at,
-                    )
-                    conocidos.add(item.work_id)
-                    nuevos += 1
+                    if ya_conocido:
+                        # Ya tenemos el fic — no hace falta re-pedirlo a AO3,
+                        # pero SÍ hay que re-mandar los tags: si cambiaste
+                        # el tag en AO3 (ej. de "por leer" a "Leídos 2026"),
+                        # esto es lo único que se entera de eso.
+                        _ingest_fic(base_url, headers, item.work_id, tags=item.tags, bookmarked_at=item.bookmarked_at)
+                    else:
+                        fic_response = client.get(WORK_URL.format(ao3_id=item.work_id))
+                        fic_response.raise_for_status()
+                        _ingest_fic(
+                            base_url,
+                            headers,
+                            item.work_id,
+                            fic_response.text,
+                            tags=item.tags,
+                            bookmarked_at=item.bookmarked_at,
+                        )
+                        conocidos.add(item.work_id)
+                        nuevos += 1
                 except (RequestFailedError, requests.exceptions.RequestException) as exc:
                     print(f"  ! {item.work_id}: {exc}", file=sys.stderr)
             break  # terminó de recorrer todas las páginas sin cortarse

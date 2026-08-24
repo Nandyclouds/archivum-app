@@ -19,7 +19,15 @@ export function TopCompleto() {
   const aniosDisponibles = (anios.data ?? []).map((p) => p.periodo).sort().reverse();
 
   const datos = useFetch(() => {
-    if (tipo === "palabras") return api.fics.list({ orden: "palabras", limit: 500, ...(anio ? { anio } : {}) });
+    if (tipo === "palabras") {
+      // "anio" ya implica leído ese año (ver /api/fics); sin año, hay que
+      // pedir estado=leido a mano o traería también pendientes/abandonados.
+      return api.fics.list({
+        orden: "palabras",
+        limit: 500,
+        ...(anio ? { anio } : { estado: "leido" }),
+      });
+    }
     if (tipo === "fandoms") return api.stats.topFandoms(500, anio || undefined);
     return api.stats.topShips(500, tipo, anio || undefined);
   }, [tipo, anio]);

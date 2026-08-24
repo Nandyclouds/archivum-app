@@ -104,16 +104,33 @@ def known_ids(db: Session = Depends(get_session)):
 
 class IngestFicRequest(BaseModel):
     ao3_id: str
-    html: str
+    # Opcional a propósito: para un fic que YA está en la biblioteca, el
+    # runner de GitHub Actions manda solo los tags actualizados del
+    # bookmark, sin re-pedir ni re-mandar el HTML entero (no hace falta:
+    # nada del fic en sí cambió, solo cómo lo tiene taggeado la usuaria en
+    # AO3 — y eso ya lo sabe de haber listado la página de bookmarks, sin
+    # gastar otra petición). Si el fic todavía no existe, html es
+    # obligatorio (si no, no hay de dónde sacar título/fandoms/etc.).
+    html: str | None = None
     bookmark_tags: list[str] | None = None
     bookmarked_at: str | None = None
 
 
 @router.post("/ingest-fic")
 def ingest_fic(payload: IngestFicRequest, db: Session = Depends(get_session)):
-    parsed = parse_work_page(payload.html, payload.ao3_id)
-    fic, es_nuevo = upsert_fic(db, parsed)
-    guardar_snapshot_html(db, fic, payload.html)
+    if payload.html:
+        parsed = parse_work_page(payload.html, payload.ao3_id)
+        fic, es_nuevo = upsert_fic(db, parsed)
+        guardar_snapshot_html(db, fic, payload.html)
+    else:
+        fic = db.query(Fic).filter_by(ao3_id=payload.ao3_id).one_or_none()
+        if fic is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Fic {payload.ao3_id} no encontrado (mandá 'html' para crearlo).",
+            )
+        es_nuevo = False
+
     if payload.bookmark_tags:
         apply_bookmark_tags(db, fic, payload.bookmark_tags, payload.bookmarked_at)
     db.commit()

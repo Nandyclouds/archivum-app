@@ -235,6 +235,24 @@ def test_listar_fics_orden_palabras(client, db_session):
     assert [f["titulo"] for f in r.json()] == ["Largo", "Corto"]
 
 
+def test_orden_palabras_combinado_con_estado_leido_excluye_pendientes(client, db_session):
+    """Regresión: la pantalla de 'fics leídos por palabras' pedía
+    orden=palabras sin estado=leido, así que mostraba fics pendientes/
+    abandonados con muchas palabras como si fueran leídos."""
+    leido = _crear_fic(db_session, ao3_id="1", titulo="Leído")
+    leido_obj = db_session.query(Fic).filter_by(ao3_id="1").one()
+    leido_obj.word_count = 100
+    pendiente = _crear_fic(db_session, ao3_id="2", titulo="Pendiente")
+    pendiente_obj = db_session.query(Fic).filter_by(ao3_id="2").one()
+    pendiente_obj.word_count = 999_999
+    db_session.add(Lectura(fic_id=leido.id, estado="leido"))
+    db_session.add(Lectura(fic_id=pendiente.id, estado="pendiente"))
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "palabras", "estado": "leido"})
+    assert [f["titulo"] for f in r.json()] == ["Leído"]
+
+
 def test_filtrar_fics_por_anio_leido(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     b = _crear_fic(db_session, ao3_id="2", titulo="B")
