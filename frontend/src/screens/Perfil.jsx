@@ -157,11 +157,20 @@ function Favoritos() {
     favoritos.reload();
   }
 
-  const lista = favoritos.data ?? [];
+  const lista = favoritos.data?.fics ?? [];
+  const total = favoritos.data?.total ?? 0;
+  const coleccionId = favoritos.data?.coleccion_id;
 
   return (
     <div className="arv-card">
-      <h3 style={{ marginBottom: 10 }}>Favoritos</h3>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+        <h3 style={{ marginBottom: 0 }}>Favoritos</h3>
+        {coleccionId && total > 4 && (
+          <Link to={`/colecciones/${coleccionId}`} className="arv-muted" style={{ fontSize: 12.5 }}>
+            ver los {total} →
+          </Link>
+        )}
+      </div>
       <div className="arv-favoritos-grid">
         {lista.map((f, i) => (
           <Link

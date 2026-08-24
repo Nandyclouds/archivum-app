@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.config import Settings
 from app.database import Base, get_session
 from app.main import app
-from app.models import Fic
+from app.models import Coleccion, Fic
 
 
 @pytest.fixture(autouse=True)
@@ -133,7 +133,7 @@ def test_borrar_cita_con_texto_vacio(client):
 
 
 def test_favoritos_vacio(client):
-    assert client.get("/api/perfil/favoritos").json() == []
+    assert client.get("/api/perfil/favoritos").json() == {"coleccion_id": None, "total": 0, "fics": []}
 
 
 def test_agregar_y_listar_favoritos(client, db_session):
@@ -142,8 +142,39 @@ def test_agregar_y_listar_favoritos(client, db_session):
     r = client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
     assert r.status_code == 201
 
-    favoritos = client.get("/api/perfil/favoritos").json()
-    assert favoritos == [{"fic_id": fic.id, "titulo": "Mi favorito", "orden": 0}]
+    body = client.get("/api/perfil/favoritos").json()
+    assert body["total"] == 1
+    assert body["fics"] == [{"fic_id": fic.id, "titulo": "Mi favorito"}]
+    assert body["coleccion_id"] is not None
+
+
+def test_agregar_favorito_usa_coleccion_favoritos_existente(client, db_session):
+    """Si ya existe una colección "Favoritos" (ej. de un tag de AO3), se
+    reusa esa — no se crea una segunda lista de favoritos separada."""
+    coleccion = Coleccion(nombre="Favoritos", tipo="bookmark_tag")
+    db_session.add(coleccion)
+    db_session.commit()
+    fic = _crear_fic(db_session, ao3_id="1", titulo="Ya en AO3")
+    coleccion.fics.append(fic)
+    db_session.commit()
+
+    nuevo = _crear_fic(db_session, ao3_id="2", titulo="Agregado desde el perfil")
+    client.post("/api/perfil/favoritos", json={"fic_id": nuevo.id})
+
+    body = client.get("/api/perfil/favoritos").json()
+    assert body["coleccion_id"] == coleccion.id
+    assert body["total"] == 2
+    assert db_session.query(Coleccion).filter_by(nombre="Favoritos").count() == 1
+
+
+def test_favoritos_muestra_como_maximo_cuatro_pero_cuenta_el_total(client, db_session):
+    for i in range(6):
+        fic = _crear_fic(db_session, ao3_id=str(i), titulo=f"Fic {i}")
+        client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
+
+    body = client.get("/api/perfil/favoritos").json()
+    assert body["total"] == 6
+    assert len(body["fics"]) == 4
 
 
 def test_agregar_favorito_fic_inexistente(client):
@@ -159,23 +190,13 @@ def test_agregar_favorito_duplicado(client, db_session):
     assert r.status_code == 409
 
 
-def test_agregar_mas_de_cuatro_favoritos(client, db_session):
-    for i in range(4):
-        fic = _crear_fic(db_session, ao3_id=str(i))
-        assert client.post("/api/perfil/favoritos", json={"fic_id": fic.id}).status_code == 201
-
-    quinto = _crear_fic(db_session, ao3_id="5")
-    r = client.post("/api/perfil/favoritos", json={"fic_id": quinto.id})
-    assert r.status_code == 409
-
-
 def test_quitar_favorito(client, db_session):
     fic = _crear_fic(db_session, ao3_id="1")
     client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
 
     r = client.delete(f"/api/perfil/favoritos/{fic.id}")
     assert r.status_code == 204
-    assert client.get("/api/perfil/favoritos").json() == []
+    assert client.get("/api/perfil/favoritos").json()["total"] == 0
 
 
 def test_quitar_favorito_inexistente_no_falla(client):

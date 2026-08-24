@@ -15,13 +15,21 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_session
-from app.models import Fic, PerfilConfig, PerfilFavorito
+from app.models import Coleccion, Fic, PerfilConfig
 
 router = APIRouter(prefix="/perfil", tags=["perfil"])
 
 TIPOS_PERMITIDOS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 TAMANO_MAXIMO = 8 * 1024 * 1024  # 8MB, de sobra para una foto de perfil/portada
-MAX_FAVORITOS = 4
+
+# La grilla "Favoritos" del perfil NO es un concepto aparte: apunta a la
+# colección "Favoritos" de siempre (la misma que ya existe si alguna vez
+# taggeaste bookmarks así en AO3, o que se crea sola la primera vez que
+# agregás un fic desde acá). Un fic marcado desde el perfil aparece también
+# en Colecciones, y viceversa — una sola lista, no dos que se puedan
+# desincronizar.
+FAVORITOS_NOMBRE = "Favoritos"
+FAVORITOS_VISIBLES = 4
 
 
 def _get_or_create_config(db: Session) -> PerfilConfig:
@@ -87,12 +95,21 @@ async def subir_portada(archivo: UploadFile = File(...), db: Session = Depends(g
     return {"ok": True}
 
 
+def _get_coleccion_favoritos(db: Session) -> Coleccion | None:
+    return db.query(Coleccion).filter_by(nombre=FAVORITOS_NOMBRE).one_or_none()
+
+
 @router.get("/favoritos")
 def listar_favoritos(db: Session = Depends(get_session)):
-    favoritos = db.query(PerfilFavorito).order_by(PerfilFavorito.orden).all()
-    return [
-        {"fic_id": f.fic_id, "titulo": f.fic.titulo, "orden": f.orden} for f in favoritos
-    ]
+    coleccion = _get_coleccion_favoritos(db)
+    if coleccion is None:
+        return {"coleccion_id": None, "total": 0, "fics": []}
+    fics = sorted(coleccion.fics, key=lambda f: f.titulo)
+    return {
+        "coleccion_id": coleccion.id,
+        "total": len(fics),
+        "fics": [{"fic_id": f.id, "titulo": f.titulo} for f in fics[:FAVORITOS_VISIBLES]],
+    }
 
 
 class FavoritoCreate(BaseModel):
@@ -105,23 +122,26 @@ def agregar_favorito(payload: FavoritoCreate, db: Session = Depends(get_session)
     if fic is None:
         raise HTTPException(status_code=404, detail="Fic no encontrado.")
 
-    existentes = db.query(PerfilFavorito).order_by(PerfilFavorito.orden).all()
-    if any(f.fic_id == payload.fic_id for f in existentes):
-        raise HTTPException(status_code=409, detail="Ese fic ya está en favoritos.")
-    if len(existentes) >= MAX_FAVORITOS:
-        raise HTTPException(status_code=409, detail=f"Ya tenés {MAX_FAVORITOS} favoritos (el máximo).")
-
-    siguiente_orden = max((f.orden for f in existentes), default=-1) + 1
-    db.add(PerfilFavorito(fic_id=payload.fic_id, orden=siguiente_orden))
+    coleccion = _get_coleccion_favoritos(db)
+    if coleccion is None:
+        coleccion = Coleccion(nombre=FAVORITOS_NOMBRE, tipo="personalizada")
+        db.add(coleccion)
+        db.flush()
+    if fic in coleccion.fics:
+        raise HTTPException(status_code=409, detail="Ese fic ya está en Favoritos.")
+    coleccion.fics.append(fic)
     db.commit()
     return {"ok": True}
 
 
 @router.delete("/favoritos/{fic_id}", status_code=204)
 def quitar_favorito(fic_id: int, db: Session = Depends(get_session)):
-    favorito = db.query(PerfilFavorito).filter_by(fic_id=fic_id).one_or_none()
-    if favorito is not None:
-        db.delete(favorito)
+    coleccion = _get_coleccion_favoritos(db)
+    if coleccion is None:
+        return
+    fic = db.get(Fic, fic_id)
+    if fic is not None and fic in coleccion.fics:
+        coleccion.fics.remove(fic)
         db.commit()
 
 
