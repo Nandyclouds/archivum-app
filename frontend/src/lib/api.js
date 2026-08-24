@@ -1,3 +1,5 @@
+import { getToken, clearToken } from "./auth";
+
 // Vacío = mismo origen desde el que se sirvió la página. Funciona tanto en
 // localhost:8000 como en la URL de Tailscale, porque FastAPI sirve la API y
 // el frontend juntos (ver app/main.py). En dev con `npm run dev` (puerto
@@ -9,10 +11,20 @@ const BASE_URL = import.meta.env.VITE_API_URL || "";
 const API_BASE = `${BASE_URL}/api`;
 
 async function request(path, options = {}) {
+  const token = getToken();
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "X-Archivum-Token": token } : {}),
+    },
     ...options,
   });
+  if (response.status === 401) {
+    // Token inválido/vencido: lo tiramos así AuthGate vuelve a pedirlo.
+    clearToken();
+    window.location.reload();
+    throw new Error("401: No autorizado");
+  }
   if (!response.ok) {
     let detail = response.statusText;
     try {
@@ -80,7 +92,11 @@ export const api = {
   },
   archivos: {
     list: () => request("/archivos"),
-    contenidoUrl: (archivoId) => `${API_BASE}/archivos/${archivoId}/contenido`,
+    contenidoUrl: (archivoId) => {
+      const token = getToken();
+      const query = token ? `?token=${encodeURIComponent(token)}` : "";
+      return `${API_BASE}/archivos/${archivoId}/contenido${query}`;
+    },
   },
   importLog: {
     list: (limit = 20) => request(`/import-log?limit=${limit}`),

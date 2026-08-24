@@ -10,6 +10,11 @@ class Settings(BaseSettings):
 
     archivum_db_path: str = "data/archivum.db"
 
+    # Vacío = sin auth (uso local, ya restringido por red/Tailscale). Con un
+    # valor puesto, todo /api/* lo exige (header o query param) — necesario
+    # en cuanto la app queda expuesta en un dominio público (ver main.py).
+    archivum_auth_token: str = ""
+
     ao3_username: str = ""
     ao3_password: str = ""
     ao3_contact_email: str = ""

@@ -20,26 +20,51 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routers import ao3_import, archivos, colecciones, etiquetas, fics, import_log, stats
+from app.config import settings
 
 app = FastAPI(title="Archivum API", version="0.1.0")
 
-# CORS abierto a propósito: esta app es local, sin autenticación, para un
-# máximo de 3 personas cada una con su propia copia (ver Tarea 1). El único
-# límite de acceso real es de red (misma WiFi / Tailscale) — por eso NUNCA
-# exponer este server a internet público (ngrok, port forwarding, etc.) sin
-# agregar autenticación antes.
+# CORS abierto a propósito: esta app es para un máximo de 3 personas, cada
+# una con su propia copia (ver Tarea 1), sin cuentas/registro. El control de
+# acceso real es ARCHIVUM_AUTH_TOKEN (ver abajo), no CORS.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rutas /api que no piden token: health check (para monitoreo) y nada más.
+_RUTAS_PUBLICAS = {"/api/health"}
+
+
+@app.middleware("http")
+async def exigir_token(request: Request, call_next):
+    """Si ARCHIVUM_AUTH_TOKEN está seteado, todo /api/* lo exige.
+
+    Vacío (default local) = sin auth, como antes. Se pone un valor real en
+    cuanto la app se expone en un dominio público (PythonAnywhere) — ahí sí
+    cualquiera con la URL podría leer/escribir en la biblioteca sin esto.
+
+    Acepta el token por header (llamadas normales del frontend) o por query
+    param `?token=` (el link de "ver copia archivada" se abre directo en el
+    navegador/otra app, sin forma de mandar headers custom).
+    """
+    if settings.archivum_auth_token and request.url.path.startswith("/api"):
+        # El preflight de CORS nunca lleva headers custom (el navegador lo
+        # arma solo) — dejarlo pasar para que CORSMiddleware lo responda, o
+        # el browser nunca llega a mandar la petición real con el token.
+        if request.method != "OPTIONS" and request.url.path not in _RUTAS_PUBLICAS:
+            token = request.headers.get("x-archivum-token") or request.query_params.get("token")
+            if token != settings.archivum_auth_token:
+                return JSONResponse({"detail": "No autorizado"}, status_code=401)
+    return await call_next(request)
 
 app.include_router(fics.router, prefix="/api")
 app.include_router(colecciones.router, prefix="/api")
