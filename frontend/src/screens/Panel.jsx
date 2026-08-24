@@ -14,7 +14,8 @@ const ESTADO_LABEL = {
 export function Panel() {
   const [anio, setAnio] = useState("");
 
-  const resumen = useFetch(() => api.stats.resumen());
+  const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio]);
+  const ficMasLargo = useFetch(() => api.stats.ficMasLargo(anio || undefined), [anio]);
   const anios = useFetch(() => api.stats.palabrasPorAnio());
   const topFandoms = useFetch(() => api.stats.topFandoms(6, anio || undefined), [anio]);
   const topShips = useFetch(() => api.stats.topShips(6, "romantico", anio || undefined), [anio]);
@@ -38,10 +39,23 @@ export function Panel() {
       </div>
 
       <div className="arv-grid-2" style={{ marginBottom: 14 }}>
-        <div className="arv-stat">
-          <div className="label">Palabras</div>
-          <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
-        </div>
+        {ficMasLargo.data ? (
+          <Link to={`/fics/${ficMasLargo.data.id}`} className="arv-stat arv-row-link" title={ficMasLargo.data.titulo}>
+            <div className="label">Palabras</div>
+            <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
+            <div
+              className="arv-muted"
+              style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+            >
+              más larga: {ficMasLargo.data.titulo}
+            </div>
+          </Link>
+        ) : (
+          <div className="arv-stat">
+            <div className="label">Palabras</div>
+            <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
+          </div>
+        )}
         <Link to="/buscar?estado=leido" className="arv-stat arv-row-link">
           <div className="label">Fics leídos</div>
           <div className="value">{r.total_lecturas_leido}</div>

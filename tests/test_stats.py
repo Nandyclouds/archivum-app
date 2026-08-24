@@ -163,6 +163,46 @@ def test_resumen_general(session):
     assert resumen["total_ships"] == 1
 
 
+def test_resumen_general_filtrado_por_anio(session):
+    fic_a = _make_fic(session, ao3_id="1", titulo="A", word_count=1000, complete=True, fandom="Fandom A", ship="A/B")
+    fic_b = _make_fic(session, ao3_id="2", titulo="B", word_count=500, complete=True, fandom="Fandom B", ship="C/D")
+    session.add_all(
+        [
+            Lectura(fic_id=fic_a.id, estado="leido", fecha_fin=datetime.date(2025, 6, 1)),
+            Lectura(fic_id=fic_b.id, estado="leido", fecha_fin=datetime.date(2026, 6, 1)),
+        ]
+    )
+    session.commit()
+
+    resumen_2025 = stats.resumen_general(session, anio=2025)
+    assert resumen_2025["total_fics"] == 2  # tamaño de biblioteca: no se filtra por año
+    assert resumen_2025["total_lecturas_leido"] == 1
+    assert resumen_2025["total_palabras_leidas"] == 1000
+    assert resumen_2025["total_fandoms"] == 1
+    assert resumen_2025["total_ships"] == 1
+
+    resumen_todos = stats.resumen_general(session)
+    assert resumen_todos["total_lecturas_leido"] == 2
+    assert resumen_todos["total_palabras_leidas"] == 1500
+
+
+def test_fic_mas_largo_leido(session):
+    corto = _make_fic(session, ao3_id="1", titulo="Corto", word_count=1000, complete=True, fandom="F")
+    largo = _make_fic(session, ao3_id="2", titulo="Largo", word_count=50_000, complete=True, fandom="F")
+    sin_leer = _make_fic(session, ao3_id="3", titulo="Sin leer", word_count=999_999, complete=True, fandom="F")
+    session.add_all(
+        [
+            Lectura(fic_id=corto.id, estado="leido", fecha_fin=datetime.date(2025, 1, 1)),
+            Lectura(fic_id=largo.id, estado="leido", fecha_fin=datetime.date(2026, 1, 1)),
+        ]
+    )
+    session.commit()
+
+    assert stats.fic_mas_largo_leido(session).titulo == "Largo"
+    assert stats.fic_mas_largo_leido(session, anio=2025).titulo == "Corto"
+    assert stats.fic_mas_largo_leido(session, anio=2099) is None
+
+
 def test_resumen_general_cuenta_relecturas(session):
     fic = _make_fic(session, ao3_id="1", titulo="A", word_count=1000, complete=True, fandom="F")
     session.add(Lectura(fic_id=fic.id, estado="leido", fecha_fin=datetime.date(2025, 1, 1)))

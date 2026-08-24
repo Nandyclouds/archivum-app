@@ -11,10 +11,18 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 
 @router.get("/resumen")
-def resumen(db: Session = Depends(get_session)):
-    datos = stats_module.resumen_general(db)
+def resumen(anio: int | None = None, db: Session = Depends(get_session)):
+    datos = stats_module.resumen_general(db, anio=anio)
     datos["racha_dias"] = stats_module.racha_dias_lectura(db)
     return datos
+
+
+@router.get("/fic-mas-largo")
+def fic_mas_largo(anio: int | None = None, db: Session = Depends(get_session)):
+    fic = stats_module.fic_mas_largo_leido(db, anio=anio)
+    if fic is None:
+        return None
+    return {"id": fic.id, "titulo": fic.titulo, "word_count": fic.word_count}
 
 
 @router.get("/top-fandoms")

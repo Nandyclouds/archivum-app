@@ -419,6 +419,23 @@ def test_stats_resumen(client, db_session):
     assert body["total_palabras_leidas"] == 1000
     assert body["racha_dias"] == 1
 
+    r = client.get("/api/stats/resumen", params={"anio": 2026})
+    assert r.json()["total_palabras_leidas"] == 1000
+    r = client.get("/api/stats/resumen", params={"anio": 2020})
+    assert r.json()["total_palabras_leidas"] == 0
+
+
+def test_stats_fic_mas_largo(client, db_session):
+    fic = _crear_fic(db_session, ao3_id="1", titulo="El más largo")
+    db_session.add(Lectura(fic_id=fic.id, estado="leido", fecha_fin=datetime.date(2026, 8, 1)))
+    db_session.commit()
+
+    r = client.get("/api/stats/fic-mas-largo")
+    assert r.json() == {"id": fic.id, "titulo": "El más largo", "word_count": 1000}
+
+    r = client.get("/api/stats/fic-mas-largo", params={"anio": 2020})
+    assert r.json() is None
+
 
 def test_stats_estado_lectura(client, db_session):
     fic = _crear_fic(db_session)

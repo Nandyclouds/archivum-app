@@ -70,6 +70,7 @@ export function Buscar() {
         <input
           key={personaje}
           className="arv-input"
+          style={{ flex: 1, minWidth: 0 }}
           list="opciones-personajes"
           placeholder="Personaje…"
           defaultValue={personaje}
@@ -79,6 +80,7 @@ export function Buscar() {
         <input
           key={tag}
           className="arv-input"
+          style={{ flex: 1, minWidth: 0 }}
           list="opciones-tags"
           placeholder="Tag adicional…"
           defaultValue={tag}
@@ -96,10 +98,11 @@ export function Buscar() {
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         <select
           className="arv-input"
+          style={{ flex: 1, minWidth: 0 }}
           value={rating}
           onChange={(e) => setFiltro("rating", e.target.value)}
         >
-          <option value="">Rating (todos)</option>
+          <option value="">Rating</option>
           {opciones.data?.ratings.map((r) => (
             <option value={r} key={r}>
               {r}
@@ -108,10 +111,11 @@ export function Buscar() {
         </select>
         <select
           className="arv-input"
+          style={{ flex: 1, minWidth: 0 }}
           value={warning}
           onChange={(e) => setFiltro("warning", e.target.value)}
         >
-          <option value="">Warnings (todos)</option>
+          <option value="">Warnings</option>
           {opciones.data?.warnings.map((w) => (
             <option value={w} key={w}>
               {w}

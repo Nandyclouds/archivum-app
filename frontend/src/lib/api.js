@@ -114,7 +114,8 @@ export const api = {
     list: (limit = 20) => request(`/import-log?limit=${limit}`),
   },
   stats: {
-    resumen: () => request("/stats/resumen"),
+    resumen: (anio) => request(`/stats/resumen${anio ? `?anio=${anio}` : ""}`),
+    ficMasLargo: (anio) => request(`/stats/fic-mas-largo${anio ? `?anio=${anio}` : ""}`),
     topFandoms: (limite = 10, anio) =>
       request(`/stats/top-fandoms?${new URLSearchParams({ limite, ...(anio ? { anio } : {}) })}`),
     topShips: (limite = 10, tipo, anio) =>

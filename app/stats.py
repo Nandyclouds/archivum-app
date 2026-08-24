@@ -238,30 +238,46 @@ def racha_dias_lectura(session: Session) -> int:
     return racha
 
 
-def resumen_general(session: Session) -> dict:
+def resumen_general(session: Session, anio: int | None = None) -> dict:
     """Bloque de números para el panel principal: palabras, fics, fandoms, ships.
 
     `total_lecturas_leido` y `total_palabras_leidas` cuentan cada lectura
     (incluidas relecturas) por separado: si releíste un fic de 1000 palabras,
     suma 2 lecturas y 2000 palabras, no 1. `total_fics` es el tamaño de la
-    biblioteca completa (incluye pendientes/sin marcar), no "leídos".
+    biblioteca completa (incluye pendientes/sin marcar), no "leídos" — no se
+    filtra por año (no tiene fecha de lectura asociada).
+
+    Con `anio`, todo lo demás se restringe a lecturas completadas ese año
+    (mismo criterio que `top_fandoms`/`top_ships`, ver `_filtrar_por_anio_leido`).
     """
     total_fics = session.query(func.count(Fic.id)).scalar()
-    total_lecturas_leido = (
-        session.query(func.count(Lectura.id)).filter(Lectura.estado == "leido").scalar()
-    )
-    total_palabras_leidas = (
+
+    lecturas_leido = session.query(func.count(Lectura.id)).filter(Lectura.estado == "leido")
+    palabras_leidas = (
         session.query(func.coalesce(func.sum(Fic.word_count), 0))
         .join(Lectura, Lectura.fic_id == Fic.id)
         .filter(Lectura.estado == "leido")
-        .scalar()
     )
-    total_fandoms = session.query(func.count(func.distinct(FicFandom.fandom_id))).scalar()
-    total_ships = session.query(func.count(func.distinct(FicShip.ship_id))).scalar()
+    fandoms_leidos = session.query(func.count(func.distinct(FicFandom.fandom_id)))
+    ships_leidos = session.query(func.count(func.distinct(FicShip.ship_id)))
+    if anio is not None:
+        lecturas_leido = lecturas_leido.filter(func.strftime("%Y", Lectura.fecha_fin) == str(anio))
+        palabras_leidas = palabras_leidas.filter(func.strftime("%Y", Lectura.fecha_fin) == str(anio))
+        fandoms_leidos = _filtrar_por_anio_leido(fandoms_leidos, FicFandom.fic_id, anio)
+        ships_leidos = _filtrar_por_anio_leido(ships_leidos, FicShip.fic_id, anio)
+
     return {
         "total_fics": total_fics,
-        "total_lecturas_leido": total_lecturas_leido,
-        "total_palabras_leidas": total_palabras_leidas,
-        "total_fandoms": total_fandoms,
-        "total_ships": total_ships,
+        "total_lecturas_leido": lecturas_leido.scalar(),
+        "total_palabras_leidas": palabras_leidas.scalar(),
+        "total_fandoms": fandoms_leidos.scalar(),
+        "total_ships": ships_leidos.scalar(),
     }
+
+
+def fic_mas_largo_leido(session: Session, anio: int | None = None) -> Fic | None:
+    """El fic leído (estado='leido') con más palabras, opcionalmente filtrado por año."""
+    query = session.query(Fic).join(Lectura, Lectura.fic_id == Fic.id).filter(Lectura.estado == "leido")
+    if anio is not None:
+        query = query.filter(func.strftime("%Y", Lectura.fecha_fin) == str(anio))
+    return query.order_by(Fic.word_count.desc()).first()
