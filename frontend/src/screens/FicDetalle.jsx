@@ -75,7 +75,7 @@ export function FicDetalle() {
               Ver copia archivada
             </button>
           )}
-          <DescargarEpub fic={f} epub={epub} onChange={fic.reload} />
+          <DescargarEpub fic={f} epub={epub} />
         </div>
       </div>
 
@@ -233,16 +233,17 @@ function MisEtiquetas({ fic, onChange }) {
   );
 }
 
-function DescargarEpub({ fic, epub, onChange }) {
+function DescargarEpub({ fic, epub }) {
   const [descargando, setDescargando] = useState(false);
+  const [disparado, setDisparado] = useState(false);
   const [error, setError] = useState(null);
 
   async function descargar() {
     setDescargando(true);
     setError(null);
     try {
-      await api.ao3.descargarEpub(fic.id);
-      onChange();
+      await api.sync.trigger("epub", { ao3Id: fic.ao3_id });
+      setDisparado(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -253,12 +254,15 @@ function DescargarEpub({ fic, epub, onChange }) {
   return (
     <span>
       <button className="arv-btn arv-btn-secondary" disabled={descargando} onClick={descargar}>
-        {descargando ? "Descargando…" : epub ? "Volver a descargar EPUB" : "Descargar EPUB"}
+        {descargando ? "Disparando…" : epub ? "Volver a descargar EPUB" : "Descargar EPUB"}
       </button>
       {epub && (
         <span className="arv-muted" style={{ marginLeft: 8 }}>
           guardado {new Date(epub.fecha_descarga).toLocaleDateString()}
         </span>
+      )}
+      {disparado && (
+        <p className="arv-muted">Descarga en camino — puede tardar unos minutos en aparecer.</p>
       )}
       {error && <p style={{ color: "var(--color-accent)" }}>{error}</p>}
     </span>

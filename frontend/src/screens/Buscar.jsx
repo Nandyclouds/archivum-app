@@ -47,7 +47,7 @@ export function Buscar() {
 
   return (
     <div>
-      <ImportarPorUrl onImportado={fics.reload} />
+      <ImportarPorUrl />
       <input
         className="arv-input"
         placeholder="Buscar en tu biblioteca…"

@@ -1,0 +1,51 @@
+name: Sync con AO3
+
+# Solo a demanda (disparado desde la app o manualmente acá) — a propósito
+# sin `schedule`, ver scripts/gh_action_sync.py. Este workflow corre en un
+# runner con salida a internet, a diferencia del host donde vive la app.
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Qué sincronizar"
+        required: true
+        type: choice
+        options:
+          - bookmarks
+          - fic
+          - epub
+      url:
+        description: "URL del fic (solo modo=fic)"
+        required: false
+        type: string
+      ao3_id:
+        description: "ID de AO3 del fic (solo modo=epub)"
+        required: false
+        type: string
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependencias
+        run: pip install -e .
+
+      - name: Correr sync
+        env:
+          AO3_USERNAME: ${{ secrets.AO3_USERNAME }}
+          AO3_PASSWORD: ${{ secrets.AO3_PASSWORD }}
+          AO3_CONTACT_EMAIL: ${{ secrets.AO3_CONTACT_EMAIL }}
+          ARCHIVUM_BASE_URL: ${{ secrets.ARCHIVUM_BASE_URL }}
+          ARCHIVUM_SYNC_SECRET: ${{ secrets.ARCHIVUM_SYNC_SECRET }}
+        run: |
+          ARGS="--modo ${{ inputs.modo }}"
+          if [ -n "${{ inputs.url }}" ]; then ARGS="$ARGS --url ${{ inputs.url }}"; fi
+          if [ -n "${{ inputs.ao3_id }}" ]; then ARGS="$ARGS --ao3-id ${{ inputs.ao3_id }}"; fi
+          python scripts/gh_action_sync.py $ARGS

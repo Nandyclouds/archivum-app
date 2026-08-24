@@ -46,24 +46,14 @@ def _utcnow() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
 
-def download_fic_epub(
-    db: Session, client: RateLimitedClient, fic: Fic, archivo_dir: Path
-) -> Archivo:
-    if fic.deleted_detected_at is not None:
-        raise DownloadError(
-            f"El fic {fic.ao3_id} está marcado como borrado en AO3; no se puede volver a descargar."
-        )
+def guardar_epub(db: Session, fic: Fic, content: bytes, archivo_dir: Path) -> Archivo:
+    """Guarda bytes de EPUB ya descargados y registra/actualiza el `Archivo`.
 
-    page_response = client.get(WORK_URL.format(ao3_id=fic.ao3_id))
-    page_response.raise_for_status()
-    parsed = parse_work_page(page_response.text, fic.ao3_id)
-    if parsed.epub_url is None:
-        raise NoEpubDisponibleError(fic.ao3_id)
-
-    epub_response = client.get(parsed.epub_url)
-    epub_response.raise_for_status()
-    content = epub_response.content
-
+    Separado de `download_fic_epub` para que el runner remoto de GitHub
+    Actions (que descarga el EPUB desde una máquina con salida a AO3, ver
+    scripts/gh_action_sync.py) pueda reusar este mismo guardado sin pasar
+    por un `RateLimitedClient` local.
+    """
     archivo_dir.mkdir(parents=True, exist_ok=True)
     ruta = archivo_dir / f"{fic.ao3_id}.epub"
     ruta.write_bytes(content)
@@ -80,6 +70,26 @@ def download_fic_epub(
 
     db.flush()
     return archivo
+
+
+def download_fic_epub(
+    db: Session, client: RateLimitedClient, fic: Fic, archivo_dir: Path
+) -> Archivo:
+    if fic.deleted_detected_at is not None:
+        raise DownloadError(
+            f"El fic {fic.ao3_id} está marcado como borrado en AO3; no se puede volver a descargar."
+        )
+
+    page_response = client.get(WORK_URL.format(ao3_id=fic.ao3_id))
+    page_response.raise_for_status()
+    parsed = parse_work_page(page_response.text, fic.ao3_id)
+    if parsed.epub_url is None:
+        raise NoEpubDisponibleError(fic.ao3_id)
+
+    epub_response = client.get(parsed.epub_url)
+    epub_response.raise_for_status()
+
+    return guardar_epub(db, fic, epub_response.content, archivo_dir)
 
 
 def download_all_unarchived(
