@@ -57,26 +57,51 @@ def palabras_leidas_por_anio(session: Session) -> list[PeriodoPalabras]:
     return [PeriodoPalabras(*row) for row in query.all()]
 
 
-def top_fandoms(session: Session, limite: int = 10) -> list[tuple[str, int]]:
-    """Fandoms con más fics en la biblioteca, de más a menos."""
+def _filtrar_por_anio_leido(query, join_col, anio: int):
+    """Restringe una query de fandoms/ships a fics leídos en un año dado.
+
+    `anio` filtra por `Lectura.fecha_fin` (cuándo se terminó de leer), no por
+    fecha de publicación del fic — "top fandoms de 2024" significa "lo que
+    más leíste en 2024", pudiendo incluir fics publicados en cualquier año.
+    """
+    return query.join(Lectura, Lectura.fic_id == join_col).filter(
+        Lectura.estado == "leido",
+        Lectura.fecha_fin.isnot(None),
+        func.strftime("%Y", Lectura.fecha_fin) == str(anio),
+    )
+
+
+def top_fandoms(session: Session, limite: int = 10, anio: int | None = None) -> list[tuple[str, int]]:
+    """Fandoms con más fics en la biblioteca, de más a menos.
+
+    Con `anio`, restringe a fics cuya lectura se completó ese año (ver
+    `_filtrar_por_anio_leido`).
+    """
     query = (
         session.query(Fandom.nombre, func.count(func.distinct(FicFandom.fic_id)).label("total"))
         .join(FicFandom, FicFandom.fandom_id == Fandom.id)
-        .group_by(Fandom.nombre)
+    )
+    if anio is not None:
+        query = _filtrar_por_anio_leido(query, FicFandom.fic_id, anio)
+    query = (
+        query.group_by(Fandom.nombre)
         .order_by(func.count(func.distinct(FicFandom.fic_id)).desc())
         .limit(limite)
     )
     return list(query.all())
 
 
-def top_ships(session: Session, limite: int = 10, tipo: str | None = None) -> list[tuple[str, int]]:
+def top_ships(
+    session: Session, limite: int = 10, tipo: str | None = None, anio: int | None = None
+) -> list[tuple[str, int]]:
     """Ships con más fics en la biblioteca, de más a menos.
 
     AO3 distingue "/" (pairing romántico) de "&" (relación platónica/familiar)
     en el nombre del tag, y eso ya se guarda en `Ship.tipo` al importar (ver
     `parser.infer_ship_tipo`). Sin filtrar por tipo acá, "ships favoritos"
     termina mezclando parejas románticas con vínculos de amistad/familia.
-    Pasar tipo='romantico' o tipo='platonico' para separarlos.
+    Pasar tipo='romantico' o tipo='platonico' para separarlos. Con `anio`,
+    restringe a fics leídos ese año (ver `_filtrar_por_anio_leido`).
     """
     query = (
         session.query(Ship.nombre, func.count(func.distinct(FicShip.fic_id)).label("total"))
@@ -84,6 +109,8 @@ def top_ships(session: Session, limite: int = 10, tipo: str | None = None) -> li
     )
     if tipo is not None:
         query = query.filter(Ship.tipo == tipo)
+    if anio is not None:
+        query = _filtrar_por_anio_leido(query, FicShip.fic_id, anio)
     query = (
         query.group_by(Ship.nombre)
         .order_by(func.count(func.distinct(FicShip.fic_id)).desc())

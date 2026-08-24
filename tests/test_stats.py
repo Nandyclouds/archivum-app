@@ -75,6 +75,31 @@ def test_top_fandoms(session):
     assert resultado[1] == ("Fandom B", 1)
 
 
+def test_top_fandoms_filtrado_por_anio(session):
+    fic_a = _make_fic(session, ao3_id="1", titulo="A", word_count=1000, complete=True, fandom="Fandom A")
+    fic_b = _make_fic(session, ao3_id="2", titulo="B", word_count=1000, complete=True, fandom="Fandom B")
+    session.add_all(
+        [
+            Lectura(fic_id=fic_a.id, estado="leido", fecha_fin=datetime.date(2025, 6, 1)),
+            Lectura(fic_id=fic_b.id, estado="leido", fecha_fin=datetime.date(2026, 6, 1)),
+        ]
+    )
+    session.commit()
+
+    assert stats.top_fandoms(session, anio=2025) == [("Fandom A", 1)]
+    assert stats.top_fandoms(session, anio=2026) == [("Fandom B", 1)]
+    assert len(stats.top_fandoms(session)) == 2  # sin filtro, trae todo
+
+
+def test_top_ships_filtrado_por_anio(session):
+    fic = _make_fic(session, ao3_id="1", titulo="A", word_count=100, complete=True, fandom="F", ship="A/B")
+    session.add(Lectura(fic_id=fic.id, estado="leido", fecha_fin=datetime.date(2025, 6, 1)))
+    session.commit()
+
+    assert stats.top_ships(session, anio=2025) == [("A/B", 1)]
+    assert stats.top_ships(session, anio=2026) == []
+
+
 def test_distribucion_longitud(session):
     _make_fic(session, ao3_id="1", titulo="Drabble", word_count=500, complete=True, fandom="F")
     _make_fic(session, ao3_id="2", titulo="Epico", word_count=200_000, complete=True, fandom="F")

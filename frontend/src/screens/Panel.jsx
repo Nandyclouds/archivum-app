@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -11,10 +12,13 @@ const ESTADO_LABEL = {
 };
 
 export function Panel() {
+  const [anio, setAnio] = useState("");
+
   const resumen = useFetch(() => api.stats.resumen());
-  const topFandoms = useFetch(() => api.stats.topFandoms(6));
-  const topShips = useFetch(() => api.stats.topShips(6, "romantico"));
-  const topRelaciones = useFetch(() => api.stats.topShips(6, "platonico"));
+  const anios = useFetch(() => api.stats.palabrasPorAnio());
+  const topFandoms = useFetch(() => api.stats.topFandoms(6, anio || undefined), [anio]);
+  const topShips = useFetch(() => api.stats.topShips(6, "romantico", anio || undefined), [anio]);
+  const topRelaciones = useFetch(() => api.stats.topShips(6, "platonico", anio || undefined), [anio]);
   const estadoLectura = useFetch(() => api.stats.estadoLectura());
 
   if (resumen.loading) return <Cargando />;
@@ -22,6 +26,7 @@ export function Panel() {
 
   const r = resumen.data;
   const maxFandom = topFandoms.data?.[0]?.total ?? 1;
+  const aniosDisponibles = (anios.data ?? []).map((p) => p.periodo).sort().reverse();
 
   return (
     <div>
@@ -50,10 +55,31 @@ export function Panel() {
         </div>
       </div>
 
+      {aniosDisponibles.length > 0 && (
+        <div className="arv-scrollnav" style={{ marginBottom: 14 }}>
+          <button className={`arv-tab${anio === "" ? " active" : ""}`} onClick={() => setAnio("")}>
+            Todos los años
+          </button>
+          {aniosDisponibles.map((a) => (
+            <button
+              key={a}
+              className={`arv-tab${anio === a ? " active" : ""}`}
+              onClick={() => setAnio(a === anio ? "" : a)}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="arv-card">
-        <h3>Top fandoms</h3>
+        <h3>Top fandoms{anio ? ` en ${anio}` : ""}</h3>
         {topFandoms.loading && <Cargando />}
-        {topFandoms.data?.length === 0 && <p className="arv-muted">Todavía no hay fics importados.</p>}
+        {topFandoms.data?.length === 0 && (
+          <p className="arv-muted">
+            {anio ? `Sin fics leídos en ${anio}.` : "Todavía no hay fics importados."}
+          </p>
+        )}
         {topFandoms.data?.map((f) => (
           <Link to={`/buscar?fandom=${encodeURIComponent(f.nombre)}`} className="arv-bar-row arv-row-link" key={f.nombre}>
             <span style={{ flex: "0 0 40%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -83,7 +109,7 @@ export function Panel() {
       </div>
 
       <div className="arv-card">
-        <h3>Ships favoritos</h3>
+        <h3>Ships favoritos{anio ? ` en ${anio}` : ""}</h3>
         <p className="arv-muted" style={{ marginTop: -6 }}>Parejas románticas (tag con "/")</p>
         {topShips.loading && <Cargando />}
         {topShips.data?.map((s) => (
@@ -92,11 +118,11 @@ export function Panel() {
             <span className="arv-muted">×{s.total}</span>
           </Link>
         ))}
-        {topShips.data?.length === 0 && <p className="arv-muted">Sin ships todavía.</p>}
+        {topShips.data?.length === 0 && <p className="arv-muted">Sin ships {anio ? `en ${anio}` : "todavía"}.</p>}
       </div>
 
       <div className="arv-card">
-        <h3>Relaciones favoritas</h3>
+        <h3>Relaciones favoritas{anio ? ` en ${anio}` : ""}</h3>
         <p className="arv-muted" style={{ marginTop: -6 }}>Amistad/familia (tag con "&amp;")</p>
         {topRelaciones.loading && <Cargando />}
         {topRelaciones.data?.map((s) => (
@@ -105,7 +131,9 @@ export function Panel() {
             <span className="arv-muted">×{s.total}</span>
           </Link>
         ))}
-        {topRelaciones.data?.length === 0 && <p className="arv-muted">Sin relaciones todavía.</p>}
+        {topRelaciones.data?.length === 0 && (
+          <p className="arv-muted">Sin relaciones {anio ? `en ${anio}` : "todavía"}.</p>
+        )}
       </div>
     </div>
   );

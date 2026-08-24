@@ -18,13 +18,17 @@ def resumen(db: Session = Depends(get_session)):
 
 
 @router.get("/top-fandoms")
-def top_fandoms(limite: int = 10, db: Session = Depends(get_session)):
-    return [{"nombre": n, "total": t} for n, t in stats_module.top_fandoms(db, limite)]
+def top_fandoms(limite: int = 10, anio: int | None = None, db: Session = Depends(get_session)):
+    return [{"nombre": n, "total": t} for n, t in stats_module.top_fandoms(db, limite, anio=anio)]
 
 
 @router.get("/top-ships")
-def top_ships(limite: int = 10, tipo: str | None = None, db: Session = Depends(get_session)):
-    return [{"nombre": n, "total": t} for n, t in stats_module.top_ships(db, limite, tipo=tipo)]
+def top_ships(
+    limite: int = 10, tipo: str | None = None, anio: int | None = None, db: Session = Depends(get_session)
+):
+    return [
+        {"nombre": n, "total": t} for n, t in stats_module.top_ships(db, limite, tipo=tipo, anio=anio)
+    ]
 
 
 @router.get("/palabras-por-mes", response_model=list[PeriodoPalabras])

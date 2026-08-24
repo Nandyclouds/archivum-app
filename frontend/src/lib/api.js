@@ -103,11 +103,19 @@ export const api = {
   },
   stats: {
     resumen: () => request("/stats/resumen"),
-    topFandoms: (limite = 10) => request(`/stats/top-fandoms?limite=${limite}`),
-    topShips: (limite = 10, tipo) =>
-      request(`/stats/top-ships?${new URLSearchParams({ limite, ...(tipo ? { tipo } : {}) })}`),
+    topFandoms: (limite = 10, anio) =>
+      request(`/stats/top-fandoms?${new URLSearchParams({ limite, ...(anio ? { anio } : {}) })}`),
+    topShips: (limite = 10, tipo, anio) =>
+      request(
+        `/stats/top-ships?${new URLSearchParams({
+          limite,
+          ...(tipo ? { tipo } : {}),
+          ...(anio ? { anio } : {}),
+        })}`
+      ),
     palabrasPorMes: (anio) =>
       request(`/stats/palabras-por-mes${anio ? `?anio=${anio}` : ""}`),
+    palabrasPorAnio: () => request("/stats/palabras-por-anio"),
     distribucionLongitud: () => request("/stats/distribucion-longitud"),
     ratioWipCompletos: () => request("/stats/ratio-wip-completos"),
     estadoLectura: () => request("/stats/estado-lectura"),
