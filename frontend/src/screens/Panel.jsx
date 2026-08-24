@@ -20,6 +20,7 @@ export function Panel() {
   const topShips = useFetch(() => api.stats.topShips(6, "romantico", anio || undefined), [anio]);
   const topRelaciones = useFetch(() => api.stats.topShips(6, "platonico", anio || undefined), [anio]);
   const estadoLectura = useFetch(() => api.stats.estadoLectura());
+  const recientes = useFetch(() => api.fics.list({ limit: 8, orden: "recientes" }));
 
   if (resumen.loading) return <Cargando />;
   if (resumen.error) return <ErrorCarga error={resumen.error} onReintentar={resumen.reload} />;
@@ -55,6 +56,20 @@ export function Panel() {
         </div>
       </div>
 
+      <div className="arv-card">
+        <h3>Agregados recientemente</h3>
+        {recientes.loading && <Cargando />}
+        {recientes.data?.length === 0 && <p className="arv-muted">Todavía no hay fics importados.</p>}
+        {recientes.data?.map((f) => (
+          <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
+            <div>
+              <div className="fandom">{f.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="titulo">{f.titulo}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
       {aniosDisponibles.length > 0 && (
         <div className="arv-scrollnav" style={{ marginBottom: 14 }}>
           <button className={`arv-tab${anio === "" ? " active" : ""}`} onClick={() => setAnio("")}>
@@ -73,7 +88,11 @@ export function Panel() {
       )}
 
       <div className="arv-card">
-        <h3>Top fandoms{anio ? ` en ${anio}` : ""}</h3>
+        <h3>
+          <Link to={`/panel/top/fandoms${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
+            Top fandoms{anio ? ` en ${anio}` : ""} →
+          </Link>
+        </h3>
         {topFandoms.loading && <Cargando />}
         {topFandoms.data?.length === 0 && (
           <p className="arv-muted">
@@ -109,8 +128,11 @@ export function Panel() {
       </div>
 
       <div className="arv-card">
-        <h3>Ships favoritos{anio ? ` en ${anio}` : ""}</h3>
-        <p className="arv-muted" style={{ marginTop: -6 }}>Parejas románticas (tag con "/")</p>
+        <h3>
+          <Link to={`/panel/top/romantico${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
+            Ships favoritos{anio ? ` en ${anio}` : ""} →
+          </Link>
+        </h3>
         {topShips.loading && <Cargando />}
         {topShips.data?.map((s) => (
           <Link to={`/buscar?ship=${encodeURIComponent(s.nombre)}`} className="arv-list-item arv-row-link" key={s.nombre}>
@@ -122,8 +144,11 @@ export function Panel() {
       </div>
 
       <div className="arv-card">
-        <h3>Relaciones favoritas{anio ? ` en ${anio}` : ""}</h3>
-        <p className="arv-muted" style={{ marginTop: -6 }}>Amistad/familia (tag con "&amp;")</p>
+        <h3>
+          <Link to={`/panel/top/platonico${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
+            Relaciones favoritas{anio ? ` en ${anio}` : ""} →
+          </Link>
+        </h3>
         {topRelaciones.loading && <Cargando />}
         {topRelaciones.data?.map((s) => (
           <Link to={`/buscar?ship=${encodeURIComponent(s.nombre)}`} className="arv-list-item arv-row-link" key={s.nombre}>

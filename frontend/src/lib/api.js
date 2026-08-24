@@ -43,6 +43,7 @@ export const api = {
   fics: {
     list: (params = {}) => request(`/fics?${new URLSearchParams(params)}`),
     get: (id) => request(`/fics/${id}`),
+    opcionesFiltro: () => request("/fics/opciones-filtro"),
   },
   ao3: {
     // Tarda ~10s reales (login + fetch, con el rate limit de 4s entre

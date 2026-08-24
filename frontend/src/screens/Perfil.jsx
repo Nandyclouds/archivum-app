@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 
 export function Perfil() {
-  const fics = useFetch(() => api.fics.list({ limit: 200 }));
+  const fics = useFetch(() => api.fics.list({ limit: 200, orden: "ultima_lectura" }));
 
   return (
     <div>

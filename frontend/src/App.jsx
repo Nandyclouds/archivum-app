@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthGate } from "./components/AuthGate";
 import { NavBar } from "./components/NavBar";
 import { Panel } from "./screens/Panel";
+import { TopCompleto } from "./screens/TopCompleto";
 import { Buscar } from "./screens/Buscar";
 import { FicDetalle } from "./screens/FicDetalle";
 import { Colecciones } from "./screens/Colecciones";
@@ -23,6 +24,7 @@ export default function App() {
           <main className="arv-main">
             <Routes>
               <Route path="/" element={<Panel />} />
+              <Route path="/panel/top/:tipo" element={<TopCompleto />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/buscar" element={<Buscar />} />
               <Route path="/fics/:id" element={<FicDetalle />} />

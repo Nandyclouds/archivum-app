@@ -17,6 +17,10 @@ export function Buscar() {
   const fandom = searchParams.get("fandom") || "";
   const ship = searchParams.get("ship") || "";
   const etiqueta = searchParams.get("etiqueta") || "";
+  const personaje = searchParams.get("personaje") || "";
+  const tag = searchParams.get("tag") || "";
+  const rating = searchParams.get("rating") || "";
+  const warning = searchParams.get("warning") || "";
   const estado = searchParams.get("estado") || "";
   const completo = searchParams.get("completo"); // "true" | "false" | null
 
@@ -29,6 +33,7 @@ export function Buscar() {
 
   const fandoms = useFetch(() => api.stats.topFandoms(30));
   const etiquetas = useFetch(() => api.etiquetas.list());
+  const opciones = useFetch(() => api.fics.opcionesFiltro());
   const fics = useFetch(
     () =>
       api.fics.list({
@@ -36,14 +41,19 @@ export function Buscar() {
         fandom,
         ship,
         etiqueta,
+        personaje,
+        tag,
+        rating,
+        warning,
         estado,
         ...(completo !== null ? { completo } : {}),
         limit: 100,
       }),
-    [q, fandom, ship, etiqueta, estado, completo]
+    [q, fandom, ship, etiqueta, personaje, tag, rating, warning, estado, completo]
   );
 
-  const hayFiltrosExtra = ship || etiqueta || estado || completo !== null;
+  const hayFiltrosExtra =
+    ship || etiqueta || personaje || tag || rating || warning || estado || completo !== null;
 
   return (
     <div>
@@ -56,10 +66,68 @@ export function Buscar() {
         style={{ marginBottom: 10 }}
       />
 
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <input
+          key={personaje}
+          className="arv-input"
+          list="opciones-personajes"
+          placeholder="Personaje…"
+          defaultValue={personaje}
+          onBlur={(e) => setFiltro("personaje", e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && setFiltro("personaje", e.target.value)}
+        />
+        <input
+          key={tag}
+          className="arv-input"
+          list="opciones-tags"
+          placeholder="Tag adicional…"
+          defaultValue={tag}
+          onBlur={(e) => setFiltro("tag", e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && setFiltro("tag", e.target.value)}
+        />
+      </div>
+      <datalist id="opciones-personajes">
+        {opciones.data?.personajes.map((p) => <option value={p} key={p} />)}
+      </datalist>
+      <datalist id="opciones-tags">
+        {opciones.data?.tags.map((t) => <option value={t} key={t} />)}
+      </datalist>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <select
+          className="arv-input"
+          value={rating}
+          onChange={(e) => setFiltro("rating", e.target.value)}
+        >
+          <option value="">Rating (todos)</option>
+          {opciones.data?.ratings.map((r) => (
+            <option value={r} key={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <select
+          className="arv-input"
+          value={warning}
+          onChange={(e) => setFiltro("warning", e.target.value)}
+        >
+          <option value="">Warnings (todos)</option>
+          {opciones.data?.warnings.map((w) => (
+            <option value={w} key={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {hayFiltrosExtra && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
           {ship && <span className="arv-tag arv-tag-accent-2">{ship}</span>}
           {etiqueta && <span className="arv-tag arv-tag-accent-2">{etiqueta}</span>}
+          {personaje && <span className="arv-tag arv-tag-accent-2">{personaje}</span>}
+          {tag && <span className="arv-tag arv-tag-accent-2">{tag}</span>}
+          {rating && <span className="arv-tag arv-tag-accent-2">{rating}</span>}
+          {warning && <span className="arv-tag arv-tag-accent-2">{warning}</span>}
           {estado && <span className="arv-tag arv-tag-accent-2">{ESTADO_LABEL[estado] ?? estado}</span>}
           {completo !== null && (
             <span className="arv-tag arv-tag-accent-2">{completo === "true" ? "Completos" : "WIP"}</span>

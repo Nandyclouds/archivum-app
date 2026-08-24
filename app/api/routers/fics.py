@@ -12,7 +12,18 @@ from app.api.ao3_session import build_authenticated_client
 from app.api.serializers import to_archivo_out, to_detail, to_list_item
 from app.config import settings
 from app.database import get_session
-from app.models import ColeccionFic, EtiquetaPersonal, Fandom, Fic, FicEtiquetaPersonal, Lectura, Resena, Ship
+from app.models import (
+    ColeccionFic,
+    EtiquetaPersonal,
+    Fandom,
+    Fic,
+    FicEtiquetaPersonal,
+    Lectura,
+    Personaje,
+    Resena,
+    Ship,
+    TagAdicional,
+)
 from app.schemas import (
     ArchivoOut,
     EtiquetaPersonalCreate,
@@ -43,11 +54,20 @@ def listar_fics(
     q: str | None = Query(None, description="Busca en título y autor"),
     fandom: str | None = Query(None, description="Nombre exacto de fandom"),
     ship: str | None = Query(None, description="Nombre exacto de ship/relación"),
+    personaje: str | None = Query(None, description="Nombre exacto de personaje"),
+    tag: str | None = Query(None, description="Nombre exacto de tag adicional (freeform)"),
+    rating: str | None = Query(None, description="Rating exacto de AO3 (ej. 'Explicit')"),
+    warning: str | None = Query(None, description="Un warning exacto de AO3 (ej. 'Major Character Death')"),
     etiqueta: str | None = Query(None, description="Nombre exacto de etiqueta personal"),
     coleccion: int | None = Query(None, description="Id de colección"),
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
     completo: bool | None = Query(None, description="Filtra por fic.complete (True=completos, False=WIP)"),
     incluir_borrados: bool = False,
+    orden: str = Query(
+        "titulo",
+        description="'titulo' (alfabético), 'ultima_lectura' (más reciente primero) o "
+        "'recientes' (agregados a la biblioteca más recientemente primero)",
+    ),
     limit: int = Query(50, le=200),
     offset: int = 0,
 ):
@@ -61,6 +81,17 @@ def listar_fics(
         query = query.join(Fic.fandoms).filter(Fandom.nombre == fandom)
     if ship:
         query = query.join(Fic.ships).filter(Ship.nombre == ship)
+    if personaje:
+        query = query.join(Fic.personajes).filter(Personaje.nombre == personaje)
+    if tag:
+        query = query.join(Fic.tags_adicionales).filter(TagAdicional.nombre == tag)
+    if rating:
+        query = query.filter(Fic.rating == rating)
+    if warning:
+        # categorias/warnings son "A|B|C" en texto (ver models.py) — un LIKE
+        # simple podría matchear una subcadena de otro warning por error, así
+        # que se busca el segmento exacto entre delimitadores "|".
+        query = query.filter(func.instr("|" + Fic.warnings + "|", f"|{warning}|") > 0)
     if etiqueta:
         query = query.join(Fic.etiquetas_personales).filter(EtiquetaPersonal.nombre == etiqueta)
     if coleccion is not None:
@@ -80,8 +111,60 @@ def listar_fics(
             .join(Lectura, Lectura.id == ultimas.c.ultima_id)
             .filter(Lectura.estado == estado)
         )
-    fics = query.order_by(Fic.titulo).offset(offset).limit(limit).all()
+    if orden == "recientes":
+        query = query.order_by(Fic.fecha_primer_import.desc())
+    elif orden == "ultima_lectura":
+        ultimas_fechas = (
+            db.query(Lectura.fic_id, func.max(Lectura.fecha_fin).label("ultima_fecha"))
+            .group_by(Lectura.fic_id)
+            .subquery()
+        )
+        query = query.outerjoin(ultimas_fechas, ultimas_fechas.c.fic_id == Fic.id).order_by(
+            ultimas_fechas.c.ultima_fecha.desc().nulls_last(), Fic.titulo
+        )
+    else:
+        query = query.order_by(Fic.titulo)
+
+    fics = query.offset(offset).limit(limit).all()
     return [to_list_item(f) for f in fics]
+
+
+# Vocabulario cerrado de AO3 para rating/warnings/categorias — hardcodeado
+# porque el orden importa para que se vea como en AO3 (rating de más suave a
+# más fuerte) y porque conviene mostrar las opciones aunque la biblioteca
+# todavía no tenga ningún fic con ese valor.
+RATINGS_AO3 = [
+    "Not Rated",
+    "General Audiences",
+    "Teen And Up Audiences",
+    "Mature",
+    "Explicit",
+]
+WARNINGS_AO3 = [
+    "No Archive Warnings Apply",
+    "Creator Chose Not To Use Archive Warnings",
+    "Graphic Depictions Of Violence",
+    "Major Character Death",
+    "Rape/Non-Con",
+    "Underage",
+]
+
+
+@router.get("/opciones-filtro")
+def opciones_filtro(db: Session = Depends(get_session)):
+    """Valores disponibles para los filtros de Buscar: fijos para rating/
+    warnings (vocabulario cerrado de AO3), sacados de la biblioteca para
+    personajes/tags (vocabulario abierto, no tiene sentido hardcodearlo)."""
+    personajes = [
+        n for (n,) in db.query(Personaje.nombre).order_by(Personaje.nombre).all()
+    ]
+    tags = [n for (n,) in db.query(TagAdicional.nombre).order_by(TagAdicional.nombre).all()]
+    return {
+        "ratings": RATINGS_AO3,
+        "warnings": WARNINGS_AO3,
+        "personajes": personajes,
+        "tags": tags,
+    }
 
 
 @router.get("/{fic_id}", response_model=FicDetail)

@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_session
 from app.main import app
-from app.models import Archivo, Fandom, Fic, Lectura, Resena, Ship
+from app.models import Archivo, Fandom, Fic, Lectura, Personaje, Resena, Ship, TagAdicional
 
 
 @pytest.fixture()
@@ -104,6 +104,33 @@ def test_obtener_fic_404(client):
     assert r.status_code == 404
 
 
+def test_listar_fics_orden_recientes(client, db_session):
+    viejo = _crear_fic(db_session, ao3_id="1", titulo="Viejo")
+    viejo.fecha_primer_import = datetime.datetime(2024, 1, 1)
+    nuevo = _crear_fic(db_session, ao3_id="2", titulo="Nuevo")
+    nuevo.fecha_primer_import = datetime.datetime(2026, 1, 1)
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "recientes"})
+    assert [f["titulo"] for f in r.json()] == ["Nuevo", "Viejo"]
+
+
+def test_listar_fics_orden_ultima_lectura(client, db_session):
+    leido_hace_poco = _crear_fic(db_session, ao3_id="1", titulo="Leído hace poco")
+    leido_hace_mucho = _crear_fic(db_session, ao3_id="2", titulo="Leído hace mucho")
+    sin_leer = _crear_fic(db_session, ao3_id="3", titulo="Sin leer")
+    db_session.add_all(
+        [
+            Lectura(fic_id=leido_hace_poco.id, estado="leido", fecha_fin=datetime.date(2026, 1, 1)),
+            Lectura(fic_id=leido_hace_mucho.id, estado="leido", fecha_fin=datetime.date(2020, 1, 1)),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "ultima_lectura"})
+    assert [f["titulo"] for f in r.json()] == ["Leído hace poco", "Leído hace mucho", "Sin leer"]
+
+
 def test_categorias_warnings_se_parsean_como_lista(client, db_session):
     fic = _crear_fic(db_session)
     fic.categorias = "F/M|Multi"
@@ -134,6 +161,65 @@ def test_filtrar_fics_por_ship(client, db_session):
     data = r.json()
     assert len(data) == 1
     assert data[0]["titulo"] == "A"
+
+
+def test_filtrar_fics_por_personaje(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    _crear_fic(db_session, ao3_id="2", titulo="B")
+    a.personajes.append(Personaje(nombre="Frodo Baggins"))
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"personaje": "Frodo Baggins"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_tag_adicional(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    _crear_fic(db_session, ao3_id="2", titulo="B")
+    a.tags_adicionales.append(TagAdicional(nombre="Slow Burn"))
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"tag": "Slow Burn"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_rating(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    a.rating = "Explicit"
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    b.rating = "General Audiences"
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"rating": "Explicit"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_warning_no_matchea_subcadena(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    a.warnings = "Major Character Death"
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    # "Character Death" NO debe matchear "Major Character Death" (segmento
+    # exacto entre "|", no una subcadena cualquiera).
+    b.warnings = "Character Death"
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"warning": "Major Character Death"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_opciones_filtro(client, db_session):
+    fic = _crear_fic(db_session)
+    fic.personajes.append(Personaje(nombre="Frodo Baggins"))
+    fic.tags_adicionales.append(TagAdicional(nombre="Slow Burn"))
+    db_session.commit()
+
+    r = client.get("/api/fics/opciones-filtro")
+    assert r.status_code == 200
+    body = r.json()
+    assert "Explicit" in body["ratings"]
+    assert "Major Character Death" in body["warnings"]
+    assert body["personajes"] == ["Frodo Baggins"]
+    assert body["tags"] == ["Slow Burn"]
 
 
 def test_filtrar_fics_por_completo(client, db_session):
