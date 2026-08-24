@@ -15,7 +15,6 @@ export function Panel() {
   const [anio, setAnio] = useState("");
 
   const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio]);
-  const ficMasLargo = useFetch(() => api.stats.ficMasLargo(anio || undefined), [anio]);
   const anios = useFetch(() => api.stats.palabrasPorAnio());
   const topFandoms = useFetch(() => api.stats.topFandoms(6, anio || undefined), [anio]);
   const topShips = useFetch(() => api.stats.topShips(6, "romantico", anio || undefined), [anio]);
@@ -29,6 +28,7 @@ export function Panel() {
   const r = resumen.data;
   const maxFandom = topFandoms.data?.[0]?.total ?? 1;
   const aniosDisponibles = (anios.data ?? []).map((p) => p.periodo).sort().reverse();
+  const anioQuery = anio ? `?anio=${anio}` : "";
 
   return (
     <div>
@@ -39,23 +39,10 @@ export function Panel() {
       </div>
 
       <div className="arv-grid-2" style={{ marginBottom: 14 }}>
-        {ficMasLargo.data ? (
-          <Link to={`/fics/${ficMasLargo.data.id}`} className="arv-stat arv-row-link" title={ficMasLargo.data.titulo}>
-            <div className="label">Palabras</div>
-            <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
-            <div
-              className="arv-muted"
-              style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-            >
-              más larga: {ficMasLargo.data.titulo}
-            </div>
-          </Link>
-        ) : (
-          <div className="arv-stat">
-            <div className="label">Palabras</div>
-            <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
-          </div>
-        )}
+        <Link to={`/panel/top/palabras${anioQuery}`} className="arv-stat arv-row-link">
+          <div className="label">Palabras</div>
+          <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
+        </Link>
         <Link to="/buscar?estado=leido" className="arv-stat arv-row-link">
           <div className="label">Fics leídos</div>
           <div className="value">{r.total_lecturas_leido}</div>
@@ -68,20 +55,6 @@ export function Panel() {
           <div className="label">Ships</div>
           <div className="value">{r.total_ships}</div>
         </div>
-      </div>
-
-      <div className="arv-card">
-        <h3>Agregados recientemente</h3>
-        {recientes.loading && <Cargando />}
-        {recientes.data?.length === 0 && <p className="arv-muted">Todavía no hay fics importados.</p>}
-        {recientes.data?.map((f) => (
-          <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
-            <div>
-              <div className="fandom">{f.fandoms[0]?.nombre ?? "Sin fandom"}</div>
-              <div className="titulo">{f.titulo}</div>
-            </div>
-          </Link>
-        ))}
       </div>
 
       {aniosDisponibles.length > 0 && (
@@ -103,8 +76,8 @@ export function Panel() {
 
       <div className="arv-card">
         <h3>
-          <Link to={`/panel/top/fandoms${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
-            Top fandoms{anio ? ` en ${anio}` : ""} →
+          <Link to={`/panel/top/fandoms${anioQuery}`} className="arv-row-link">
+            Top fandoms{anio ? ` en ${anio}` : ""}
           </Link>
         </h3>
         {topFandoms.loading && <Cargando />}
@@ -143,8 +116,8 @@ export function Panel() {
 
       <div className="arv-card">
         <h3>
-          <Link to={`/panel/top/romantico${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
-            Ships favoritos{anio ? ` en ${anio}` : ""} →
+          <Link to={`/panel/top/romantico${anioQuery}`} className="arv-row-link">
+            Ships favoritos{anio ? ` en ${anio}` : ""}
           </Link>
         </h3>
         {topShips.loading && <Cargando />}
@@ -159,8 +132,8 @@ export function Panel() {
 
       <div className="arv-card">
         <h3>
-          <Link to={`/panel/top/platonico${anio ? `?anio=${anio}` : ""}`} className="arv-row-link">
-            Relaciones favoritas{anio ? ` en ${anio}` : ""} →
+          <Link to={`/panel/top/platonico${anioQuery}`} className="arv-row-link">
+            Relaciones favoritas{anio ? ` en ${anio}` : ""}
           </Link>
         </h3>
         {topRelaciones.loading && <Cargando />}
@@ -173,6 +146,20 @@ export function Panel() {
         {topRelaciones.data?.length === 0 && (
           <p className="arv-muted">Sin relaciones {anio ? `en ${anio}` : "todavía"}.</p>
         )}
+      </div>
+
+      <div className="arv-card">
+        <h3>Agregados recientemente</h3>
+        {recientes.loading && <Cargando />}
+        {recientes.data?.length === 0 && <p className="arv-muted">Todavía no hay fics importados.</p>}
+        {recientes.data?.map((f) => (
+          <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
+            <div>
+              <div className="fandom">{f.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="titulo">{f.titulo}</div>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

@@ -62,13 +62,15 @@ def listar_fics(
     coleccion: int | None = Query(None, description="Id de colección"),
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
     completo: bool | None = Query(None, description="Filtra por fic.complete (True=completos, False=WIP)"),
+    anio: int | None = Query(None, description="Restringe a fics con una lectura 'leido' completada este año"),
     incluir_borrados: bool = False,
     orden: str = Query(
         "titulo",
-        description="'titulo' (alfabético), 'ultima_lectura' (más reciente primero) o "
-        "'recientes' (agregados a la biblioteca más recientemente primero)",
+        description="'titulo' (alfabético), 'ultima_lectura' (más reciente primero), "
+        "'recientes' (agregados a la biblioteca más recientemente primero) o "
+        "'palabras' (más palabras primero)",
     ),
-    limit: int = Query(50, le=200),
+    limit: int = Query(50, le=1000),
     offset: int = 0,
 ):
     query = db.query(Fic)
@@ -100,6 +102,13 @@ def listar_fics(
         )
     if completo is not None:
         query = query.filter(Fic.complete == completo)
+    if anio is not None:
+        # .distinct(): si releíste el mismo fic dos veces en el mismo año, el
+        # join a Lectura lo traería duplicado.
+        query = query.join(Lectura, Lectura.fic_id == Fic.id).filter(
+            Lectura.estado == "leido",
+            func.strftime("%Y", Lectura.fecha_fin) == str(anio),
+        ).distinct()
     if estado:
         ultimas = (
             db.query(Lectura.fic_id, func.max(Lectura.id).label("ultima_id"))
@@ -113,6 +122,8 @@ def listar_fics(
         )
     if orden == "recientes":
         query = query.order_by(Fic.fecha_primer_import.desc())
+    elif orden == "palabras":
+        query = query.order_by(Fic.word_count.desc())
     elif orden == "ultima_lectura":
         ultimas_fechas = (
             db.query(Lectura.fic_id, func.max(Lectura.fecha_fin).label("ultima_fecha"))

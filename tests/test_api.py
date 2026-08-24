@@ -222,6 +222,48 @@ def test_opciones_filtro(client, db_session):
     assert body["tags"] == ["Slow Burn"]
 
 
+def test_listar_fics_orden_palabras(client, db_session):
+    _crear_fic(db_session, ao3_id="1", titulo="Corto")
+    corto = db_session.query(Fic).filter_by(ao3_id="1").one()
+    corto.word_count = 500
+    _crear_fic(db_session, ao3_id="2", titulo="Largo")
+    largo = db_session.query(Fic).filter_by(ao3_id="2").one()
+    largo.word_count = 50_000
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "palabras"})
+    assert [f["titulo"] for f in r.json()] == ["Largo", "Corto"]
+
+
+def test_filtrar_fics_por_anio_leido(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    db_session.add_all(
+        [
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2025, 6, 1)),
+            Lectura(fic_id=b.id, estado="leido", fecha_fin=datetime.date(2026, 6, 1)),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"anio": 2025})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_anio_no_duplica_por_relectura(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    db_session.add_all(
+        [
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2025, 1, 1)),
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2025, 6, 1), es_relectura=True),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"anio": 2025})
+    assert len(r.json()) == 1
+
+
 def test_filtrar_fics_por_completo(client, db_session):
     _crear_fic(db_session, ao3_id="1", titulo="Completo", complete=True)
     _crear_fic(db_session, ao3_id="2", titulo="WIP", complete=False)
