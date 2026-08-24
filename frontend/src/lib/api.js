@@ -135,6 +135,14 @@ export const api = {
       }
       return response.json();
     },
+    actualizarCita: (cita_texto, cita_fuente) =>
+      request("/perfil", { method: "PATCH", body: JSON.stringify({ cita_texto, cita_fuente }) }),
+    favoritos: {
+      list: () => request("/perfil/favoritos"),
+      add: (ficId) =>
+        request("/perfil/favoritos", { method: "POST", body: JSON.stringify({ fic_id: ficId }) }),
+      remove: (ficId) => request(`/perfil/favoritos/${ficId}`, { method: "DELETE" }),
+    },
   },
   stats: {
     resumen: (anio) => request(`/stats/resumen${anio ? `?anio=${anio}` : ""}`),

@@ -342,3 +342,21 @@ class PerfilConfig(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     avatar_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    cita_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cita_fuente: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class PerfilFavorito(Base):
+    """Hasta 4 fics destacados a mano en el perfil (grilla "Favoritos").
+
+    Distinto de colecciones/etiquetas: esto es un ranking fijo y chico
+    (4 lugares, con orden), no una lista abierta.
+    """
+
+    __tablename__ = "perfil_favoritos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fic_id: Mapped[int] = mapped_column(ForeignKey("fics.id"), unique=True)
+    orden: Mapped[int] = mapped_column(Integer, default=0)
+
+    fic: Mapped["Fic"] = relationship()

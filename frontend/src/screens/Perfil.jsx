@@ -13,6 +13,20 @@ const BUCKET_LABEL = {
   "epico (100k+)": "Épico (100k+)",
   sin_clasificar: "Sin clasificar",
 };
+const BUCKET_LABEL_CORTO = {
+  "drabble (<1k)": "Drabble",
+  "corto (1k-10k)": "Corto",
+  "mediano (10k-40k)": "Mediano",
+  "largo (40k-100k)": "Largo",
+  "epico (100k+)": "Épico",
+  sin_clasificar: "Otros",
+};
+const PALETA_FAVORITOS = [
+  { bg: "var(--color-text)", fg: "var(--color-surface)" },
+  { bg: "var(--color-accent)", fg: "var(--color-surface)" },
+  { bg: "var(--color-accent-2)", fg: "var(--color-surface)" },
+  { bg: "var(--color-surface-2)", fg: "var(--color-text)" },
+];
 
 export function Perfil() {
   const fics = useFetch(() => api.fics.list({ limit: 200, orden: "ultima_lectura" }));
@@ -20,7 +34,9 @@ export function Perfil() {
   return (
     <div>
       <CabeceraPerfil />
+      <Favoritos />
       <Graficos />
+      <CitaFavorita />
 
       <div className="arv-card">
         <h3>Historial de lectura</h3>
@@ -118,33 +134,175 @@ function CabeceraPerfil() {
   );
 }
 
+function Favoritos() {
+  const favoritos = useFetch(() => api.perfil.favoritos.list());
+  const [buscando, setBuscando] = useState(false);
+  const [q, setQ] = useState("");
+  const resultados = useFetch(() => (q ? api.fics.list({ q, limit: 8 }) : Promise.resolve([])), [q]);
+
+  async function agregar(ficId) {
+    try {
+      await api.perfil.favoritos.add(ficId);
+      setBuscando(false);
+      setQ("");
+      favoritos.reload();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function quitar(e, ficId) {
+    e.preventDefault();
+    await api.perfil.favoritos.remove(ficId);
+    favoritos.reload();
+  }
+
+  const lista = favoritos.data ?? [];
+
+  return (
+    <div className="arv-card">
+      <h3 style={{ marginBottom: 10 }}>Favoritos</h3>
+      <div className="arv-favoritos-grid">
+        {lista.map((f, i) => (
+          <Link
+            key={f.fic_id}
+            to={`/fics/${f.fic_id}`}
+            className="arv-favorito-card"
+            style={{ background: PALETA_FAVORITOS[i % 4].bg, color: PALETA_FAVORITOS[i % 4].fg }}
+          >
+            <span>{f.titulo}</span>
+            <button className="arv-favorito-quitar" onClick={(e) => quitar(e, f.fic_id)} aria-label="Quitar de favoritos">
+              ×
+            </button>
+          </Link>
+        ))}
+        {lista.length < 4 && (
+          <div className="arv-favorito-add" onClick={() => setBuscando(true)}>
+            +
+          </div>
+        )}
+      </div>
+      {buscando && (
+        <div style={{ marginTop: 12 }}>
+          <input
+            className="arv-input"
+            placeholder="Buscar un fic para agregar…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            autoFocus
+          />
+          {resultados.data?.map((fic) => (
+            <div
+              key={fic.id}
+              className="arv-list-item"
+              style={{ cursor: "pointer" }}
+              onClick={() => agregar(fic.id)}
+            >
+              <span>{fic.titulo}</span>
+            </div>
+          ))}
+          {q && resultados.data?.length === 0 && <p className="arv-muted">Sin resultados.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GraficoAnios({ datos }) {
+  if (!datos || datos.length === 0) return null;
+  const W = 320;
+  const H = 96;
+  const max = Math.max(...datos.map((d) => d.palabras), 1);
+  const n = datos.length;
+  const puntos = datos.map((d, i) => ({
+    x: n === 1 ? W / 2 : (i / (n - 1)) * (W - 8) + 4,
+    y: H - 4 - (d.palabras / max) * (H - 10),
+  }));
+  const linea = puntos.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const area = `${linea} L ${puntos[n - 1].x.toFixed(1)} ${H} L ${puntos[0].x.toFixed(1)} ${H} Z`;
+  const ultimo = puntos[n - 1];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 96, display: "block", overflow: "visible" }}>
+      <defs>
+        <linearGradient id="arv-graf-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.25" />
+          <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#arv-graf-fill)" />
+      <path d={linea} fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" />
+      {puntos.slice(0, -1).map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--color-accent-soft)" />
+      ))}
+      <circle cx={ultimo.x} cy={ultimo.y} r="5" fill="var(--color-accent)" stroke="var(--color-surface)" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
+function BubbleLongitud({ datos }) {
+  if (!datos) return null;
+  const MAX_D = 108;
+  const MIN_D = 20;
+  const max = Math.max(...datos.map((d) => d.total), 1);
+  return (
+    <>
+      <div className="arv-bubble-row">
+        {datos.map(({ bucket, total }) => {
+          const d = Math.max(MIN_D, Math.sqrt(total / max) * MAX_D);
+          return (
+            <div key={bucket} className="arv-bubble" style={{ width: d, height: d }}>
+              <span className="numero" style={{ fontSize: Math.max(11, d * 0.26) }}>
+                {total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+        {datos.map(({ bucket }) => (
+          <span key={bucket} className="arv-muted" style={{ fontSize: 10.5 }}>
+            {BUCKET_LABEL_CORTO[bucket] ?? bucket}
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function Graficos() {
   const porAnio = useFetch(() => api.stats.palabrasPorAnio());
   const longitud = useFetch(() => api.stats.distribucionLongitud());
   const wipCompletos = useFetch(() => api.stats.ratioWipCompletos());
+  const resumen = useFetch(() => api.stats.resumen());
 
-  const maxAnio = Math.max(1, ...(porAnio.data?.map((p) => p.palabras) ?? [1]));
-  const maxLongitud = Math.max(1, ...(longitud.data?.map((b) => b.total) ?? [1]));
-  const totalWipCompletos = (wipCompletos.data?.completos ?? 0) + (wipCompletos.data?.wip ?? 0);
+  const ultimoAnio = porAnio.data?.[porAnio.data.length - 1];
+  const completos = wipCompletos.data?.completos ?? 0;
+  const wip = wipCompletos.data?.wip ?? 0;
+  const totalCompletosWip = completos + wip;
+  const pctCompletos = totalCompletosWip > 0 ? Math.round((completos / totalCompletosWip) * 100) : 0;
 
   return (
     <div className="arv-card">
-      <h3 style={{ marginBottom: 2 }}>Gráficos</h3>
-
-      <div className="arv-graf-divider">
-        <span>Palabras leídas por año</span>
-        <span className="line" />
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <h3 style={{ marginBottom: 2 }}>Gráficos</h3>
       </div>
+
       {porAnio.loading && <Cargando />}
-      {porAnio.data?.map((p) => (
-        <div className="arv-bar-row" key={p.periodo}>
-          <span style={{ flex: "0 0 15%" }}>{p.periodo}</span>
-          <div className="arv-bar-track">
-            <div className="arv-bar-fill" style={{ width: `${(p.palabras / maxAnio) * 100}%` }} />
+      {ultimoAnio && (
+        <>
+          <div className="arv-graf-hero">
+            <span className="numero">{formatoCompacto(ultimoAnio.palabras)}</span>
+            <span className="etiqueta">palabras en {ultimoAnio.periodo}</span>
           </div>
-          <span className="arv-muted">{(p.palabras / 1000).toFixed(0)}k</span>
-        </div>
-      ))}
+          <GraficoAnios datos={porAnio.data} />
+          <div className="arv-graf-anio-labels">
+            {porAnio.data.map((p) => (
+              <span key={p.periodo}>{p.periodo}</span>
+            ))}
+          </div>
+        </>
+      )}
       {porAnio.data?.length === 0 && <p className="arv-muted">Sin datos todavía.</p>}
 
       <div className="arv-graf-divider">
@@ -152,44 +310,135 @@ function Graficos() {
         <span className="line" />
       </div>
       {longitud.loading && <Cargando />}
-      {longitud.data?.map(({ bucket, total }) => (
-        <div className="arv-bar-row" key={bucket}>
-          <span style={{ flex: "0 0 35%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {BUCKET_LABEL[bucket] ?? bucket}
-          </span>
-          <div className="arv-bar-track">
-            <div className="arv-bar-fill" style={{ width: `${(total / maxLongitud) * 100}%` }} />
-          </div>
-          <span className="arv-muted">{total}</span>
-        </div>
-      ))}
+      <BubbleLongitud datos={longitud.data} />
 
       <div className="arv-graf-divider">
         <span>Completos vs. WIP</span>
         <span className="line" />
       </div>
-      {wipCompletos.data && totalWipCompletos > 0 && (
-        <div className="arv-graf-split">
-          <div
-            style={{
-              flex: wipCompletos.data.completos,
-              background: "var(--color-accent)",
-              color: "var(--color-surface)",
-            }}
-          >
-            {wipCompletos.data.completos > 0 && `${wipCompletos.data.completos} completos`}
+      {wipCompletos.data && totalCompletosWip > 0 && (
+        <div className="arv-donut-fila">
+          <div className="arv-donut-wrap">
+            <div
+              className="arv-donut"
+              style={{
+                background: `conic-gradient(var(--color-accent) 0 ${pctCompletos}%, var(--color-accent-2-soft) ${pctCompletos}% 100%)`,
+              }}
+            >
+              <div className="arv-donut-inner">
+                <span className="numero">{pctCompletos}%</span>
+                <span className="etiqueta">COMPLETOS</span>
+              </div>
+            </div>
+            <div className="arv-donut-legend">
+              <span>
+                <i style={{ background: "var(--color-accent)" }} />
+                {completos}
+              </span>
+              <span>
+                <i style={{ background: "var(--color-accent-2-soft)" }} />
+                {wip} WIP
+              </span>
+            </div>
           </div>
-          <div
-            style={{
-              flex: wipCompletos.data.wip,
-              background: "var(--color-accent-2-soft)",
-              color: "var(--color-accent-2)",
-            }}
-          >
-            {wipCompletos.data.wip > 0 && wipCompletos.data.wip}
-          </div>
+          {resumen.data && (
+            <div className="arv-racha-card">
+              <span className="etiqueta">
+                Racha de
+                <br />
+                lectura
+              </span>
+              <div>
+                <div className="numero">{resumen.data.racha_dias}</div>
+                <div className="sub">
+                  {resumen.data.racha_dias === 1 ? "día seguido" : "días seguidos"}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+function CitaFavorita() {
+  const perfil = useFetch(() => api.perfil.get());
+  const [editando, setEditando] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [fuente, setFuente] = useState("");
+
+  function empezarEdicion() {
+    setTexto(perfil.data?.cita_texto ?? "");
+    setFuente(perfil.data?.cita_fuente ?? "");
+    setEditando(true);
+  }
+
+  async function guardar() {
+    try {
+      await api.perfil.actualizarCita(texto, fuente);
+      setEditando(false);
+      perfil.reload();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  if (editando) {
+    return (
+      <div className="arv-card">
+        <h3>Cita favorita</h3>
+        <textarea
+          className="arv-input"
+          style={{ resize: "vertical", minHeight: 70, marginBottom: 8 }}
+          placeholder="La cita…"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <input
+          className="arv-input"
+          style={{ marginBottom: 10 }}
+          placeholder="De dónde salió (ej: seven summers, cap. 12)"
+          value={fuente}
+          onChange={(e) => setFuente(e.target.value)}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="arv-btn" onClick={guardar}>
+            Guardar
+          </button>
+          <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(false)}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!perfil.data?.cita_texto) {
+    return (
+      <div className="arv-card">
+        <h3>Cita favorita</h3>
+        <p className="arv-muted" style={{ marginBottom: 10 }}>
+          Todavía no guardaste ninguna cita.
+        </p>
+        <button className="arv-btn arv-btn-secondary" onClick={empezarEdicion}>
+          Agregar cita
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="arv-cita-card" style={{ marginBottom: 14, cursor: "pointer" }} onClick={empezarEdicion}>
+      <span className="etiqueta">CITA FAVORITA</span>
+      <p>“{perfil.data.cita_texto}”</p>
+      {perfil.data.cita_fuente && <span className="fuente">de {perfil.data.cita_fuente}</span>}
+    </div>
+  );
+}
+
+function formatoCompacto(numero) {
+  if (numero >= 1_000_000) return `${(numero / 1_000_000).toFixed(1)}M`;
+  if (numero >= 1_000) return `${(numero / 1_000).toFixed(0)}k`;
+  return String(numero);
 }

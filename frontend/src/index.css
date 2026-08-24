@@ -209,6 +209,231 @@ a {
   font-weight: 600;
 }
 
+.arv-graf-hero {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.arv-graf-hero .numero {
+  font-family: var(--font-display);
+  font-size: 38px;
+  line-height: 1;
+  color: var(--color-accent);
+}
+.arv-graf-hero .etiqueta {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  padding-bottom: 6px;
+}
+
+.arv-graf-anio-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+}
+
+.arv-bubble-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 130px;
+  flex-wrap: wrap;
+}
+.arv-bubble {
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  flex: none;
+}
+.arv-bubble .numero {
+  font-family: var(--font-display);
+  line-height: 1;
+}
+.arv-bubble .etiqueta {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.arv-donut-fila {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+.arv-donut-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.arv-donut {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.arv-donut-inner {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.arv-donut-inner .numero {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--color-text);
+  line-height: 1;
+}
+.arv-donut-inner .etiqueta {
+  font-size: 8.5px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+}
+.arv-donut-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.arv-donut-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.arv-donut-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.arv-racha-card {
+  width: 128px;
+  background: var(--color-accent);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--color-surface);
+}
+.arv-racha-card .etiqueta {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+.arv-racha-card .numero {
+  font-family: var(--font-display);
+  font-size: 36px;
+  line-height: 1;
+  margin-top: 10px;
+}
+.arv-racha-card .sub {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.arv-favoritos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+.arv-favorito-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  background: var(--color-accent);
+  padding: 8px;
+  display: flex;
+  align-items: flex-end;
+  text-decoration: none;
+  overflow: hidden;
+}
+.arv-favorito-card span {
+  font-size: 11px;
+  line-height: 1.2;
+  color: inherit;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.arv-favorito-quitar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.arv-favorito-add {
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.arv-cita-card {
+  background: var(--color-text);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+.arv-cita-card .etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 8px;
+}
+.arv-cita-card p {
+  margin: 0;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--color-surface);
+}
+.arv-cita-card .fuente {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8px;
+  display: block;
+}
+
 .arv-card h2,
 .arv-card h3 {
   margin-top: 0;
