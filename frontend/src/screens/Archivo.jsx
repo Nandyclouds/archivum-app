@@ -83,7 +83,10 @@ export function Archivo() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
               {g.html && (
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.04em" }}>
+                    HTML
+                  </span>
                   <button
                     className="arv-icon-btn"
                     onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.html.id))}
@@ -111,7 +114,10 @@ export function Archivo() {
                 </div>
               )}
               {g.epub && (
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.04em" }}>
+                    EPUB
+                  </span>
                   <button
                     className="arv-icon-btn"
                     onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.epub.id))}
