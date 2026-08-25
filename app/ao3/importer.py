@@ -55,6 +55,11 @@ from app.models import Archivo, Coleccion, Fandom, Fic, Lectura, Personaje, Ship
 WORK_URL = "https://archiveofourown.org/works/{ao3_id}?view_adult=true&view_full_work=true"
 BOOKMARKS_URL = "https://archiveofourown.org/users/{username}/bookmarks?page={page}"
 HISTORY_URL = "https://archiveofourown.org/users/{username}/readings?page={page}"
+# "Marked for Later" no es un bookmark tag: es un botón aparte en la página
+# de cada work, y AO3 lo expone como un filtro de la propia History
+# (?show=to-read), no una entrada nueva del menú. Mismo listado/parser que
+# HISTORY_URL (misma estructura de <li>), solo cambia el filtro server-side.
+HISTORY_MARKED_URL = "https://archiveofourown.org/users/{username}/readings?show=to-read&page={page}"
 
 DEFAULT_STALE_DAYS = 30
 

@@ -15,6 +15,7 @@ Uso (variables de entorno, seteadas como GitHub Secrets en el workflow):
     python scripts/gh_action_sync.py --modo fic --url https://archiveofourown.org/works/123
     python scripts/gh_action_sync.py --modo epub --ao3-id 123
     python scripts/gh_action_sync.py --modo bookmarks
+    python scripts/gh_action_sync.py --modo marcados
 """
 
 from __future__ import annotations
@@ -29,14 +30,22 @@ import requests
 
 from app.ao3 import auth
 from app.ao3.client import RateLimitedClient, RequestFailedError, SessionRequestLimitReached
-from app.ao3.importer import WORK_URL, _walk_bookmark_items
-from app.ao3.parser import parse_work_page, work_id_from_url
+from app.ao3.importer import HISTORY_MARKED_URL, WORK_URL, _walk_bookmark_items, _walk_listing_work_ids
+from app.ao3.parser import parse_history_page, parse_work_page, work_id_from_url
 
-# Tope de tiempo total para el modo bookmarks: AO3 a veces devuelve 429/503
-# sostenido durante un rato — reintentamos con pausas en vez de morir de
-# una, pero sin pasarnos del límite de minutos del runner de GitHub Actions.
+# Tope de tiempo total para los modos que recorren varias páginas de listado
+# (bookmarks, marcados): AO3 a veces devuelve 429/503 sostenido durante un
+# rato — reintentamos con pausas en vez de morir de una, pero sin pasarnos
+# del límite de minutos del runner de GitHub Actions.
 PRESUPUESTO_TOTAL_SEGUNDOS = 50 * 60
 ESPERA_ENTRE_REINTENTOS_SEGUNDOS = 5 * 60
+
+# Nombre de la colección donde caen los fics de "Marked for Later" — mismo
+# mecanismo que cualquier otro tag de bookmark (ver reading_status.py), pero
+# a diferencia de "por leer" no se interpreta como estado de lectura: es
+# solo una etiqueta, para no pisar el estado real si la usuaria ya lo leyó
+# por otro lado.
+TAG_MARCADOS = "Marked for Later"
 
 
 def _base_url() -> str:
@@ -172,9 +181,62 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
     print(f"Bookmarks nuevos importados: {nuevos}")
 
 
+def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> None:
+    """Trae los work_ids marcados 'Marked for Later' (?show=to-read de la
+    History) y los etiqueta en Archivum. A los ya conocidos solo se les
+    agrega el tag (sin re-pedir la página); a los nuevos se los importa
+    entero, igual que un bookmark nuevo."""
+    username = os.environ.get("AO3_USERNAME", "")
+
+    response = requests.get(f"{base_url}/api/sync/known-ids", headers=headers, timeout=30)
+    response.raise_for_status()
+    conocidos = set(response.json()["ao3_ids"])
+    print(f"Fics ya conocidos en Archivum: {len(conocidos)}")
+
+    inicio = time.monotonic()
+    start_page = 1
+    nuevos = 0
+    etiquetados = 0
+    while True:
+        try:
+            for work_id in _walk_listing_work_ids(
+                client, HISTORY_MARKED_URL, username, parse_history_page, start_page=start_page
+            ):
+                try:
+                    if work_id in conocidos:
+                        _ingest_fic(base_url, headers, work_id, tags=[TAG_MARCADOS])
+                        etiquetados += 1
+                    else:
+                        fic_response = client.get(WORK_URL.format(ao3_id=work_id))
+                        fic_response.raise_for_status()
+                        _ingest_fic(base_url, headers, work_id, fic_response.text, tags=[TAG_MARCADOS])
+                        conocidos.add(work_id)
+                        nuevos += 1
+                except (RequestFailedError, requests.exceptions.RequestException) as exc:
+                    print(f"  ! {work_id}: {exc}", file=sys.stderr)
+            break
+        except SessionRequestLimitReached as exc:
+            print(f"Límite de sesión alcanzado: {exc}. Terminando esta corrida.")
+            break
+        except RequestFailedError as exc:
+            transcurrido = time.monotonic() - inicio
+            if transcurrido + ESPERA_ENTRE_REINTENTOS_SEGUNDOS > PRESUPUESTO_TOTAL_SEGUNDOS:
+                print(f"AO3 sigue fallando y se acabó el presupuesto de tiempo: {exc}")
+                break
+            print(f"AO3 falló listando páginas ({exc}). Esperando 5 min antes de reintentar...")
+            time.sleep(ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
+            # Igual que en modo_bookmarks: reintentar desde la página 1 es
+            # barato (los ya etiquetados/importados se saltean por estar en
+            # `conocidos`, y a los ya-conocidos el re-etiquetado es idempotente).
+            start_page = 1
+            continue
+
+    print(f"Marked for Later — nuevos importados: {nuevos}, ya conocidos etiquetados: {etiquetados}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modo", required=True, choices=["fic", "epub", "bookmarks"])
+    parser.add_argument("--modo", required=True, choices=["fic", "epub", "bookmarks", "marcados"])
     parser.add_argument("--url", default=None)
     parser.add_argument("--ao3-id", default=None)
     args = parser.parse_args()
@@ -194,6 +256,8 @@ def main() -> None:
             print("--ao3-id es obligatorio para --modo epub", file=sys.stderr)
             sys.exit(1)
         modo_epub(client, base_url, headers, args.ao3_id)
+    elif args.modo == "marcados":
+        modo_marcados(client, base_url, headers)
     else:
         modo_bookmarks(client, base_url, headers)
 

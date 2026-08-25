@@ -180,6 +180,8 @@
     "errores": "{{count}} errores",
     "actualizarBookmarks": "Actualizar bookmarks",
     "actualizarBookmarksInfo": "Trae los bookmarks nuevos que agregaste en AO3 desde la última vez. Corre en GitHub Actions, así que no hace falta que tu PC esté prendida — puede tardar varios minutos (o más, si AO3 está limitando peticiones).",
+    "actualizarMarcados": "Actualizar Marked for Later",
+    "actualizarMarcadosInfo": "Trae los fics que marcaste como \"Marked for Later\" en tu History de AO3 (no es un bookmark). A los que ya conocés solo les agrega la etiqueta \"Marked for Later\" para encontrarlos en Colecciones, sin pisar el estado de lectura que ya tengan.",
     "actualizarAhora": "Actualizar ahora",
     "disparando": "Disparando…",
     "syncEnCamino": "Sync en camino — volvé a revisar tu biblioteca en un rato."

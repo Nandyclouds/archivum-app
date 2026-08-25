@@ -44,7 +44,7 @@ router = APIRouter(prefix="/sync", tags=["sync"])
 
 
 class TriggerRequest(BaseModel):
-    modo: str  # "bookmarks" | "fic" | "epub"
+    modo: str  # "bookmarks" | "fic" | "epub" | "marcados"
     url: str | None = None
     ao3_id: str | None = None
 
@@ -56,7 +56,7 @@ def disparar_sync(payload: TriggerRequest):
             status_code=503,
             detail="GITHUB_PAT/GITHUB_REPO no configurados en el .env de este servidor.",
         )
-    if payload.modo not in {"bookmarks", "fic", "epub"}:
+    if payload.modo not in {"bookmarks", "fic", "epub", "marcados"}:
         raise HTTPException(status_code=400, detail=f"Modo desconocido: {payload.modo}")
     if payload.modo == "fic" and not payload.url:
         raise HTTPException(status_code=400, detail="Falta 'url' para modo=fic.")

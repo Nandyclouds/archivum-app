@@ -211,6 +211,23 @@ def test_trigger_modo_fic_sin_url(client, monkeypatch):
 
 
 @responses.activate
+def test_trigger_modo_marcados(client, monkeypatch):
+    monkeypatch.setattr(settings, "github_pat", "token-falso")
+    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
+    monkeypatch.setattr(settings, "github_workflow_file", "ao3-sync.yml")
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
+        status=204,
+    )
+
+    response = client.post("/api/sync/trigger", json={"modo": "marcados"})
+    assert response.status_code == 200
+    assert response.json() == {"disparado": True}
+
+
+@responses.activate
 def test_trigger_dispara_el_workflow_de_github(client, monkeypatch):
     monkeypatch.setattr(settings, "github_pat", "token-falso")
     monkeypatch.setattr(settings, "github_repo", "usuario/repo")

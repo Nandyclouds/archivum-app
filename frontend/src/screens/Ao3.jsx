@@ -18,7 +18,8 @@ export function Ao3() {
         </h2>
       </div>
 
-      <ActualizarBookmarks />
+      <BotonSync modo="bookmarks" tituloKey="ao3.actualizarBookmarks" infoKey="ao3.actualizarBookmarksInfo" />
+      <BotonSync modo="marcados" tituloKey="ao3.actualizarMarcados" infoKey="ao3.actualizarMarcadosInfo" />
 
       {logs.loading && <Cargando />}
       {logs.error && <ErrorCarga error={logs.error} onReintentar={logs.reload} />}
@@ -42,7 +43,7 @@ export function Ao3() {
   );
 }
 
-function ActualizarBookmarks() {
+function BotonSync({ modo, tituloKey, infoKey }) {
   const { t } = useTranslation();
   const [estado, setEstado] = useState("idle"); // idle | disparando | disparado | error
   const [error, setError] = useState(null);
@@ -51,7 +52,7 @@ function ActualizarBookmarks() {
     setEstado("disparando");
     setError(null);
     try {
-      await api.sync.trigger("bookmarks");
+      await api.sync.trigger(modo);
       setEstado("disparado");
     } catch (err) {
       setEstado("error");
@@ -62,8 +63,8 @@ function ActualizarBookmarks() {
   return (
     <div className="arv-card">
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {t("ao3.actualizarBookmarks")}
-        <InfoPopover>{t("ao3.actualizarBookmarksInfo")}</InfoPopover>
+        {t(tituloKey)}
+        <InfoPopover>{t(infoKey)}</InfoPopover>
       </h3>
       <button className="arv-btn" disabled={estado === "disparando"} onClick={disparar}>
         {estado === "disparando" ? t("ao3.disparando") : t("ao3.actualizarAhora")}
