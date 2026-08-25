@@ -76,16 +76,21 @@ function CabeceraPerfil() {
         contenedorClassName="arv-perfil-portada"
         onCambio={onCambio}
       />
-      <div className="arv-perfil-avatar-wrap">
-        <EditorFoto
-          tipo="avatar"
-          tieneFoto={!!perfil.data?.tiene_avatar}
-          url={conCache(api.perfil.imagenUrl("avatar"))}
-          posicion={perfil.data?.avatar_posicion ?? "50% 50%"}
-          contenedorClassName="arv-perfil-avatar"
-          placeholder={<User size={32} />}
-          onCambio={onCambio}
-        />
+      <div className="arv-perfil-avatar-fila">
+        <div className="arv-perfil-avatar-wrap">
+          <EditorFoto
+            tipo="avatar"
+            tieneFoto={!!perfil.data?.tiene_avatar}
+            url={conCache(api.perfil.imagenUrl("avatar"))}
+            posicion={perfil.data?.avatar_posicion ?? "50% 50%"}
+            contenedorClassName="arv-perfil-avatar"
+            placeholder={<User size={32} />}
+            onCambio={onCambio}
+          />
+        </div>
+        {perfil.data?.insignia && (
+          <span className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</span>
+        )}
       </div>
     </div>
   );
@@ -333,7 +338,7 @@ function Identidad() {
     );
   }
 
-  const { handle: handleActual, pronombres: pronombresActual, insignia: insigniaActual } = perfil.data ?? {};
+  const { handle: handleActual, pronombres: pronombresActual } = perfil.data ?? {};
 
   return (
     <div style={{ cursor: "pointer", padding: "2px 4px 18px" }} onClick={empezarEdicion}>
@@ -361,11 +366,6 @@ function Identidad() {
           {handleActual && pronombresActual && " · "}
           {pronombresActual}
         </p>
-      )}
-      {insigniaActual && (
-        <span className="arv-insignia" style={{ marginTop: 8 }}>
-          {insigniaActual}
-        </span>
       )}
       {perfil.data?.bio && (
         <p
