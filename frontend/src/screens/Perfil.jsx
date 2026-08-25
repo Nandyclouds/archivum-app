@@ -7,6 +7,7 @@ import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { ConEmoji } from "../components/ConEmoji";
 import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
+import { InfoPopover } from "../components/InfoPopover";
 import { useEmojisPersonalizados } from "../lib/EmojiPersonalizadoContext";
 import { cambiarIdioma } from "../i18n";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
@@ -908,10 +909,10 @@ function EmojisPersonalizados() {
 
   return (
     <div className="arv-card">
-      <h3>{t("perfil.emojisPersonalizados")}</h3>
-      <p className="arv-muted" style={{ marginBottom: 14 }}>
-        {t("perfil.emojisPersonalizadosInfo")}
-      </p>
+      <h3 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        {t("perfil.emojisPersonalizados")}
+        <InfoPopover>{t("perfil.emojisPersonalizadosInfo")}</InfoPopover>
+      </h3>
 
       {lista.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
