@@ -435,12 +435,27 @@ def test_crear_resena(client, db_session):
     body = r.json()
     assert body["rating"] == 4.5
     assert body["fecha"] == datetime.date.today().isoformat()
+    assert body["hizo_llorar"] is False
 
 
 def test_crear_resena_rating_fuera_de_rango(client, db_session):
     fic = _crear_fic(db_session)
     r = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 6})
     assert r.status_code == 422
+
+
+def test_crear_y_actualizar_resena_hizo_llorar(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 5, "hizo_llorar": True})
+    assert r.status_code == 201
+    resena_id = r.json()["id"]
+    assert r.json()["hizo_llorar"] is True
+
+    r = client.patch(
+        f"/api/fics/{fic.id}/resenas/{resena_id}", json={"hizo_llorar": False}
+    )
+    assert r.status_code == 200
+    assert r.json()["hizo_llorar"] is False
 
 
 def test_colecciones_crud_y_fics(client, db_session):

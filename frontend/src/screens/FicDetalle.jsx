@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Droplet, Check } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
 import { Estrellas } from "../components/Estrellas";
+import { EstrellasInput } from "../components/EstrellasInput";
 import { InfoPopover } from "../components/InfoPopover";
 import { abrirEnNavegadorExterno } from "../lib/abrirExterno";
 
@@ -103,6 +105,9 @@ function MisColecciones({ fic, onChange }) {
   const [guardando, setGuardando] = useState(false);
 
   const idsDelFic = new Set(fic.colecciones.map((c) => c.id));
+  const ordenadas = [...(colecciones.data ?? [])].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+  );
 
   async function alternar(coleccionId, yaEsta) {
     setGuardando(true);
@@ -135,28 +140,31 @@ function MisColecciones({ fic, onChange }) {
   return (
     <div className="arv-card">
       <h3>{t("ficDetalle.colecciones")}</h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-        {colecciones.data?.map((c) => {
-          const yaEsta = idsDelFic.has(c.id);
-          return (
-            <button
-              key={c.id}
-              className={`arv-tag ${yaEsta ? "arv-tag-accent" : "arv-tag-accent-2"}`}
-              disabled={guardando}
-              onClick={() => alternar(c.id, yaEsta)}
-              style={{ border: "none", cursor: "pointer" }}
-            >
-              {yaEsta ? "✓ " : "+ "}
-              {c.nombre}
-            </button>
-          );
-        })}
-        {colecciones.data?.length === 0 && (
-          <p className="arv-muted" style={{ margin: 0 }}>
-            {t("ficDetalle.sinColecciones")}
-          </p>
-        )}
-      </div>
+      {ordenadas.length > 0 ? (
+        <div className="arv-coleccion-picker">
+          {ordenadas.map((c) => {
+            const yaEsta = idsDelFic.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`arv-coleccion-picker-item ${yaEsta ? "arv-coleccion-picker-item-activa" : ""}`}
+                disabled={guardando}
+                onClick={() => alternar(c.id, yaEsta)}
+              >
+                <span className="arv-coleccion-picker-nombre">{c.nombre}</span>
+                <span className="arv-coleccion-picker-check">
+                  {yaEsta && <Check size={13} strokeWidth={3} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="arv-muted" style={{ margin: "0 0 12px" }}>
+          {t("ficDetalle.sinColecciones")}
+        </p>
+      )}
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
@@ -164,7 +172,11 @@ function MisColecciones({ fic, onChange }) {
           value={nombreNueva}
           onChange={(e) => setNombreNueva(e.target.value)}
         />
-        <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={crearYAgregar}>
+        <button
+          className="arv-btn arv-btn-secondary arv-btn-compacto"
+          disabled={guardando}
+          onClick={crearYAgregar}
+        >
           {t("ficDetalle.crearYAgregar")}
         </button>
       </div>
@@ -432,15 +444,16 @@ function MiResena({ fic, resena, onChange }) {
   const [editando, setEditando] = useState(false);
   const [rating, setRating] = useState(resena?.rating ?? 5);
   const [texto, setTexto] = useState(resena?.texto ?? "");
+  const [hizoLlorar, setHizoLlorar] = useState(resena?.hizo_llorar ?? false);
   const [guardando, setGuardando] = useState(false);
 
   async function guardar() {
     setGuardando(true);
     try {
       if (resena) {
-        await api.resenas.update(fic.id, resena.id, { rating: Number(rating), texto });
+        await api.resenas.update(fic.id, resena.id, { rating: Number(rating), texto, hizo_llorar: hizoLlorar });
       } else {
-        await api.resenas.create(fic.id, { rating: Number(rating), texto });
+        await api.resenas.create(fic.id, { rating: Number(rating), texto, hizo_llorar: hizoLlorar });
       }
       setEditando(false);
       onChange();
@@ -455,7 +468,15 @@ function MiResena({ fic, resena, onChange }) {
         <h3>{t("ficDetalle.miResena")}</h3>
         {resena ? (
           <>
-            <Estrellas rating={resena.rating} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+              <Estrellas rating={resena.rating} />
+              {resena.hizo_llorar && (
+                <span className="arv-llore-badge">
+                  <Droplet size={12} fill="currentColor" />
+                  {t("ficDetalle.hizoLlorarBadge")}
+                </span>
+              )}
+            </div>
             <p>{resena.texto}</p>
           </>
         ) : (
@@ -472,23 +493,25 @@ function MiResena({ fic, resena, onChange }) {
     <div className="arv-card">
       <h3>{t("ficDetalle.miResena")}</h3>
       <label className="arv-muted">{t("ficDetalle.ratingLabel")}</label>
-      <input
-        className="arv-input"
-        type="number"
-        min="1"
-        max="5"
-        step="0.5"
-        value={rating}
-        onChange={(e) => setRating(e.target.value)}
-        style={{ marginBottom: 10 }}
-      />
+      <div style={{ margin: "6px 0 14px" }}>
+        <EstrellasInput value={Number(rating)} onChange={setRating} />
+      </div>
+      <button
+        type="button"
+        className={`arv-llore-toggle ${hizoLlorar ? "arv-llore-toggle-activo" : ""}`}
+        disabled={guardando}
+        onClick={() => setHizoLlorar((v) => !v)}
+      >
+        <Droplet size={15} fill={hizoLlorar ? "currentColor" : "none"} />
+        {t("ficDetalle.hizoLlorarLabel")}
+      </button>
       <textarea
         className="arv-input"
         rows={4}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         placeholder={t("ficDetalle.resenaPlaceholder")}
-        style={{ marginBottom: 10, borderRadius: 12 }}
+        style={{ margin: "14px 0 10px", borderRadius: 12 }}
       />
       <div style={{ display: "flex", gap: 8 }}>
         <button className="arv-btn" disabled={guardando} onClick={guardar}>

@@ -138,7 +138,9 @@
     "miResena": "My review",
     "sinResena": "You haven't left a review yet.",
     "agregarResena": "Add review",
-    "ratingLabel": "Rating (1 to 5, halves allowed)",
+    "ratingLabel": "Rating (tap half or full star)",
+    "hizoLlorarLabel": "Made you cry?",
+    "hizoLlorarBadge": "Cried at this one",
     "resenaPlaceholder": "What did you think?"
   },
   "colecciones": {

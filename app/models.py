@@ -261,6 +261,7 @@ class Resena(Base):
     rating: Mapped[float] = mapped_column(Float)
     texto: Mapped[str | None] = mapped_column(Text, nullable=True)
     contiene_spoilers: Mapped[bool] = mapped_column(Boolean, default=False)
+    hizo_llorar: Mapped[bool] = mapped_column(Boolean, default=False)
     fecha: Mapped[datetime.date] = mapped_column(
         Date, default=datetime.date.today, index=True
     )

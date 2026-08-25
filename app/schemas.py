@@ -91,6 +91,7 @@ class ResenaOut(BaseModel):
     rating: float
     texto: str | None = None
     contiene_spoilers: bool
+    hizo_llorar: bool = False
     fecha: datetime.date
 
 
@@ -98,6 +99,7 @@ class ResenaCreate(BaseModel):
     rating: float = Field(ge=1, le=5)
     texto: str | None = None
     contiene_spoilers: bool = False
+    hizo_llorar: bool = False
     fecha: datetime.date | None = None
 
 
@@ -105,6 +107,7 @@ class ResenaUpdate(BaseModel):
     rating: float | None = Field(default=None, ge=1, le=5)
     texto: str | None = None
     contiene_spoilers: bool | None = None
+    hizo_llorar: bool | None = None
     fecha: datetime.date | None = None
 
 

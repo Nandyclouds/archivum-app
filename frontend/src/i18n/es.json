@@ -138,7 +138,9 @@
     "miResena": "Mi reseña",
     "sinResena": "Todavía no dejaste una reseña.",
     "agregarResena": "Agregar reseña",
-    "ratingLabel": "Rating (1 a 5, permite medios)",
+    "ratingLabel": "Puntaje (tocá media estrella o toda)",
+    "hizoLlorarLabel": "¿Te hizo llorar?",
+    "hizoLlorarBadge": "Lloré con este",
     "resenaPlaceholder": "¿Qué te pareció?"
   },
   "colecciones": {
