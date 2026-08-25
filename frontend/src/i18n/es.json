@@ -193,8 +193,10 @@
     "volverAlPanel": "Volver al panel"
   },
   "perfil": {
-    "cambiarPortada": "Cambiar portada",
-    "cambiarAvatar": "Cambiar foto de perfil",
+    "cambiarFoto": "Cambiar foto",
+    "moverFoto": "Mover foto",
+    "verEnGrande": "Ver en grande",
+    "arrastraParaMover": "Arrastrá para mover",
     "favoritos": "Favoritos",
     "verLos": "ver los {{count}}",
     "buscarFicPlaceholder": "Buscar un fic para agregar…",

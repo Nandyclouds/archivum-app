@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -52,77 +52,196 @@ export function Perfil() {
 }
 
 function CabeceraPerfil() {
-  const { t } = useTranslation();
   const perfil = useFetch(() => api.perfil.get());
   const [version, setVersion] = useState(0);
-  const portadaInput = useRef(null);
-  const avatarInput = useRef(null);
 
-  async function subir(tipo, archivo) {
+  const conCache = (url) => `${url}${url.includes("?") ? "&" : "?"}v=${version}`;
+
+  function onCambio() {
+    setVersion((v) => v + 1);
+    perfil.reload();
+  }
+
+  return (
+    <div className="arv-perfil-header">
+      <EditorFoto
+        tipo="portada"
+        tieneFoto={!!perfil.data?.tiene_portada}
+        url={conCache(api.perfil.imagenUrl("portada"))}
+        posicion={perfil.data?.portada_posicion ?? "50% 50%"}
+        contenedorClassName="arv-perfil-portada"
+        onCambio={onCambio}
+      />
+      <div className="arv-perfil-avatar-wrap">
+        <EditorFoto
+          tipo="avatar"
+          tieneFoto={!!perfil.data?.tiene_avatar}
+          url={conCache(api.perfil.imagenUrl("avatar"))}
+          posicion={perfil.data?.avatar_posicion ?? "50% 50%"}
+          contenedorClassName="arv-perfil-avatar"
+          placeholder={<User size={32} />}
+          onCambio={onCambio}
+        />
+      </div>
+    </div>
+  );
+}
+
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function parsePosicion(posicion) {
+  const [x, y] = posicion.split(" ").map((v) => parseFloat(v));
+  return [Number.isFinite(x) ? x : 50, Number.isFinite(y) ? y : 50];
+}
+
+function EditorFoto({ tipo, tieneFoto, url, posicion, contenedorClassName, placeholder, onCambio }) {
+  const { t } = useTranslation();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [moviendo, setMoviendo] = useState(false);
+  const [viendoGrande, setViendoGrande] = useState(false);
+  const [posicionLocal, setPosicionLocal] = useState(posicion);
+  const [guardandoPosicion, setGuardandoPosicion] = useState(false);
+  const inputRef = useRef(null);
+  const contenedorRef = useRef(null);
+  const arrastre = useRef(null);
+
+  useEffect(() => {
+    if (!moviendo) setPosicionLocal(posicion);
+  }, [posicion, moviendo]);
+
+  function onPointerDown(e) {
+    if (!moviendo) return;
+    const rect = contenedorRef.current.getBoundingClientRect();
+    const [x0, y0] = parsePosicion(posicionLocal);
+    arrastre.current = { startX: e.clientX, startY: e.clientY, x0, y0, rect };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e) {
+    if (!arrastre.current) return;
+    const { startX, startY, x0, y0, rect } = arrastre.current;
+    const nuevoX = clamp(x0 - ((e.clientX - startX) / rect.width) * 100, 0, 100);
+    const nuevoY = clamp(y0 - ((e.clientY - startY) / rect.height) * 100, 0, 100);
+    setPosicionLocal(`${nuevoX.toFixed(1)}% ${nuevoY.toFixed(1)}%`);
+  }
+
+  function onPointerUp() {
+    arrastre.current = null;
+  }
+
+  async function guardarPosicion() {
+    const [x, y] = parsePosicion(posicionLocal);
+    setGuardandoPosicion(true);
+    try {
+      await api.perfil.actualizarPosicion(tipo, x, y);
+      setMoviendo(false);
+      onCambio();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setGuardandoPosicion(false);
+    }
+  }
+
+  function cancelarMovimiento() {
+    setPosicionLocal(posicion);
+    setMoviendo(false);
+  }
+
+  async function subir(archivo) {
     if (!archivo) return;
     try {
       await api.perfil.subirImagen(tipo, archivo);
-      setVersion((v) => v + 1);
-      perfil.reload();
+      onCambio();
     } catch (err) {
       alert(err.message);
     }
   }
 
-  const conCache = (url) => `${url}${url.includes("?") ? "&" : "?"}v=${version}`;
-
   return (
-    <div className="arv-perfil-header">
+    <>
       <div
-        className="arv-perfil-portada"
-        style={
-          perfil.data?.tiene_portada
-            ? { backgroundImage: `url(${conCache(api.perfil.imagenUrl("portada"))})` }
-            : undefined
-        }
+        ref={contenedorRef}
+        className={contenedorClassName}
+        style={{
+          ...(tieneFoto ? { backgroundImage: `url(${url})`, backgroundPosition: posicionLocal } : {}),
+          cursor: moviendo ? "grab" : "pointer",
+          touchAction: moviendo ? "none" : "auto",
+        }}
+        onClick={() => !moviendo && setMenuAbierto(true)}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
       >
-        <button
-          className="arv-perfil-editar arv-perfil-editar-portada"
-          onClick={() => portadaInput.current.click()}
-          aria-label={t("perfil.cambiarPortada")}
-        >
-          <Camera size={15} />
-        </button>
-        <input
-          ref={portadaInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => subir("portada", e.target.files[0])}
-        />
+        {!tieneFoto && placeholder}
+        {moviendo && <div className="arv-foto-mover-hint">{t("perfil.arrastraParaMover")}</div>}
       </div>
-      <div className="arv-perfil-avatar-wrap">
-        <div
-          className="arv-perfil-avatar"
-          style={
-            perfil.data?.tiene_avatar
-              ? { backgroundImage: `url(${conCache(api.perfil.imagenUrl("avatar"))})` }
-              : undefined
-          }
-        >
-          {!perfil.data?.tiene_avatar && <User size={32} />}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        hidden
+        onChange={(e) => subir(e.target.files[0])}
+      />
+
+      {menuAbierto && (
+        <div className="arv-hoja-fondo" onClick={() => setMenuAbierto(false)}>
+          <div className="arv-hoja" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => {
+                inputRef.current.click();
+                setMenuAbierto(false);
+              }}
+            >
+              {t("perfil.cambiarFoto")}
+            </button>
+            {tieneFoto && (
+              <button
+                onClick={() => {
+                  setMoviendo(true);
+                  setMenuAbierto(false);
+                }}
+              >
+                {t("perfil.moverFoto")}
+              </button>
+            )}
+            {tieneFoto && (
+              <button
+                onClick={() => {
+                  setViendoGrande(true);
+                  setMenuAbierto(false);
+                }}
+              >
+                {t("perfil.verEnGrande")}
+              </button>
+            )}
+            <button className="cancelar" onClick={() => setMenuAbierto(false)}>
+              {t("common.cancelar")}
+            </button>
+          </div>
         </div>
-        <button
-          className="arv-perfil-editar arv-perfil-editar-avatar"
-          onClick={() => avatarInput.current.click()}
-          aria-label={t("perfil.cambiarAvatar")}
-        >
-          <Camera size={13} />
-        </button>
-        <input
-          ref={avatarInput}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          hidden
-          onChange={(e) => subir("avatar", e.target.files[0])}
-        />
-      </div>
-    </div>
+      )}
+
+      {moviendo && (
+        <div className="arv-foto-mover-acciones">
+          <button className="arv-btn" disabled={guardandoPosicion} onClick={guardarPosicion}>
+            {t("common.guardar")}
+          </button>
+          <button className="arv-btn arv-btn-secondary" onClick={cancelarMovimiento}>
+            {t("common.cancelar")}
+          </button>
+        </div>
+      )}
+
+      {viendoGrande && (
+        <div className="arv-foto-lightbox" onClick={() => setViendoGrande(false)}>
+          <img src={url} alt="" />
+        </div>
+      )}
+    </>
   );
 }
 

@@ -344,6 +344,11 @@ class PerfilConfig(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     avatar_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Posición del recorte dentro del marco circular/rectangular, como CSS
+    # `background-position` ("50% 50%" = centrado, default). Se ajusta
+    # arrastrando la imagen en el modo "mover" del menú de la foto.
+    avatar_posicion: Mapped[str] = mapped_column(String(20), nullable=False, default="50% 50%")
+    portada_posicion: Mapped[str] = mapped_column(String(20), nullable=False, default="50% 50%")
     cita_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
     cita_fuente: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # Ids de Fic elegidos a mano para el grid visible de Favoritos (los otros

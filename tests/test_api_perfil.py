@@ -64,9 +64,33 @@ def test_obtener_perfil_vacio(client):
     assert r.json() == {
         "tiene_avatar": False,
         "tiene_portada": False,
+        "avatar_posicion": "50% 50%",
+        "portada_posicion": "50% 50%",
         "cita_texto": None,
         "cita_fuente": None,
     }
+
+
+def test_actualizar_posicion_avatar(client):
+    r = client.put("/api/perfil/posicion/avatar", json={"x": 30, "y": 70})
+    assert r.status_code == 200
+    assert client.get("/api/perfil").json()["avatar_posicion"] == "30.0% 70.0%"
+
+
+def test_actualizar_posicion_tipo_invalido(client):
+    r = client.put("/api/perfil/posicion/banner", json={"x": 30, "y": 70})
+    assert r.status_code == 404
+
+
+def test_actualizar_posicion_fuera_de_rango(client):
+    r = client.put("/api/perfil/posicion/avatar", json={"x": 130, "y": 70})
+    assert r.status_code == 422
+
+
+def test_subir_foto_nueva_resetea_posicion(client):
+    client.put("/api/perfil/posicion/avatar", json={"x": 30, "y": 70})
+    client.post("/api/perfil/avatar", files={"archivo": ("otra.jpg", _imagen_falsa(), "image/jpeg")})
+    assert client.get("/api/perfil").json()["avatar_posicion"] == "50% 50%"
 
 
 def test_subir_avatar(client, tmp_path):

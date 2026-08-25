@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -47,6 +47,8 @@ def obtener_perfil(db: Session = Depends(get_session)):
     return {
         "tiene_avatar": bool(config and config.avatar_ruta),
         "tiene_portada": bool(config and config.portada_ruta),
+        "avatar_posicion": config.avatar_posicion if config else "50% 50%",
+        "portada_posicion": config.portada_posicion if config else "50% 50%",
         "cita_texto": config.cita_texto if config else None,
         "cita_fuente": config.cita_fuente if config else None,
     }
@@ -66,6 +68,21 @@ def actualizar_perfil(payload: CitaUpdate, db: Session = Depends(get_session)):
     return {"ok": True}
 
 
+class PosicionUpdate(BaseModel):
+    x: float = Field(ge=0, le=100)
+    y: float = Field(ge=0, le=100)
+
+
+@router.put("/posicion/{tipo}")
+def actualizar_posicion(tipo: str, payload: PosicionUpdate, db: Session = Depends(get_session)):
+    if tipo not in ("avatar", "portada"):
+        raise HTTPException(status_code=404, detail="Tipo de imagen inválido.")
+    config = _get_or_create_config(db)
+    setattr(config, f"{tipo}_posicion", f"{payload.x:.1f}% {payload.y:.1f}%")
+    db.commit()
+    return {"ok": True}
+
+
 async def _guardar_imagen(db: Session, tipo: str, archivo: UploadFile) -> None:
     if archivo.content_type not in TIPOS_PERMITIDOS:
         raise HTTPException(status_code=415, detail="Formato no soportado (usá JPG, PNG o WEBP).")
@@ -80,6 +97,7 @@ async def _guardar_imagen(db: Session, tipo: str, archivo: UploadFile) -> None:
 
     config = _get_or_create_config(db)
     setattr(config, f"{tipo}_ruta", str(ruta))
+    setattr(config, f"{tipo}_posicion", "50% 50%")  # foto nueva, el recorte viejo ya no aplica
     db.commit()
 
 

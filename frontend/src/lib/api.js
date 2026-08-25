@@ -151,6 +151,8 @@ export const api = {
     },
     actualizarCita: (cita_texto, cita_fuente) =>
       request("/perfil", { method: "PATCH", body: JSON.stringify({ cita_texto, cita_fuente }) }),
+    actualizarPosicion: (tipo, x, y) =>
+      request(`/perfil/posicion/${tipo}`, { method: "PUT", body: JSON.stringify({ x, y }) }),
     favoritos: {
       list: () => request("/perfil/favoritos"),
       add: (ficId) =>

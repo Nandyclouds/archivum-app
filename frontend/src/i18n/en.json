@@ -193,8 +193,10 @@
     "volverAlPanel": "Back to dashboard"
   },
   "perfil": {
-    "cambiarPortada": "Change cover",
-    "cambiarAvatar": "Change profile picture",
+    "cambiarFoto": "Change photo",
+    "moverFoto": "Move photo",
+    "verEnGrande": "View full size",
+    "arrastraParaMover": "Drag to move",
     "favoritos": "Favorites",
     "verLos": "view all {{count}}",
     "buscarFicPlaceholder": "Search for a fic to add…",
