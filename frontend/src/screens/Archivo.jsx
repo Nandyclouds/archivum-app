@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, Download, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
@@ -70,7 +71,9 @@ export function Archivo() {
         {grupos.map((g) => (
           <div className="arv-list-item" key={g.fic_id} style={{ alignItems: "flex-start" }}>
             <div>
-              <div style={{ fontWeight: 600 }}>{g.fic_titulo}</div>
+              <Link to={`/fics/${g.fic_id}`} style={{ fontWeight: 600, color: "inherit", textDecoration: "none" }}>
+                {g.fic_titulo}
+              </Link>
               <div className="arv-muted">
                 {t("archivo.guardado", { fecha: new Date(g.fecha_descarga).toLocaleDateString(i18n.language) })}
               </div>
