@@ -190,6 +190,41 @@ a {
   margin-bottom: 14px;
 }
 
+/* Adornitos (ver components/Doodles.jsx): la tarjeta necesita position
+   relative para que el SVG absoluto se ancle a ella, y a propósito NO
+   overflow:hidden — se dejan asomar un poco fuera del borde, como un
+   garabato pegado encima, no encajado adentro. */
+.arv-card-doodle {
+  position: relative;
+}
+.arv-doodle {
+  position: absolute;
+  color: var(--color-accent-2);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.arv-doodle-favoritos {
+  top: -12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  transform: rotate(14deg);
+}
+.arv-doodle-graficos-flor {
+  top: -10px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  transform: rotate(-8deg);
+}
+.arv-doodle-graficos-ramita {
+  bottom: -12px;
+  left: -8px;
+  width: 34px;
+  height: 34px;
+  transform: rotate(200deg);
+}
+
 .arv-perfil-header {
   margin-bottom: 6px;
 }

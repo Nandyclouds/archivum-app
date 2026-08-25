@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
 import { cambiarIdioma } from "../i18n";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
 
@@ -431,7 +432,8 @@ function Favoritos() {
   const coleccionId = favoritos.data?.coleccion_id;
 
   return (
-    <div className="arv-card">
+    <div className="arv-card arv-card-doodle">
+      <DoodleHoja className="arv-doodle-favoritos" />
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <h3 style={{ marginBottom: 0 }}>{t("perfil.favoritos")}</h3>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -624,7 +626,9 @@ function Graficos() {
   const pctCompletos = totalCompletosWip > 0 ? Math.round((completos / totalCompletosWip) * 100) : 0;
 
   return (
-    <div className="arv-card">
+    <div className="arv-card arv-card-doodle">
+      <DoodleFlor className="arv-doodle-graficos-flor" />
+      <DoodleRamita className="arv-doodle-graficos-ramita" />
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
         <h3 style={{ marginBottom: 2 }}>{t("perfil.graficos")}</h3>
       </div>
