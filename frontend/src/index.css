@@ -61,6 +61,16 @@ body {
   font-family: var(--font-body);
 }
 
+/* Twemoji (ver components/ConEmoji.jsx): tamaño relativo al texto que lo
+   rodea, con un pelín de aire a los costados para que no se pegue a las
+   letras. */
+img.emoji {
+  height: 1.15em;
+  width: 1.15em;
+  margin: 0 0.04em;
+  vertical-align: -0.2em;
+}
+
 button,
 input,
 textarea,

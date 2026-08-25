@@ -5,6 +5,7 @@ import { Droplet, Check } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
+import { ConEmoji } from "../components/ConEmoji";
 import { Estrellas } from "../components/Estrellas";
 import { EstrellasInput } from "../components/EstrellasInput";
 import { InfoPopover } from "../components/InfoPopover";
@@ -78,7 +79,9 @@ export function FicDetalle() {
             <div className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.05em", marginBottom: 4 }}>
               {t("ficDetalle.notaBookmark")}
             </div>
-            <p style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap" }}>{f.nota_bookmark}</p>
+            <ConEmoji as="p" style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap" }}>
+              {f.nota_bookmark}
+            </ConEmoji>
           </div>
         )}
 
@@ -490,7 +493,7 @@ function MiResena({ fic, resena, onChange }) {
                 </span>
               )}
             </div>
-            <p>{resena.texto}</p>
+            <ConEmoji as="p">{resena.texto}</ConEmoji>
           </>
         ) : (
           <p className="arv-muted">{t("ficDetalle.sinResena")}</p>

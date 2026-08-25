@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { ConEmoji } from "../components/ConEmoji";
 import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
 import { cambiarIdioma } from "../i18n";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
@@ -90,7 +91,7 @@ function CabeceraPerfil() {
           />
         </div>
         {perfil.data?.insignia && (
-          <span className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</span>
+          <ConEmoji className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</ConEmoji>
         )}
       </div>
     </div>
@@ -344,7 +345,8 @@ function Identidad() {
   return (
     <div style={{ cursor: "pointer", padding: "2px 4px 18px" }} onClick={empezarEdicion}>
       {perfil.data?.nombre_usuario ? (
-        <h2
+        <ConEmoji
+          as="h2"
           style={{
             margin: 0,
             fontFamily: "var(--font-display)",
@@ -355,7 +357,7 @@ function Identidad() {
           }}
         >
           {perfil.data.nombre_usuario}
-        </h2>
+        </ConEmoji>
       ) : (
         <p className="arv-muted" style={{ margin: 0 }}>
           {t("perfil.agregarUsuario")}
@@ -369,12 +371,13 @@ function Identidad() {
         </p>
       )}
       {perfil.data?.bio && (
-        <p
+        <ConEmoji
+          as="p"
           className="arv-muted"
           style={{ marginBottom: 0, marginTop: 8, fontStyle: "italic", fontSize: 14.5, lineHeight: 1.5 }}
         >
           {perfil.data.bio}
-        </p>
+        </ConEmoji>
       )}
     </div>
   );
@@ -779,7 +782,7 @@ function CitaFavorita() {
   return (
     <div className="arv-cita-card" style={{ marginBottom: 14, cursor: "pointer" }} onClick={empezarEdicion}>
       <span className="etiqueta">{t("perfil.citaFavoritaEtiqueta")}</span>
-      <p>“{perfil.data.cita_texto}”</p>
+      <ConEmoji as="p">“{perfil.data.cita_texto}”</ConEmoji>
       {perfil.data.cita_fuente && <span className="fuente">{t("perfil.de", { fuente: perfil.data.cita_fuente })}</span>}
     </div>
   );

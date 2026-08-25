@@ -4,6 +4,7 @@ import { StickyNote } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { ConEmoji } from "../components/ConEmoji";
 import { ImportarPorUrl } from "../components/ImportarPorUrl";
 import { MultiSelect } from "../components/MultiSelect";
 
@@ -273,7 +274,8 @@ export function Buscar() {
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
               {conNota && fic.nota_bookmark && (
-                <div
+                <ConEmoji
+                  as="div"
                   className="arv-muted"
                   style={{
                     fontStyle: "italic",
@@ -284,7 +286,7 @@ export function Buscar() {
                   }}
                 >
                   “{fic.nota_bookmark}”
-                </div>
+                </ConEmoji>
               )}
             </div>
             <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
