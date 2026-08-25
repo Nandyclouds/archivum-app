@@ -243,6 +243,20 @@ def test_filtrar_fics_por_idioma(client, db_session):
     assert [f["titulo"] for f in r.json()] == ["A"]
 
 
+def test_filtrar_fics_por_con_nota(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    a.nota_bookmark = "qué lindo esto"
+    _crear_fic(db_session, ao3_id="2", titulo="B")
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"con_nota": True})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+    assert r.json()[0]["nota_bookmark"] == "qué lindo esto"
+
+    r_todos = client.get("/api/fics")
+    assert len(r_todos.json()) == 2
+
+
 def test_filtrar_fics_por_rating(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     a.rating = "Explicit"

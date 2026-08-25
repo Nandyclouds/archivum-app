@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { StickyNote } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
@@ -21,6 +22,7 @@ export function Buscar() {
   const idioma = searchParams.get("idioma") || "";
   const estado = searchParams.get("estado") || "";
   const completo = searchParams.get("completo"); // "true" | "false" | null
+  const conNota = searchParams.get("con_nota") === "1";
 
   function setFiltro(clave, valor) {
     const next = new URLSearchParams(searchParams);
@@ -54,6 +56,7 @@ export function Buscar() {
         idioma,
         estado,
         ...(completo !== null ? { completo } : {}),
+        ...(conNota ? { con_nota: true } : {}),
         limit: 100,
       }),
     [
@@ -69,6 +72,7 @@ export function Buscar() {
       idioma,
       estado,
       completo,
+      conNota,
     ]
   );
 
@@ -82,7 +86,8 @@ export function Buscar() {
     categoria ||
     idioma ||
     estado ||
-    completo !== null;
+    completo !== null ||
+    conNota;
 
   return (
     <div>
@@ -177,15 +182,26 @@ export function Buscar() {
         </select>
       </div>
 
-      <div className="arv-segmentado" style={{ marginBottom: 10, width: "fit-content" }}>
-        <button className={completo === null ? "active" : ""} onClick={() => setFiltro("completo", "")}>
-          {t("buscar.todos")}
-        </button>
-        <button className={completo === "true" ? "active" : ""} onClick={() => setFiltro("completo", "true")}>
-          {t("buscar.completos")}
-        </button>
-        <button className={completo === "false" ? "active" : ""} onClick={() => setFiltro("completo", "false")}>
-          {t("buscar.wip")}
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
+        <div className="arv-segmentado" style={{ width: "fit-content" }}>
+          <button className={completo === null ? "active" : ""} onClick={() => setFiltro("completo", "")}>
+            {t("buscar.todos")}
+          </button>
+          <button className={completo === "true" ? "active" : ""} onClick={() => setFiltro("completo", "true")}>
+            {t("buscar.completos")}
+          </button>
+          <button className={completo === "false" ? "active" : ""} onClick={() => setFiltro("completo", "false")}>
+            {t("buscar.wip")}
+          </button>
+        </div>
+        <button
+          className={`arv-icon-btn${conNota ? " active" : ""}`}
+          onClick={() => setFiltro("con_nota", conNota ? "" : "1")}
+          aria-label={t("buscar.conNota")}
+          title={t("buscar.conNota")}
+          style={conNota ? { background: "var(--color-accent)", color: "var(--color-surface)" } : undefined}
+        >
+          <StickyNote size={16} />
         </button>
       </div>
 
@@ -200,6 +216,7 @@ export function Buscar() {
           {completo !== null && (
             <span className="arv-tag arv-tag-accent-2">{completo === "true" ? t("buscar.completos") : t("buscar.wip")}</span>
           )}
+          {conNota && <span className="arv-tag arv-tag-accent-2">{t("buscar.conNota")}</span>}
           <button
             className="arv-tab"
             onClick={() => {
@@ -247,9 +264,23 @@ export function Buscar() {
       <div className="arv-card">
         {fics.data?.map((fic) => (
           <Link key={fic.id} to={`/fics/${fic.id}`} className="arv-fic-row">
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
+              {conNota && fic.nota_bookmark && (
+                <div
+                  className="arv-muted"
+                  style={{
+                    fontStyle: "italic",
+                    fontSize: 12.5,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  “{fic.nota_bookmark}”
+                </div>
+              )}
             </div>
             <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
               {formatoCompacto(fic.word_count)}

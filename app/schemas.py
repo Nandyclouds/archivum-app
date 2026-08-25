@@ -142,6 +142,7 @@ class FicListItem(BaseModel):
     ships: list[ShipOut] = []
     etiquetas_personales: list[EtiquetaPersonalOut] = []
     estado_actual: str | None = None
+    nota_bookmark: str | None = None
 
 
 class ArchivoResumen(BaseModel):

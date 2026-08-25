@@ -64,6 +64,7 @@ def listar_fics(
     coleccion: int | None = Query(None, description="Id de colección"),
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
     completo: bool | None = Query(None, description="Filtra por fic.complete (True=completos, False=WIP)"),
+    con_nota: bool = Query(False, description="Si es True, solo fics con nota_bookmark"),
     anio: int | None = Query(None, description="Restringe a fics con una lectura 'leido' completada este año"),
     incluir_borrados: bool = False,
     orden: str = Query(
@@ -104,6 +105,8 @@ def listar_fics(
         query = query.filter(func.instr("|" + Fic.categorias + "|", f"|{categoria}|") > 0)
     if idioma:
         query = query.filter(Fic.idioma == idioma)
+    if con_nota:
+        query = query.filter(Fic.nota_bookmark.isnot(None))
     if etiqueta:
         query = query.join(Fic.etiquetas_personales).filter(EtiquetaPersonal.nombre == etiqueta)
     if coleccion is not None:
