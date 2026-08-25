@@ -211,6 +211,9 @@
     "volverAlPanel": "Back to dashboard"
   },
   "perfil": {
+    "nombreUsuarioPlaceholder": "Your username…",
+    "bioPlaceholder": "A short bio…",
+    "agregarUsuario": "Add a username",
     "cambiarFoto": "Change photo",
     "moverFoto": "Move photo",
     "verEnGrande": "View full size",

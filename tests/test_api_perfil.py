@@ -68,6 +68,8 @@ def test_obtener_perfil_vacio(client):
         "portada_posicion": "50% 50%",
         "cita_texto": None,
         "cita_fuente": None,
+        "nombre_usuario": None,
+        "bio": None,
     }
 
 
@@ -154,6 +156,34 @@ def test_borrar_cita_con_texto_vacio(client):
     r = client.get("/api/perfil")
     assert r.json()["cita_texto"] is None
     assert r.json()["cita_fuente"] is None
+
+
+def test_actualizar_identidad(client):
+    r = client.patch("/api/perfil", json={"nombre_usuario": "mafe", "bio": "throw a punch, fall in love"})
+    assert r.status_code == 200
+
+    body = client.get("/api/perfil").json()
+    assert body["nombre_usuario"] == "mafe"
+    assert body["bio"] == "throw a punch, fall in love"
+
+
+def test_actualizar_identidad_no_pisa_la_cita(client):
+    client.patch("/api/perfil", json={"cita_texto": "una cita", "cita_fuente": "un fic"})
+    client.patch("/api/perfil", json={"nombre_usuario": "mafe"})
+
+    body = client.get("/api/perfil").json()
+    assert body["nombre_usuario"] == "mafe"
+    assert body["cita_texto"] == "una cita"
+    assert body["cita_fuente"] == "un fic"
+
+
+def test_actualizar_cita_no_pisa_la_identidad(client):
+    client.patch("/api/perfil", json={"nombre_usuario": "mafe", "bio": "hola"})
+    client.patch("/api/perfil", json={"cita_texto": "una cita", "cita_fuente": "un fic"})
+
+    body = client.get("/api/perfil").json()
+    assert body["nombre_usuario"] == "mafe"
+    assert body["bio"] == "hola"
 
 
 def test_favoritos_vacio(client):

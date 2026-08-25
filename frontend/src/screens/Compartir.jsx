@@ -69,7 +69,7 @@ export function Compartir() {
           {t("compartir.importar")}
         </button>
       </div>
-      <Link to="/" className="arv-muted" style={{ display: "block", marginTop: 12 }}>
+      <Link to="/panel" className="arv-muted" style={{ display: "block", marginTop: 12 }}>
         {t("compartir.volverAlPanel")}
       </Link>
     </div>

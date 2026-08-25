@@ -211,6 +211,9 @@
     "volverAlPanel": "Volver al panel"
   },
   "perfil": {
+    "nombreUsuarioPlaceholder": "Tu nombre de usuario…",
+    "bioPlaceholder": "Una bio corta…",
+    "agregarUsuario": "Agregar nombre de usuario",
     "cambiarFoto": "Cambiar foto",
     "moverFoto": "Mover foto",
     "verEnGrande": "Ver en grande",

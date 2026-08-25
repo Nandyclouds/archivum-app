@@ -4,8 +4,8 @@ import { LayoutDashboard, User, Search, Library, Archive, Cloud, Bell } from "lu
 import { useNovedades } from "../lib/NovedadesContext";
 
 const TABS = [
-  { to: "/perfil", key: "perfil", icon: User },
-  { to: "/", key: "panel", icon: LayoutDashboard, end: true },
+  { to: "/", key: "perfil", icon: User, end: true },
+  { to: "/panel", key: "panel", icon: LayoutDashboard },
   { to: "/buscar", key: "buscar", icon: Search },
   { to: "/colecciones", key: "colecciones", icon: Library },
   { to: "/novedades", key: "novedades", icon: Bell },

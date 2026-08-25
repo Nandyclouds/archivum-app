@@ -372,6 +372,8 @@ class PerfilConfig(Base):
     __tablename__ = "perfil_config"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    nombre_usuario: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Posición del recorte dentro del marco circular/rectangular, como CSS

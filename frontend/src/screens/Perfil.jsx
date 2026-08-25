@@ -22,6 +22,7 @@ export function Perfil() {
   return (
     <div>
       <CabeceraPerfil />
+      <Identidad />
       <Favoritos />
       <Graficos />
       <CitaFavorita />
@@ -242,6 +243,79 @@ function EditorFoto({ tipo, tieneFoto, url, posicion, contenedorClassName, place
         </div>
       )}
     </>
+  );
+}
+
+function Identidad() {
+  const { t } = useTranslation();
+  const perfil = useFetch(() => api.perfil.get());
+  const [editando, setEditando] = useState(false);
+  const [nombreUsuario, setNombreUsuario] = useState("");
+  const [bio, setBio] = useState("");
+  const [guardando, setGuardando] = useState(false);
+
+  function empezarEdicion() {
+    setNombreUsuario(perfil.data?.nombre_usuario ?? "");
+    setBio(perfil.data?.bio ?? "");
+    setEditando(true);
+  }
+
+  async function guardar() {
+    setGuardando(true);
+    try {
+      await api.perfil.actualizarIdentidad(nombreUsuario, bio);
+      setEditando(false);
+      perfil.reload();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  if (editando) {
+    return (
+      <div className="arv-card">
+        <input
+          className="arv-input"
+          style={{ marginBottom: 8 }}
+          placeholder={t("perfil.nombreUsuarioPlaceholder")}
+          value={nombreUsuario}
+          onChange={(e) => setNombreUsuario(e.target.value)}
+          autoFocus
+        />
+        <textarea
+          className="arv-input"
+          style={{ resize: "vertical", minHeight: 60, marginBottom: 10 }}
+          placeholder={t("perfil.bioPlaceholder")}
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="arv-btn" disabled={guardando} onClick={guardar}>
+            {t("common.guardar")}
+          </button>
+          <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(false)}>
+            {t("common.cancelar")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="arv-card" style={{ cursor: "pointer" }} onClick={empezarEdicion}>
+      {perfil.data?.nombre_usuario ? (
+        <h2 style={{ margin: 0 }}>{perfil.data.nombre_usuario}</h2>
+      ) : (
+        <p className="arv-muted" style={{ margin: 0 }}>
+          {t("perfil.agregarUsuario")}
+        </p>
+      )}
+      {perfil.data?.bio && (
+        <p style={{ marginBottom: 0, marginTop: 6 }}>{perfil.data.bio}</p>
+      )}
+    </div>
   );
 }
 

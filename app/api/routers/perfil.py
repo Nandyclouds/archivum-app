@@ -51,19 +51,27 @@ def obtener_perfil(db: Session = Depends(get_session)):
         "portada_posicion": config.portada_posicion if config else "50% 50%",
         "cita_texto": config.cita_texto if config else None,
         "cita_fuente": config.cita_fuente if config else None,
+        "nombre_usuario": config.nombre_usuario if config else None,
+        "bio": config.bio if config else None,
     }
 
 
-class CitaUpdate(BaseModel):
+class PerfilUpdate(BaseModel):
     cita_texto: str | None = None
     cita_fuente: str | None = None
+    nombre_usuario: str | None = None
+    bio: str | None = None
 
 
 @router.patch("")
-def actualizar_perfil(payload: CitaUpdate, db: Session = Depends(get_session)):
+def actualizar_perfil(payload: PerfilUpdate, db: Session = Depends(get_session)):
+    """Solo toca los campos que vinieron en el pedido (no pisa el resto) —
+    así guardar el usuario no borra la cita, y viceversa."""
     config = _get_or_create_config(db)
-    config.cita_texto = payload.cita_texto.strip() if payload.cita_texto else None
-    config.cita_fuente = payload.cita_fuente.strip() if payload.cita_fuente else None
+    for campo, valor in payload.model_dump(exclude_unset=True).items():
+        if isinstance(valor, str):
+            valor = valor.strip() or None
+        setattr(config, campo, valor)
     db.commit()
     return {"ok": True}
 

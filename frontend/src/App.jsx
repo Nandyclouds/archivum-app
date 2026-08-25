@@ -26,9 +26,9 @@ export default function App() {
             </header>
             <main className="arv-main">
               <Routes>
-                <Route path="/" element={<Panel />} />
+                <Route path="/" element={<Perfil />} />
+                <Route path="/panel" element={<Panel />} />
                 <Route path="/panel/top/:tipo" element={<TopCompleto />} />
-                <Route path="/perfil" element={<Perfil />} />
                 <Route path="/buscar" element={<Buscar />} />
                 <Route path="/fics/:id" element={<FicDetalle />} />
                 <Route path="/colecciones" element={<Colecciones />} />
