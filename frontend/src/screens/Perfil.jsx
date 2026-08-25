@@ -450,16 +450,25 @@ function Ajustes() {
   const { t, i18n } = useTranslation();
   const [tema, setTema] = useState(obtenerTema());
   const [color, setColor] = useState(obtenerColorAcento());
+  const [textoColor, setTextoColor] = useState(obtenerColorAcento());
 
   function cambiarTema(valor) {
     aplicarTema(valor);
     setTema(valor);
     setColor(obtenerColorAcento());
+    setTextoColor(obtenerColorAcento());
   }
 
   function cambiarColor(hex) {
     aplicarColorAcento(hex);
     setColor(hex);
+    setTextoColor(hex);
+  }
+
+  function cambiarTextoColor(valor) {
+    setTextoColor(valor);
+    const hex = valor.startsWith("#") ? valor : `#${valor}`;
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) cambiarColor(hex);
   }
 
   return (
@@ -498,13 +507,25 @@ function Ajustes() {
 
       <div className="arv-ajustes-fila">
         <span className="arv-ajustes-label">{t("perfil.colorDeAcento")}</span>
-        <input
-          type="color"
-          className="arv-color-swatch"
-          value={color}
-          onChange={(e) => cambiarColor(e.target.value)}
-          aria-label={t("perfil.colorDeAcento")}
-        />
+        <div className="arv-color-picker">
+          <input
+            type="text"
+            className="arv-color-hex"
+            value={textoColor}
+            onChange={(e) => cambiarTextoColor(e.target.value)}
+            onBlur={() => setTextoColor(color)}
+            maxLength={7}
+            spellCheck={false}
+            aria-label={t("perfil.colorDeAcento")}
+          />
+          <input
+            type="color"
+            className="arv-color-swatch"
+            value={color}
+            onChange={(e) => cambiarColor(e.target.value)}
+            aria-label={t("perfil.colorDeAcento")}
+          />
+        </div>
       </div>
     </div>
   );

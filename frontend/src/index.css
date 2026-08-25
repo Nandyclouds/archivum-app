@@ -663,6 +663,21 @@ select.arv-input {
   background: var(--color-accent);
   color: var(--color-surface);
 }
+.arv-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.arv-color-hex {
+  width: 92px;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 13px;
+  font-family: monospace;
+  text-transform: lowercase;
+}
 .arv-color-swatch {
   width: 36px;
   height: 36px;
@@ -672,6 +687,7 @@ select.arv-input {
   padding: 0;
   cursor: pointer;
   background: var(--color-accent);
+  flex: none;
 }
 .arv-color-swatch::-webkit-color-swatch-wrapper {
   padding: 0;
