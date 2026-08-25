@@ -149,6 +149,30 @@ a {
   overflow-y: auto;
 }
 
+.arv-main-full-bleed {
+  padding-top: 0;
+}
+.arv-main-full-bleed .arv-perfil-header {
+  margin-left: -24px;
+  margin-right: -24px;
+}
+.arv-main-full-bleed .arv-perfil-portada {
+  border-radius: 0;
+}
+
+.arv-navbar-abajo {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--color-bg);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 10px rgba(43, 33, 24, 0.12);
+}
+
 .arv-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);

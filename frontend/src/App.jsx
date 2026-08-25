@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthGate } from "./components/AuthGate";
 import { NavBar } from "./components/NavBar";
 import { NovedadesProvider } from "./lib/NovedadesContext";
@@ -14,32 +14,47 @@ import { Ao3 } from "./screens/Ao3";
 import { Novedades } from "./screens/Novedades";
 import { Compartir } from "./screens/Compartir";
 
+function AppShell() {
+  const location = useLocation();
+  // En Perfil (pantalla de inicio) la portada llega hasta arriba de todo,
+  // sin el título ni la barra encima empujándola — la barra se muestra
+  // fija abajo en su lugar, para no perder la forma de navegar.
+  const esPerfil = location.pathname === "/";
+
+  return (
+    <div className="arv-app">
+      {!esPerfil && (
+        <header className="arv-topbar">
+          <h1>Archivum</h1>
+          <NavBar />
+        </header>
+      )}
+      <main className={`arv-main${esPerfil ? " arv-main-full-bleed" : ""}`}>
+        <Routes>
+          <Route path="/" element={<Perfil />} />
+          <Route path="/panel" element={<Panel />} />
+          <Route path="/panel/top/:tipo" element={<TopCompleto />} />
+          <Route path="/buscar" element={<Buscar />} />
+          <Route path="/fics/:id" element={<FicDetalle />} />
+          <Route path="/colecciones" element={<Colecciones />} />
+          <Route path="/colecciones/:id" element={<ColeccionDetalle />} />
+          <Route path="/archivo" element={<Archivo />} />
+          <Route path="/ao3" element={<Ao3 />} />
+          <Route path="/novedades" element={<Novedades />} />
+          <Route path="/compartir" element={<Compartir />} />
+        </Routes>
+      </main>
+      {esPerfil && <NavBar className="arv-navbar-abajo" />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthGate>
       <NovedadesProvider>
         <BrowserRouter>
-          <div className="arv-app">
-            <header className="arv-topbar">
-              <h1>Archivum</h1>
-              <NavBar />
-            </header>
-            <main className="arv-main">
-              <Routes>
-                <Route path="/" element={<Perfil />} />
-                <Route path="/panel" element={<Panel />} />
-                <Route path="/panel/top/:tipo" element={<TopCompleto />} />
-                <Route path="/buscar" element={<Buscar />} />
-                <Route path="/fics/:id" element={<FicDetalle />} />
-                <Route path="/colecciones" element={<Colecciones />} />
-                <Route path="/colecciones/:id" element={<ColeccionDetalle />} />
-                <Route path="/archivo" element={<Archivo />} />
-                <Route path="/ao3" element={<Ao3 />} />
-                <Route path="/novedades" element={<Novedades />} />
-                <Route path="/compartir" element={<Compartir />} />
-              </Routes>
-            </main>
-          </div>
+          <AppShell />
         </BrowserRouter>
       </NovedadesProvider>
     </AuthGate>

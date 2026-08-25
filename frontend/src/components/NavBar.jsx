@@ -13,13 +13,13 @@ const TABS = [
   { to: "/archivo", key: "archivo", icon: Archive },
 ];
 
-export function NavBar() {
+export function NavBar({ className = "" }) {
   const { t } = useTranslation();
   const { lista } = useNovedades();
   const noLeidas = lista.length;
 
   return (
-    <nav className="arv-scrollnav">
+    <nav className={`arv-scrollnav${className ? ` ${className}` : ""}`}>
       {TABS.map(({ to, key, icon: Icon, end }) => (
         <NavLink
           key={to}
