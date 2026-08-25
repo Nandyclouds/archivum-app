@@ -1,17 +1,12 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { ImportarPorUrl } from "../components/ImportarPorUrl";
 
-const ESTADO_LABEL = {
-  leido: "Leídos",
-  leyendo: "Leyendo",
-  abandonado: "Abandonados",
-  pendiente: "Pendientes",
-};
-
 export function Buscar() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") || "";
   const fandom = searchParams.get("fandom") || "";
@@ -60,7 +55,7 @@ export function Buscar() {
       <ImportarPorUrl />
       <input
         className="arv-input"
-        placeholder="Buscar en tu biblioteca…"
+        placeholder={t("buscar.buscarPlaceholder")}
         value={q}
         onChange={(e) => setFiltro("q", e.target.value)}
         style={{ marginBottom: 10 }}
@@ -72,7 +67,7 @@ export function Buscar() {
           className="arv-input"
           style={{ flex: 1, minWidth: 0 }}
           list="opciones-personajes"
-          placeholder="Personaje…"
+          placeholder={t("buscar.personajePlaceholder")}
           defaultValue={personaje}
           onBlur={(e) => setFiltro("personaje", e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && setFiltro("personaje", e.target.value)}
@@ -82,7 +77,7 @@ export function Buscar() {
           className="arv-input"
           style={{ flex: 1, minWidth: 0 }}
           list="opciones-tags"
-          placeholder="Tag adicional…"
+          placeholder={t("buscar.tagPlaceholder")}
           defaultValue={tag}
           onBlur={(e) => setFiltro("tag", e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && setFiltro("tag", e.target.value)}
@@ -92,7 +87,7 @@ export function Buscar() {
         {opciones.data?.personajes.map((p) => <option value={p} key={p} />)}
       </datalist>
       <datalist id="opciones-tags">
-        {opciones.data?.tags.map((t) => <option value={t} key={t} />)}
+        {opciones.data?.tags.map((tagOpcion) => <option value={tagOpcion} key={tagOpcion} />)}
       </datalist>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -102,7 +97,7 @@ export function Buscar() {
           value={rating}
           onChange={(e) => setFiltro("rating", e.target.value)}
         >
-          <option value="">Rating</option>
+          <option value="">{t("buscar.rating")}</option>
           {opciones.data?.ratings.map((r) => (
             <option value={r} key={r}>
               {r}
@@ -115,7 +110,7 @@ export function Buscar() {
           value={warning}
           onChange={(e) => setFiltro("warning", e.target.value)}
         >
-          <option value="">Warnings</option>
+          <option value="">{t("buscar.warnings")}</option>
           {opciones.data?.warnings.map((w) => (
             <option value={w} key={w}>
               {w}
@@ -132,9 +127,9 @@ export function Buscar() {
           {tag && <span className="arv-tag arv-tag-accent-2">{tag}</span>}
           {rating && <span className="arv-tag arv-tag-accent-2">{rating}</span>}
           {warning && <span className="arv-tag arv-tag-accent-2">{warning}</span>}
-          {estado && <span className="arv-tag arv-tag-accent-2">{ESTADO_LABEL[estado] ?? estado}</span>}
+          {estado && <span className="arv-tag arv-tag-accent-2">{t(`buscar.estadoLabel.${estado}`, estado)}</span>}
           {completo !== null && (
-            <span className="arv-tag arv-tag-accent-2">{completo === "true" ? "Completos" : "WIP"}</span>
+            <span className="arv-tag arv-tag-accent-2">{completo === "true" ? t("buscar.completos") : t("buscar.wip")}</span>
           )}
           <button
             className="arv-tab"
@@ -142,14 +137,14 @@ export function Buscar() {
               setSearchParams({ ...(q ? { q } : {}), ...(fandom ? { fandom } : {}) }, { replace: true });
             }}
           >
-            Limpiar
+            {t("buscar.limpiar")}
           </button>
         </div>
       )}
 
       <div className="arv-scrollnav" style={{ marginBottom: 14 }}>
         <button className={`arv-tab${fandom === "" ? " active" : ""}`} onClick={() => setFiltro("fandom", "")}>
-          Todos
+          {t("buscar.todos")}
         </button>
         {fandoms.data?.map((f) => (
           <button
@@ -178,19 +173,19 @@ export function Buscar() {
 
       {fics.loading && <Cargando />}
       {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
-      {fics.data?.length === 0 && <Vacio>No encontré fics con esos filtros.</Vacio>}
+      {fics.data?.length === 0 && <Vacio>{t("buscar.sinResultados")}</Vacio>}
 
       <div className="arv-card">
         {fics.data?.map((fic) => (
           <Link key={fic.id} to={`/fics/${fic.id}`} className="arv-fic-row">
             <div>
-              <div className="fandom">{fic.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
             </div>
             <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
               {formatoCompacto(fic.word_count)}
               <br />
-              {fic.estado_actual ?? "sin estado"}
+              {fic.estado_actual ? t(`buscar.estadoLabel.${fic.estado_actual}`, fic.estado_actual) : t("common.sinEstado")}
             </div>
           </Link>
         ))}

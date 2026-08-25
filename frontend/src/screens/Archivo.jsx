@@ -1,12 +1,12 @@
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { abrirEnNavegadorExterno, descargarArchivo } from "../lib/abrirExterno";
 import { InfoPopover } from "../components/InfoPopover";
 
-const FORMATO_LABEL = { html: "Ver copia", epub: "Descargar EPUB" };
-
 export function Archivo() {
+  const { t, i18n } = useTranslation();
   const archivos = useFetch(() => api.archivos.list());
 
   if (archivos.loading) return <Cargando />;
@@ -20,20 +20,20 @@ export function Archivo() {
     }
   }
 
+  const FORMATO_LABEL = { html: t("archivo.verCopia"), epub: t("archivo.descargarEpub") };
+
   return (
     <div>
       <div className="arv-card">
         <h2 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          Archivo tipo Wayback Machine
+          {t("archivo.titulo")}
           <InfoPopover>
-            Copia HTML guardada automáticamente al importar cada fic, por si el original
-            desaparece. El EPUB es aparte y hay que pedirlo (botón en cada fic, o{" "}
-            <code>download --all-unarchived</code> desde la terminal).
+            {t("archivo.infoParte1")} <code>download --all-unarchived</code> {t("archivo.infoParte2")}
           </InfoPopover>
         </h2>
       </div>
 
-      {archivos.data.length === 0 && <Vacio>Todavía no hay nada archivado.</Vacio>}
+      {archivos.data.length === 0 && <Vacio>{t("archivo.sinArchivos")}</Vacio>}
 
       <div className="arv-card">
         {archivos.data.map((a) => (
@@ -41,7 +41,7 @@ export function Archivo() {
             <div>
               <div style={{ fontWeight: 600 }}>{a.fic_titulo}</div>
               <div className="arv-muted">
-                guardado {new Date(a.fecha_descarga).toLocaleDateString()}
+                {t("archivo.guardado", { fecha: new Date(a.fecha_descarga).toLocaleDateString(i18n.language) })}
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, width: 130 }}>
@@ -49,7 +49,7 @@ export function Archivo() {
                 className={`arv-tag ${a.fic_deleted_detected_at ? "arv-tag-accent" : "arv-tag-accent-2"}`}
                 style={{ justifyContent: "center" }}
               >
-                {a.fic_deleted_detected_at ? "Original eliminado" : "Disponible"}
+                {a.fic_deleted_detected_at ? t("archivo.originalEliminado") : t("archivo.disponible")}
               </span>
               <button
                 className="arv-btn arv-btn-secondary"
@@ -59,7 +59,7 @@ export function Archivo() {
               </button>
               {a.formato === "html" && (
                 <button className="arv-btn arv-btn-secondary" onClick={() => descargarHtml(a)}>
-                  Descargar
+                  {t("archivo.descargar")}
                 </button>
               )}
             </div>

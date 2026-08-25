@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 
-const TIPO_LABEL = {
-  personalizada: "Personalizada",
-  bookmark_tag: "Tag de AO3",
-  fandom: "Fandom",
-  ship: "Ship",
-  estado: "Estado",
-};
-
 export function Colecciones() {
+  const { t } = useTranslation();
   const colecciones = useFetch(() => api.colecciones.list());
   const [nombreNueva, setNombreNueva] = useState("");
   const [creando, setCreando] = useState(false);
@@ -34,33 +28,33 @@ export function Colecciones() {
 
   return (
     <div>
-      {colecciones.data.length === 0 && <Vacio>Todavía no tenés colecciones.</Vacio>}
+      {colecciones.data.length === 0 && <Vacio>{t("colecciones.sinColecciones")}</Vacio>}
 
       <div className="arv-card">
         {colecciones.data.map((c) => (
           <Link to={`/colecciones/${c.id}`} className="arv-list-item arv-row-link" key={c.id}>
             <div>
               <span className="arv-tag arv-tag-accent-2" style={{ marginRight: 8 }}>
-                {TIPO_LABEL[c.tipo] ?? c.tipo}
+                {t(`colecciones.tipoLabel.${c.tipo}`, c.tipo)}
               </span>
               {c.nombre}
             </div>
-            <span className="arv-muted">{c.cantidad_fics} fics</span>
+            <span className="arv-muted">{t("colecciones.fics", { count: c.cantidad_fics })}</span>
           </Link>
         ))}
       </div>
 
       <div className="arv-card">
-        <h3>Nueva colección</h3>
+        <h3>{t("colecciones.nuevaColeccion")}</h3>
         <div style={{ display: "flex", gap: 8 }}>
           <input
             className="arv-input"
-            placeholder="Nombre"
+            placeholder={t("colecciones.nombrePlaceholder")}
             value={nombreNueva}
             onChange={(e) => setNombreNueva(e.target.value)}
           />
           <button className="arv-btn" disabled={creando} onClick={crear}>
-            Crear
+            {t("common.crear")}
           </button>
         </div>
       </div>

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 
 export function ColeccionDetalle() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const coleccion = useFetch(() => api.colecciones.get(id), [id]);
@@ -55,7 +57,7 @@ export function ColeccionDetalle() {
                 setEditando(true);
               }}
             >
-              Editar
+              {t("common.editar")}
             </button>
           </div>
         ) : (
@@ -67,32 +69,32 @@ export function ColeccionDetalle() {
               autoFocus
             />
             <button className="arv-btn" disabled={guardando} onClick={guardarNombre}>
-              Guardar
+              {t("common.guardar")}
             </button>
             <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(false)}>
-              Cancelar
+              {t("common.cancelar")}
             </button>
           </div>
         )}
         <p className="arv-muted" style={{ marginBottom: 0 }}>
-          {c.cantidad_fics} fics
+          {t("coleccionDetalle.fics", { count: c.cantidad_fics })}
         </p>
       </div>
 
       {fics.loading && <Cargando />}
       {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
-      {fics.data?.length === 0 && <Vacio>Todavía no agregaste ningún fic acá.</Vacio>}
+      {fics.data?.length === 0 && <Vacio>{t("coleccionDetalle.sinFics")}</Vacio>}
 
       <div className="arv-card">
         {fics.data?.map((fic) => (
           <div className="arv-list-item" key={fic.id}>
             <Link to={`/fics/${fic.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-              <div className="fandom">{fic.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
             </Link>
             <button
               onClick={() => quitarFic(fic.id)}
-              aria-label="Quitar de la colección"
+              aria-label={t("coleccionDetalle.quitarDeColeccion")}
               style={{
                 border: "none",
                 background: "transparent",
@@ -110,7 +112,7 @@ export function ColeccionDetalle() {
 
       <div className="arv-card">
         <button className="arv-btn arv-btn-secondary" onClick={borrarColeccion}>
-          Borrar colección
+          {t("coleccionDetalle.borrarColeccion")}
         </button>
       </div>
     </div>

@@ -18,6 +18,32 @@
   --shadow-card: 0 2px 10px rgba(43, 33, 24, 0.08);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #1c1712;
+    --color-surface: #2a2119;
+    --color-surface-2: #362c20;
+    --color-text: #f0e6d8;
+    --color-text-muted: #b3a28c;
+    --color-border: #4a3c2c;
+    --color-accent-soft: #4a2f22;
+    --color-accent-2-soft: #33402a;
+    --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #1c1712;
+  --color-surface: #2a2119;
+  --color-surface-2: #362c20;
+  --color-text: #f0e6d8;
+  --color-text-muted: #b3a28c;
+  --color-border: #4a3c2c;
+  --color-accent-soft: #4a2f22;
+  --color-accent-2-soft: #33402a;
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -600,4 +626,61 @@ select.arv-input {
 .arv-fic-row .meta {
   font-size: 12px;
   color: var(--color-text-muted);
+}
+
+.arv-ajustes-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+}
+.arv-ajustes-fila:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+.arv-ajustes-label {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.arv-segmentado {
+  display: flex;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 2px;
+}
+.arv-segmentado button {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.arv-segmentado button.active {
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+.arv-color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-card);
+  padding: 0;
+  cursor: pointer;
+  background: var(--color-accent);
+}
+.arv-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.arv-color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+.arv-color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
 }

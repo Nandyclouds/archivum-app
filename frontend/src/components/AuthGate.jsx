@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getToken, setToken } from "../lib/auth";
 import { api } from "../lib/api";
 
 export function AuthGate({ children }) {
+  const { t } = useTranslation();
   const [desbloqueado, setDesbloqueado] = useState(() => !!getToken());
   const [valor, setValor] = useState("");
   const [error, setError] = useState("");
@@ -13,7 +15,7 @@ export function AuthGate({ children }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!valor.trim()) {
-      setError("Ingresá el código de acceso.");
+      setError(t("authGate.faltaCodigo"));
       return;
     }
     setVerificando(true);
@@ -23,7 +25,7 @@ export function AuthGate({ children }) {
       await api.stats.resumen();
       setDesbloqueado(true);
     } catch (err) {
-      setError("Código incorrecto.");
+      setError(t("authGate.codigoIncorrecto"));
       setToken("");
     } finally {
       setVerificando(false);
@@ -36,7 +38,7 @@ export function AuthGate({ children }) {
         <div className="arv-card" style={{ width: "100%" }}>
           <h2>Archivum</h2>
           <p className="arv-muted" style={{ marginBottom: 16 }}>
-            Ingresá el código de acceso para entrar.
+            {t("authGate.subtitulo")}
           </p>
           <form onSubmit={handleSubmit}>
             <input
@@ -44,7 +46,7 @@ export function AuthGate({ children }) {
               type="password"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              placeholder="Código de acceso"
+              placeholder={t("authGate.placeholder")}
               autoFocus
               style={{ marginBottom: 12 }}
             />
@@ -52,7 +54,7 @@ export function AuthGate({ children }) {
               <p style={{ color: "var(--color-accent)", fontSize: 13, marginBottom: 12 }}>{error}</p>
             )}
             <button className="arv-btn" type="submit" disabled={verificando}>
-              {verificando ? "Verificando..." : "Entrar"}
+              {verificando ? t("authGate.verificando") : t("authGate.entrar")}
             </button>
           </form>
         </div>

@@ -1,16 +1,11 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 
-const TITULOS = {
-  fandoms: "Todos los fandoms",
-  romantico: "Todas las parejas",
-  platonico: "Todas las relaciones",
-  palabras: "Fics leídos por palabras",
-};
-
 export function TopCompleto() {
+  const { t } = useTranslation();
   const { tipo } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const anio = searchParams.get("anio") || "";
@@ -40,7 +35,10 @@ export function TopCompleto() {
   return (
     <div>
       <div className="arv-card">
-        <h2 style={{ marginBottom: 2 }}>{TITULOS[tipo] ?? "Todos"}{anio ? ` en ${anio}` : ""}</h2>
+        <h2 style={{ marginBottom: 2 }}>
+          {t(`topCompleto.titulos.${tipo}`, t("topCompleto.todos"))}
+          {anio ? ` ${t("topCompleto.enAnio", { anio })}` : ""}
+        </h2>
       </div>
 
       {aniosDisponibles.length > 0 && (
@@ -49,7 +47,7 @@ export function TopCompleto() {
             className={`arv-tab${anio === "" ? " active" : ""}`}
             onClick={() => setSearchParams({}, { replace: true })}
           >
-            Todos los años
+            {t("topCompleto.todosLosAnios")}
           </button>
           {aniosDisponibles.map((a) => (
             <button
@@ -65,18 +63,18 @@ export function TopCompleto() {
 
       {datos.loading && <Cargando />}
       {datos.error && <ErrorCarga error={datos.error} onReintentar={datos.reload} />}
-      {datos.data?.length === 0 && <Vacio>Nada para mostrar acá todavía.</Vacio>}
+      {datos.data?.length === 0 && <Vacio>{t("topCompleto.sinDatos")}</Vacio>}
 
       <div className="arv-card">
         {tipo === "palabras"
           ? datos.data?.map((fic) => (
               <Link to={`/fics/${fic.id}`} className="arv-fic-row" key={fic.id}>
                 <div>
-                  <div className="fandom">{fic.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+                  <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
                   <div className="titulo">{fic.titulo}</div>
                 </div>
                 <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                  {fic.word_count.toLocaleString()} palabras
+                  {fic.word_count.toLocaleString()} {t("common.palabras")}
                 </div>
               </Link>
             ))

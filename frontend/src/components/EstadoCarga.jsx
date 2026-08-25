@@ -1,14 +1,18 @@
+import { useTranslation } from "react-i18next";
+
 export function Cargando() {
-  return <p className="arv-muted">Cargando…</p>;
+  const { t } = useTranslation();
+  return <p className="arv-muted">{t("common.cargando")}</p>;
 }
 
 export function ErrorCarga({ error, onReintentar }) {
+  const { t } = useTranslation();
   return (
     <div className="arv-card">
-      <p className="arv-muted">No se pudo conectar con la API: {error.message}</p>
+      <p className="arv-muted">{t("common.errorApi", { msg: error.message })}</p>
       {onReintentar && (
         <button className="arv-btn arv-btn-secondary" onClick={onReintentar}>
-          Reintentar
+          {t("common.reintentar")}
         </button>
       )}
     </div>

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { InfoPopover } from "./InfoPopover";
 
 export function ImportarPorUrl() {
+  const { t } = useTranslation();
   const [url, setUrl] = useState("");
   const [estado, setEstado] = useState("idle"); // idle | cargando | disparado | error
   const [error, setError] = useState(null);
@@ -24,28 +26,22 @@ export function ImportarPorUrl() {
   return (
     <div className="arv-card">
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        Importar por link
-        <InfoPopover>
-          Pegá la URL de un fic de AO3 y se agrega a tu biblioteca. Funciona con fics con
-          candado porque usa tu sesión conectada. El import corre en GitHub Actions (no en este
-          server), así que tarda entre uno y varios minutos — no aparece al toque.
-        </InfoPopover>
+        {t("importarPorUrl.titulo")}
+        <InfoPopover>{t("importarPorUrl.info")}</InfoPopover>
       </h3>
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
-          placeholder="https://archiveofourown.org/works/..."
+          placeholder={t("importarPorUrl.placeholder")}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           disabled={estado === "cargando"}
         />
         <button className="arv-btn" disabled={estado === "cargando"} onClick={importar}>
-          {estado === "cargando" ? "Disparando…" : "Importar"}
+          {estado === "cargando" ? t("importarPorUrl.disparando") : t("importarPorUrl.importar")}
         </button>
       </div>
-      {estado === "disparado" && (
-        <p className="arv-muted">Import en camino — puede tardar unos minutos en aparecer.</p>
-      )}
+      {estado === "disparado" && <p className="arv-muted">{t("importarPorUrl.enCamino")}</p>}
       {error && <p style={{ color: "var(--color-accent)" }}>{error}</p>}
     </div>
   );

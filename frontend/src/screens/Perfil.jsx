@@ -1,26 +1,13 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Camera, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { cambiarIdioma } from "../i18n";
+import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
 
-const BUCKET_LABEL = {
-  "drabble (<1k)": "Drabble (<1k)",
-  "corto (1k-10k)": "Corto (1k-10k)",
-  "mediano (10k-40k)": "Mediano (10k-40k)",
-  "largo (40k-100k)": "Largo (40k-100k)",
-  "epico (100k+)": "Épico (100k+)",
-  sin_clasificar: "Sin clasificar",
-};
-const BUCKET_LABEL_CORTO = {
-  "drabble (<1k)": "Drabble",
-  "corto (1k-10k)": "Corto",
-  "mediano (10k-40k)": "Mediano",
-  "largo (40k-100k)": "Largo",
-  "epico (100k+)": "Épico",
-  sin_clasificar: "Otros",
-};
 const PALETA_FAVORITOS = [
   { bg: "var(--color-text)", fg: "var(--color-surface)" },
   { bg: "var(--color-accent)", fg: "var(--color-surface)" },
@@ -29,6 +16,7 @@ const PALETA_FAVORITOS = [
 ];
 
 export function Perfil() {
+  const { t } = useTranslation();
   const fics = useFetch(() => api.fics.list({ limit: 200, orden: "ultima_lectura" }));
 
   return (
@@ -37,21 +25,24 @@ export function Perfil() {
       <Favoritos />
       <Graficos />
       <CitaFavorita />
+      <Ajustes />
 
       <div className="arv-card">
-        <h3>Historial de lectura</h3>
+        <h3>{t("perfil.historialDeLectura")}</h3>
         {fics.loading && <Cargando />}
         {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
-        {fics.data?.length === 0 && <Vacio>Todavía no importaste ningún fic.</Vacio>}
+        {fics.data?.length === 0 && <Vacio>{t("perfil.sinFicsImportados")}</Vacio>}
         {fics.data?.map((f) => (
           <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
             <div>
-              <div className="fandom">{f.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
             </div>
             <div className="meta" style={{ textAlign: "right" }}>
-              <div>{f.estado_actual ?? "sin estado"}</div>
-              <div>{f.word_count.toLocaleString()} palabras</div>
+              <div>{f.estado_actual ?? t("common.sinEstado")}</div>
+              <div>
+                {f.word_count.toLocaleString()} {t("common.palabras")}
+              </div>
             </div>
           </Link>
         ))}
@@ -61,6 +52,7 @@ export function Perfil() {
 }
 
 function CabeceraPerfil() {
+  const { t } = useTranslation();
   const perfil = useFetch(() => api.perfil.get());
   const [version, setVersion] = useState(0);
   const portadaInput = useRef(null);
@@ -92,7 +84,7 @@ function CabeceraPerfil() {
         <button
           className="arv-perfil-editar arv-perfil-editar-portada"
           onClick={() => portadaInput.current.click()}
-          aria-label="Cambiar portada"
+          aria-label={t("perfil.cambiarPortada")}
         >
           <Camera size={15} />
         </button>
@@ -118,7 +110,7 @@ function CabeceraPerfil() {
         <button
           className="arv-perfil-editar arv-perfil-editar-avatar"
           onClick={() => avatarInput.current.click()}
-          aria-label="Cambiar foto de perfil"
+          aria-label={t("perfil.cambiarAvatar")}
         >
           <Camera size={13} />
         </button>
@@ -135,6 +127,7 @@ function CabeceraPerfil() {
 }
 
 function Favoritos() {
+  const { t } = useTranslation();
   const favoritos = useFetch(() => api.perfil.favoritos.list());
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState("");
@@ -164,10 +157,10 @@ function Favoritos() {
   return (
     <div className="arv-card">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <h3 style={{ marginBottom: 0 }}>Favoritos</h3>
+        <h3 style={{ marginBottom: 0 }}>{t("perfil.favoritos")}</h3>
         {coleccionId && total > 4 && (
           <Link to={`/colecciones/${coleccionId}`} className="arv-muted" style={{ fontSize: 12.5 }}>
-            ver los {total}
+            {t("perfil.verLos", { count: total })}
           </Link>
         )}
       </div>
@@ -180,7 +173,11 @@ function Favoritos() {
             style={{ background: PALETA_FAVORITOS[i % 4].bg, color: PALETA_FAVORITOS[i % 4].fg }}
           >
             <span>{f.titulo}</span>
-            <button className="arv-favorito-quitar" onClick={(e) => quitar(e, f.fic_id)} aria-label="Quitar de favoritos">
+            <button
+              className="arv-favorito-quitar"
+              onClick={(e) => quitar(e, f.fic_id)}
+              aria-label={t("perfil.quitarDeFavoritos")}
+            >
               ×
             </button>
           </Link>
@@ -195,7 +192,7 @@ function Favoritos() {
         <div style={{ marginTop: 12 }}>
           <input
             className="arv-input"
-            placeholder="Buscar un fic para agregar…"
+            placeholder={t("perfil.buscarFicPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             autoFocus
@@ -210,7 +207,7 @@ function Favoritos() {
               <span>{fic.titulo}</span>
             </div>
           ))}
-          {q && resultados.data?.length === 0 && <p className="arv-muted">Sin resultados.</p>}
+          {q && resultados.data?.length === 0 && <p className="arv-muted">{t("perfil.sinResultados")}</p>}
         </div>
       )}
     </div>
@@ -250,6 +247,7 @@ function GraficoAnios({ datos }) {
 }
 
 function BubbleLongitud({ datos }) {
+  const { t } = useTranslation();
   if (!datos) return null;
   const MAX_D = 108;
   const MIN_D = 20;
@@ -271,7 +269,7 @@ function BubbleLongitud({ datos }) {
       <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
         {datos.map(({ bucket }) => (
           <span key={bucket} className="arv-muted" style={{ fontSize: 10.5 }}>
-            {BUCKET_LABEL_CORTO[bucket] ?? bucket}
+            {t(`perfil.bucketLabelCorto.${bucket}`, { defaultValue: bucket })}
           </span>
         ))}
       </div>
@@ -280,6 +278,7 @@ function BubbleLongitud({ datos }) {
 }
 
 function Graficos() {
+  const { t } = useTranslation();
   const porAnio = useFetch(() => api.stats.palabrasPorAnio());
   const longitud = useFetch(() => api.stats.distribucionLongitud());
   const wipCompletos = useFetch(() => api.stats.ratioWipCompletos());
@@ -294,7 +293,7 @@ function Graficos() {
   return (
     <div className="arv-card">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-        <h3 style={{ marginBottom: 2 }}>Gráficos</h3>
+        <h3 style={{ marginBottom: 2 }}>{t("perfil.graficos")}</h3>
       </div>
 
       {porAnio.loading && <Cargando />}
@@ -302,7 +301,7 @@ function Graficos() {
         <>
           <div className="arv-graf-hero">
             <span className="numero">{formatoCompacto(ultimoAnio.palabras)}</span>
-            <span className="etiqueta">palabras en {ultimoAnio.periodo}</span>
+            <span className="etiqueta">{t("perfil.palabrasEnAnio", { anio: ultimoAnio.periodo })}</span>
           </div>
           <GraficoAnios datos={porAnio.data} />
           <div className="arv-graf-anio-labels">
@@ -312,17 +311,17 @@ function Graficos() {
           </div>
         </>
       )}
-      {porAnio.data?.length === 0 && <p className="arv-muted">Sin datos todavía.</p>}
+      {porAnio.data?.length === 0 && <p className="arv-muted">{t("perfil.sinDatosTodavia")}</p>}
 
       <div className="arv-graf-divider">
-        <span>Distribución por longitud</span>
+        <span>{t("perfil.distribucionPorLongitud")}</span>
         <span className="line" />
       </div>
       {longitud.loading && <Cargando />}
       <BubbleLongitud datos={longitud.data} />
 
       <div className="arv-graf-divider">
-        <span>Completos vs. WIP</span>
+        <span>{t("perfil.completosVsWip")}</span>
         <span className="line" />
       </div>
       {wipCompletos.data && totalCompletosWip > 0 && (
@@ -336,7 +335,7 @@ function Graficos() {
             >
               <div className="arv-donut-inner">
                 <span className="numero">{pctCompletos}%</span>
-                <span className="etiqueta">COMPLETOS</span>
+                <span className="etiqueta">{t("perfil.completos")}</span>
               </div>
             </div>
             <div className="arv-donut-legend">
@@ -346,21 +345,21 @@ function Graficos() {
               </span>
               <span>
                 <i style={{ background: "var(--color-accent-2-soft)" }} />
-                {wip} WIP
+                {wip} {t("perfil.wip")}
               </span>
             </div>
           </div>
           {resumen.data && (
             <div className="arv-racha-card">
               <span className="etiqueta">
-                Racha de
+                {t("perfil.rachaDeLectura")}
                 <br />
-                lectura
+                {t("perfil.lectura")}
               </span>
               <div>
                 <div className="numero">{resumen.data.racha_dias}</div>
                 <div className="sub">
-                  {resumen.data.racha_dias === 1 ? "día seguido" : "días seguidos"}
+                  {resumen.data.racha_dias === 1 ? t("perfil.diaSeguido") : t("perfil.diasSeguidos")}
                 </div>
               </div>
             </div>
@@ -372,6 +371,7 @@ function Graficos() {
 }
 
 function CitaFavorita() {
+  const { t } = useTranslation();
   const perfil = useFetch(() => api.perfil.get());
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState("");
@@ -396,27 +396,27 @@ function CitaFavorita() {
   if (editando) {
     return (
       <div className="arv-card">
-        <h3>Cita favorita</h3>
+        <h3>{t("perfil.citaFavorita")}</h3>
         <textarea
           className="arv-input"
           style={{ resize: "vertical", minHeight: 70, marginBottom: 8 }}
-          placeholder="La cita…"
+          placeholder={t("perfil.citaPlaceholder")}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
         />
         <input
           className="arv-input"
           style={{ marginBottom: 10 }}
-          placeholder="De dónde salió (ej: seven summers, cap. 12)"
+          placeholder={t("perfil.fuentePlaceholder")}
           value={fuente}
           onChange={(e) => setFuente(e.target.value)}
         />
         <div style={{ display: "flex", gap: 8 }}>
           <button className="arv-btn" onClick={guardar}>
-            Guardar
+            {t("common.guardar")}
           </button>
           <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(false)}>
-            Cancelar
+            {t("common.cancelar")}
           </button>
         </div>
       </div>
@@ -426,12 +426,12 @@ function CitaFavorita() {
   if (!perfil.data?.cita_texto) {
     return (
       <div className="arv-card">
-        <h3>Cita favorita</h3>
+        <h3>{t("perfil.citaFavorita")}</h3>
         <p className="arv-muted" style={{ marginBottom: 10 }}>
-          Todavía no guardaste ninguna cita.
+          {t("perfil.sinCita")}
         </p>
         <button className="arv-btn arv-btn-secondary" onClick={empezarEdicion}>
-          Agregar cita
+          {t("perfil.agregarCita")}
         </button>
       </div>
     );
@@ -439,9 +439,73 @@ function CitaFavorita() {
 
   return (
     <div className="arv-cita-card" style={{ marginBottom: 14, cursor: "pointer" }} onClick={empezarEdicion}>
-      <span className="etiqueta">CITA FAVORITA</span>
+      <span className="etiqueta">{t("perfil.citaFavoritaEtiqueta")}</span>
       <p>“{perfil.data.cita_texto}”</p>
-      {perfil.data.cita_fuente && <span className="fuente">de {perfil.data.cita_fuente}</span>}
+      {perfil.data.cita_fuente && <span className="fuente">{t("perfil.de", { fuente: perfil.data.cita_fuente })}</span>}
+    </div>
+  );
+}
+
+function Ajustes() {
+  const { t, i18n } = useTranslation();
+  const [tema, setTema] = useState(obtenerTema());
+  const [color, setColor] = useState(obtenerColorAcento());
+
+  function cambiarTema(valor) {
+    aplicarTema(valor);
+    setTema(valor);
+    setColor(obtenerColorAcento());
+  }
+
+  function cambiarColor(hex) {
+    aplicarColorAcento(hex);
+    setColor(hex);
+  }
+
+  return (
+    <div className="arv-card">
+      <h3>{t("perfil.ajustes")}</h3>
+
+      <div className="arv-ajustes-fila">
+        <span className="arv-ajustes-label">{t("perfil.idioma")}</span>
+        <div className="arv-segmentado">
+          <button
+            className={i18n.language === "es" ? "active" : ""}
+            onClick={() => cambiarIdioma("es")}
+          >
+            {t("perfil.espanol")}
+          </button>
+          <button
+            className={i18n.language === "en" ? "active" : ""}
+            onClick={() => cambiarIdioma("en")}
+          >
+            {t("perfil.ingles")}
+          </button>
+        </div>
+      </div>
+
+      <div className="arv-ajustes-fila">
+        <span className="arv-ajustes-label">{t("perfil.tema")}</span>
+        <div className="arv-segmentado">
+          <button className={tema === "light" ? "active" : ""} onClick={() => cambiarTema("light")}>
+            {t("perfil.temaClaro")}
+          </button>
+          <button className={tema === "dark" ? "active" : ""} onClick={() => cambiarTema("dark")}>
+            {t("perfil.temaOscuro")}
+          </button>
+        </div>
+      </div>
+
+      <div className="arv-ajustes-fila">
+        <span className="arv-ajustes-label">{t("perfil.colorDeAcento")}</span>
+        <input
+          type="color"
+          className="arv-color-swatch"
+          value={color}
+          onChange={(e) => cambiarColor(e.target.value)}
+          aria-label={t("perfil.colorDeAcento")}
+        />
+      </div>
     </div>
   );
 }

@@ -1,17 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
 
-const ESTADO_LABEL = {
-  leido: "Completos",
-  leyendo: "Leyendo",
-  abandonado: "Abandonados",
-  pendiente: "Pendientes",
-};
-
 export function Panel() {
+  const { t } = useTranslation();
   const [anio, setAnio] = useState("");
 
   const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio]);
@@ -34,25 +29,25 @@ export function Panel() {
     <div>
       <div className="arv-card">
         <p className="arv-muted" style={{ marginBottom: 4 }}>
-          {r.racha_dias > 0 ? `${r.racha_dias} día${r.racha_dias === 1 ? "" : "s"} seguidos leyendo` : "Todavía sin racha"}
+          {r.racha_dias > 0 ? t("panel.racha", { count: r.racha_dias }) : t("panel.sinRacha")}
         </p>
       </div>
 
       <div className="arv-grid-2" style={{ marginBottom: 14 }}>
         <Link to={`/panel/top/palabras${anioQuery}`} className="arv-stat arv-row-link">
-          <div className="label">Palabras</div>
+          <div className="label">{t("panel.palabras")}</div>
           <div className="value">{formatoCompacto(r.total_palabras_leidas)}</div>
         </Link>
         <Link to="/buscar?estado=leido" className="arv-stat arv-row-link">
-          <div className="label">Fics leídos</div>
+          <div className="label">{t("panel.ficsLeidos")}</div>
           <div className="value">{r.total_lecturas_leido}</div>
         </Link>
         <div className="arv-stat">
-          <div className="label">Fandoms</div>
+          <div className="label">{t("panel.fandoms")}</div>
           <div className="value">{r.total_fandoms}</div>
         </div>
         <div className="arv-stat">
-          <div className="label">Ships</div>
+          <div className="label">{t("panel.ships")}</div>
           <div className="value">{r.total_ships}</div>
         </div>
       </div>
@@ -60,7 +55,7 @@ export function Panel() {
       {aniosDisponibles.length > 0 && (
         <div className="arv-scrollnav" style={{ marginBottom: 14 }}>
           <button className={`arv-tab${anio === "" ? " active" : ""}`} onClick={() => setAnio("")}>
-            Todos los años
+            {t("panel.todosLosAnios")}
           </button>
           {aniosDisponibles.map((a) => (
             <button
@@ -77,13 +72,13 @@ export function Panel() {
       <div className="arv-card">
         <h3>
           <Link to={`/panel/top/fandoms${anioQuery}`} className="arv-row-link">
-            Top fandoms{anio ? ` en ${anio}` : ""}
+            {anio ? t("panel.topFandomsEnAnio", { anio }) : t("panel.topFandoms")}
           </Link>
         </h3>
         {topFandoms.loading && <Cargando />}
         {topFandoms.data?.length === 0 && (
           <p className="arv-muted">
-            {anio ? `Sin fics leídos en ${anio}.` : "Todavía no hay fics importados."}
+            {anio ? t("panel.sinFicsLeidosEnAnio", { anio }) : t("panel.todaviaNoHayFics")}
           </p>
         )}
         {topFandoms.data?.map((f) => (
@@ -100,24 +95,24 @@ export function Panel() {
       </div>
 
       <div className="arv-card">
-        <h3>Estado de lectura</h3>
+        <h3>{t("panel.estadoDeLectura")}</h3>
         {estadoLectura.loading && <Cargando />}
         {estadoLectura.data &&
           Object.entries(estadoLectura.data).map(([estado, total]) => (
             <Link to={`/buscar?estado=${estado}`} className="arv-list-item arv-row-link" key={estado}>
-              <span>{ESTADO_LABEL[estado] ?? estado}</span>
+              <span>{t(`panel.estadoLabel.${estado}`, estado)}</span>
               <strong>{total}</strong>
             </Link>
           ))}
         {estadoLectura.data && Object.keys(estadoLectura.data).length === 0 && (
-          <p className="arv-muted">Todavía no marcaste ningún fic con un estado de lectura.</p>
+          <p className="arv-muted">{t("panel.sinEstadoMarcado")}</p>
         )}
       </div>
 
       <div className="arv-card">
         <h3>
           <Link to={`/panel/top/romantico${anioQuery}`} className="arv-row-link">
-            Ships favoritos{anio ? ` en ${anio}` : ""}
+            {anio ? t("panel.shipsFavoritosEnAnio", { anio }) : t("panel.shipsFavoritos")}
           </Link>
         </h3>
         {topShips.loading && <Cargando />}
@@ -127,13 +122,15 @@ export function Panel() {
             <span className="arv-muted">×{s.total}</span>
           </Link>
         ))}
-        {topShips.data?.length === 0 && <p className="arv-muted">Sin ships {anio ? `en ${anio}` : "todavía"}.</p>}
+        {topShips.data?.length === 0 && (
+          <p className="arv-muted">{anio ? t("panel.sinShipsEnAnio", { anio }) : t("panel.sinShips")}</p>
+        )}
       </div>
 
       <div className="arv-card">
         <h3>
           <Link to={`/panel/top/platonico${anioQuery}`} className="arv-row-link">
-            Relaciones favoritas{anio ? ` en ${anio}` : ""}
+            {anio ? t("panel.relacionesFavoritasEnAnio", { anio }) : t("panel.relacionesFavoritas")}
           </Link>
         </h3>
         {topRelaciones.loading && <Cargando />}
@@ -144,18 +141,18 @@ export function Panel() {
           </Link>
         ))}
         {topRelaciones.data?.length === 0 && (
-          <p className="arv-muted">Sin relaciones {anio ? `en ${anio}` : "todavía"}.</p>
+          <p className="arv-muted">{anio ? t("panel.sinRelacionesEnAnio", { anio }) : t("panel.sinRelaciones")}</p>
         )}
       </div>
 
       <div className="arv-card">
-        <h3>Agregados recientemente</h3>
+        <h3>{t("panel.agregadosRecientemente")}</h3>
         {recientes.loading && <Cargando />}
-        {recientes.data?.length === 0 && <p className="arv-muted">Todavía no hay fics importados.</p>}
+        {recientes.data?.length === 0 && <p className="arv-muted">{t("panel.todaviaNoHayFics")}</p>}
         {recientes.data?.map((f) => (
           <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
             <div>
-              <div className="fandom">{f.fandoms[0]?.nombre ?? "Sin fandom"}</div>
+              <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
             </div>
           </Link>

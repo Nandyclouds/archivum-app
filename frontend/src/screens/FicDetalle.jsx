@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
@@ -7,20 +8,12 @@ import { Estrellas } from "../components/Estrellas";
 import { InfoPopover } from "../components/InfoPopover";
 import { abrirEnNavegadorExterno } from "../lib/abrirExterno";
 
-const ESTADOS = [
-  { value: "pendiente", label: "Pendiente" },
-  { value: "leyendo", label: "Leyendo" },
-  { value: "leido", label: "Leído" },
-  { value: "abandonado", label: "Abandonado" },
-];
-
-const ESTADO_LABEL = Object.fromEntries(ESTADOS.map((e) => [e.value, e.label]));
-
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export function FicDetalle() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const fic = useFetch(() => api.fics.get(id), [id]);
 
@@ -38,9 +31,9 @@ export function FicDetalle() {
       <div className="arv-card">
         <h2 style={{ marginBottom: 4 }}>{f.titulo}</h2>
         <p className="arv-muted" style={{ marginTop: 0 }}>
-          por {f.autor}
+          {t("ficDetalle.por", { autor: f.autor })}
           {f.restricted && " 🔒"}
-          {f.deleted_detected_at && " · borrado en AO3"}
+          {f.deleted_detected_at && ` · ${t("ficDetalle.borradoEnAo3")}`}
         </p>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
@@ -57,7 +50,7 @@ export function FicDetalle() {
         </div>
 
         <p className="arv-muted">
-          {f.chapters_published}/{f.chapters_total ?? "?"} · {f.word_count.toLocaleString()} palabras
+          {f.chapters_published}/{f.chapters_total ?? "?"} · {f.word_count.toLocaleString()} {t("common.palabras")}
           {f.rating && ` · ${f.rating}`}
         </p>
 
@@ -65,14 +58,14 @@ export function FicDetalle() {
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <a className="arv-btn arv-btn-secondary" href={f.url} target="_blank" rel="noreferrer">
-            Ver en AO3
+            {t("ficDetalle.verEnAo3")}
           </a>
           {snapshot && (
             <button
               className="arv-btn arv-btn-secondary"
               onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(snapshot.id))}
             >
-              Ver copia archivada
+              {t("ficDetalle.verCopiaArchivada")}
             </button>
           )}
           <DescargarEpub fic={f} epub={epub} />
@@ -88,6 +81,7 @@ export function FicDetalle() {
 }
 
 function MisColecciones({ fic, onChange }) {
+  const { t } = useTranslation();
   const colecciones = useFetch(() => api.colecciones.list());
   const [nombreNueva, setNombreNueva] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -124,7 +118,7 @@ function MisColecciones({ fic, onChange }) {
 
   return (
     <div className="arv-card">
-      <h3>Colecciones</h3>
+      <h3>{t("ficDetalle.colecciones")}</h3>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
         {colecciones.data?.map((c) => {
           const yaEsta = idsDelFic.has(c.id);
@@ -143,19 +137,19 @@ function MisColecciones({ fic, onChange }) {
         })}
         {colecciones.data?.length === 0 && (
           <p className="arv-muted" style={{ margin: 0 }}>
-            Todavía no tenés colecciones.
+            {t("ficDetalle.sinColecciones")}
           </p>
         )}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
-          placeholder="Nueva colección…"
+          placeholder={t("ficDetalle.nuevaColeccionPlaceholder")}
           value={nombreNueva}
           onChange={(e) => setNombreNueva(e.target.value)}
         />
         <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={crearYAgregar}>
-          Crear y agregar
+          {t("ficDetalle.crearYAgregar")}
         </button>
       </div>
     </div>
@@ -163,6 +157,7 @@ function MisColecciones({ fic, onChange }) {
 }
 
 function MisEtiquetas({ fic, onChange }) {
+  const { t } = useTranslation();
   const [nombreNueva, setNombreNueva] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -191,11 +186,8 @@ function MisEtiquetas({ fic, onChange }) {
   return (
     <div className="arv-card">
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        Mis etiquetas
-        <InfoPopover>
-          Distinto de las colecciones: son etiquetas rápidas y libres, propias tuyas (no vienen de
-          AO3). Sirven para filtrar en Buscar.
-        </InfoPopover>
+        {t("ficDetalle.misEtiquetas")}
+        <InfoPopover>{t("ficDetalle.misEtiquetasInfo")}</InfoPopover>
       </h3>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
         {fic.etiquetas_personales.map((et) => (
@@ -204,7 +196,7 @@ function MisEtiquetas({ fic, onChange }) {
             <button
               onClick={() => quitar(et.id)}
               disabled={guardando}
-              aria-label={`Quitar etiqueta ${et.nombre}`}
+              aria-label={t("ficDetalle.quitarEtiqueta", { nombre: et.nombre })}
               style={{ border: "none", background: "transparent", cursor: "pointer", color: "inherit" }}
             >
               ✕
@@ -213,20 +205,20 @@ function MisEtiquetas({ fic, onChange }) {
         ))}
         {fic.etiquetas_personales.length === 0 && (
           <p className="arv-muted" style={{ margin: 0 }}>
-            Sin etiquetas todavía.
+            {t("ficDetalle.sinEtiquetas")}
           </p>
         )}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
-          placeholder="Nueva etiqueta…"
+          placeholder={t("ficDetalle.nuevaEtiquetaPlaceholder")}
           value={nombreNueva}
           onChange={(e) => setNombreNueva(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && agregar()}
         />
         <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={agregar}>
-          Agregar
+          {t("ficDetalle.agregar")}
         </button>
       </div>
     </div>
@@ -234,6 +226,7 @@ function MisEtiquetas({ fic, onChange }) {
 }
 
 function DescargarEpub({ fic, epub }) {
+  const { t, i18n } = useTranslation();
   const [descargando, setDescargando] = useState(false);
   const [disparado, setDisparado] = useState(false);
   const [error, setError] = useState(null);
@@ -254,22 +247,31 @@ function DescargarEpub({ fic, epub }) {
   return (
     <span>
       <button className="arv-btn arv-btn-secondary" disabled={descargando} onClick={descargar}>
-        {descargando ? "Disparando…" : epub ? "Volver a descargar EPUB" : "Descargar EPUB"}
+        {descargando
+          ? t("importarPorUrl.disparando")
+          : epub
+          ? t("ficDetalle.volverADescargarEpub")
+          : t("ficDetalle.descargarEpub")}
       </button>
       {epub && (
         <span className="arv-muted" style={{ marginLeft: 8 }}>
-          guardado {new Date(epub.fecha_descarga).toLocaleDateString()}
+          {t("ficDetalle.guardado", { fecha: new Date(epub.fecha_descarga).toLocaleDateString(i18n.language) })}
         </span>
       )}
-      {disparado && (
-        <p className="arv-muted">Descarga en camino — puede tardar unos minutos en aparecer.</p>
-      )}
+      {disparado && <p className="arv-muted">{t("ficDetalle.descargaEnCamino")}</p>}
       {error && <p style={{ color: "var(--color-accent)" }}>{error}</p>}
     </span>
   );
 }
 
 function EstadoLectura({ fic, lecturas, onChange }) {
+  const { t, i18n } = useTranslation();
+  const ESTADOS = [
+    { value: "pendiente", label: t("ficDetalle.estados.pendiente") },
+    { value: "leyendo", label: t("ficDetalle.estados.leyendo") },
+    { value: "leido", label: t("ficDetalle.estados.leido") },
+    { value: "abandonado", label: t("ficDetalle.estados.abandonado") },
+  ];
   const ultimaLectura = lecturas.at(-1);
   const [guardando, setGuardando] = useState(false);
   const [fechaRelectura, setFechaRelectura] = useState(hoyISO());
@@ -315,13 +317,8 @@ function EstadoLectura({ fic, lecturas, onChange }) {
   return (
     <div className="arv-card">
       <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        Estado de lectura
-        <InfoPopover>
-          Cada lectura marcada "Leído" —incluidas las relecturas— suma las palabras del fic a
-          "Palabras leídas" y "Fics leídos" en el Panel. Cambiar el estado acá arriba actualiza
-          tu lectura más reciente. Para que una relectura cuente aparte (y no pise la anterior),
-          usá "Registrar relectura" más abajo: agrega una lectura nueva sin borrar la vieja.
-        </InfoPopover>
+        {t("ficDetalle.estadoDeLectura")}
+        <InfoPopover>{t("ficDetalle.estadoDeLecturaInfo")}</InfoPopover>
       </h3>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
         {ESTADOS.map((e) => (
@@ -341,15 +338,15 @@ function EstadoLectura({ fic, lecturas, onChange }) {
           {lecturas.map((l) => (
             <div className="arv-list-item" key={l.id}>
               <span>
-                {ESTADO_LABEL[l.estado] ?? l.estado}
-                {l.es_relectura && <span className="arv-muted"> · relectura</span>}
+                {t(`ficDetalle.estados.${l.estado}`, l.estado)}
+                {l.es_relectura && <span className="arv-muted"> · {t("ficDetalle.relectura")}</span>}
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="arv-muted">{l.fecha_fin ?? "sin fecha"}</span>
+                <span className="arv-muted">{l.fecha_fin ?? t("ficDetalle.sinFecha")}</span>
                 <button
                   onClick={() => borrarLectura(l.id)}
                   disabled={guardando}
-                  aria-label="Borrar esta lectura"
+                  aria-label={t("ficDetalle.borrarLectura")}
                   style={{
                     border: "none",
                     background: "transparent",
@@ -376,7 +373,7 @@ function EstadoLectura({ fic, lecturas, onChange }) {
           style={{ maxWidth: 160 }}
         />
         <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={registrarRelectura}>
-          + Registrar relectura
+          {t("ficDetalle.registrarRelectura")}
         </button>
       </div>
     </div>
@@ -384,6 +381,7 @@ function EstadoLectura({ fic, lecturas, onChange }) {
 }
 
 function MiResena({ fic, resena, onChange }) {
+  const { t } = useTranslation();
   const [editando, setEditando] = useState(false);
   const [rating, setRating] = useState(resena?.rating ?? 5);
   const [texto, setTexto] = useState(resena?.texto ?? "");
@@ -407,17 +405,17 @@ function MiResena({ fic, resena, onChange }) {
   if (!editando) {
     return (
       <div className="arv-card">
-        <h3>Mi reseña</h3>
+        <h3>{t("ficDetalle.miResena")}</h3>
         {resena ? (
           <>
             <Estrellas rating={resena.rating} />
             <p>{resena.texto}</p>
           </>
         ) : (
-          <p className="arv-muted">Todavía no dejaste una reseña.</p>
+          <p className="arv-muted">{t("ficDetalle.sinResena")}</p>
         )}
         <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(true)}>
-          {resena ? "Editar" : "Agregar reseña"}
+          {resena ? t("common.editar") : t("ficDetalle.agregarResena")}
         </button>
       </div>
     );
@@ -425,8 +423,8 @@ function MiResena({ fic, resena, onChange }) {
 
   return (
     <div className="arv-card">
-      <h3>Mi reseña</h3>
-      <label className="arv-muted">Rating (1 a 5, permite medios)</label>
+      <h3>{t("ficDetalle.miResena")}</h3>
+      <label className="arv-muted">{t("ficDetalle.ratingLabel")}</label>
       <input
         className="arv-input"
         type="number"
@@ -442,15 +440,15 @@ function MiResena({ fic, resena, onChange }) {
         rows={4}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="¿Qué te pareció?"
+        placeholder={t("ficDetalle.resenaPlaceholder")}
         style={{ marginBottom: 10, borderRadius: 12 }}
       />
       <div style={{ display: "flex", gap: 8 }}>
         <button className="arv-btn" disabled={guardando} onClick={guardar}>
-          Guardar
+          {t("common.guardar")}
         </button>
         <button className="arv-btn arv-btn-secondary" onClick={() => setEditando(false)}>
-          Cancelar
+          {t("common.cancelar")}
         </button>
       </div>
     </div>

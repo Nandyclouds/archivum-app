@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 
 export function InfoPopover({ children }) {
+  const { t } = useTranslation();
   const [abierto, setAbierto] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const botonRef = useRef(null);
@@ -53,7 +55,7 @@ export function InfoPopover({ children }) {
         type="button"
         ref={botonRef}
         onClick={() => setAbierto((v) => !v)}
-        aria-label="Más información"
+        aria-label={t("common.masInformacion")}
         style={{
           border: "none",
           background: "var(--color-surface-2)",

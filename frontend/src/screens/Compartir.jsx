@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
 // Pantalla que recibe el "Compartir" de Android (ver share_target en
@@ -7,6 +8,7 @@ import { api } from "../lib/api";
 // (compartir texto seleccionado en vez del link de la barra) viene en
 // ?text=... — probamos los dos.
 export function Compartir() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [estado, setEstado] = useState("cargando");
   const [error, setError] = useState(null);
@@ -45,30 +47,30 @@ export function Compartir() {
   if (estado === "cargando") {
     return (
       <div className="arv-card">
-        <h3>Importando…</h3>
-        <p className="arv-muted">Puede tardar ~10 segundos por el límite de velocidad de AO3.</p>
+        <h3>{t("compartir.importando")}</h3>
+        <p className="arv-muted">{t("compartir.esperaLimite")}</p>
       </div>
     );
   }
 
   return (
     <div className="arv-card">
-      <h3>{estado === "sin-url" ? "No encontré un link" : "Algo falló"}</h3>
+      <h3>{estado === "sin-url" ? t("compartir.sinLink") : t("compartir.algoFallo")}</h3>
       {error && <p style={{ color: "var(--color-accent)" }}>{error}</p>}
-      <p className="arv-muted">Pegalo acá:</p>
+      <p className="arv-muted">{t("compartir.pegaloAca")}</p>
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
-          placeholder="https://archiveofourown.org/works/..."
+          placeholder={t("importarPorUrl.placeholder")}
           value={urlManual}
           onChange={(e) => setUrlManual(e.target.value)}
         />
         <button className="arv-btn" onClick={importarManual}>
-          Importar
+          {t("compartir.importar")}
         </button>
       </div>
       <Link to="/" className="arv-muted" style={{ display: "block", marginTop: 12 }}>
-        Volver al panel
+        {t("compartir.volverAlPanel")}
       </Link>
     </div>
   );
