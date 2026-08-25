@@ -191,7 +191,7 @@ a {
 }
 
 .arv-perfil-header {
-  margin-bottom: 16px;
+  margin-bottom: 6px;
 }
 
 .arv-perfil-portada {
@@ -567,23 +567,6 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-}
-.arv-favorito-quitar {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
 }
 .arv-favorito-add {
   aspect-ratio: 2 / 3;

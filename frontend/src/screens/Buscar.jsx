@@ -59,7 +59,7 @@ export function Buscar() {
         anio,
         ...(completo !== null ? { completo } : {}),
         ...(conNota ? { con_nota: true } : {}),
-        limit: 100,
+        limit: 1000,
       }),
     [
       q,

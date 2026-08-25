@@ -385,12 +385,6 @@ function Favoritos() {
     }
   }
 
-  async function quitar(e, ficId) {
-    e.preventDefault();
-    await api.perfil.favoritos.remove(ficId);
-    favoritos.reload();
-  }
-
   const lista = favoritos.data?.fics ?? [];
   const total = favoritos.data?.total ?? 0;
   const coleccionId = favoritos.data?.coleccion_id;
@@ -476,13 +470,6 @@ function Favoritos() {
               <span className="arv-favorito-linea" />
               <span className="arv-favorito-autor">{t("perfil.porAutor", { autor: f.autor })}</span>
             </div>
-            <button
-              className="arv-favorito-quitar"
-              onClick={(e) => quitar(e, f.fic_id)}
-              aria-label={t("perfil.quitarDeFavoritos")}
-            >
-              ×
-            </button>
           </Link>
         ))}
         {lista.length < 4 && (

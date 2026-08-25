@@ -141,10 +141,11 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
 
     inicio = time.monotonic()
     start_page = 1
+    progreso = {"pagina": start_page}
     nuevos = 0
     while True:
         try:
-            for item in _walk_bookmark_items(client, username, start_page=start_page):
+            for item in _walk_bookmark_items(client, username, start_page=start_page, progreso=progreso):
                 ya_conocido = item.work_id in conocidos
                 try:
                     if ya_conocido:
@@ -187,11 +188,13 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
                 break
             print(f"AO3 falló listando páginas ({exc}). Esperando 5 min antes de reintentar...")
             time.sleep(ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
-            # No sabemos exactamente en qué página se cortó _walk_bookmark_items
-            # (es un generador), así que reintentamos desde el principio: las
-            # páginas ya vistas son baratas (una petición c/u) y cada fic ya
-            # ingresado está en `conocidos`, así que se saltea sin re-pedirlo.
-            start_page = 1
+            # Reanudar desde la página donde se cortó (progreso["pagina"]),
+            # no desde la 1: volver a pedir todas las páginas ya vistas cuesta
+            # una petición rate-limitada c/u, y con AO3 fallando seguido eso
+            # se come el presupuesto de tiempo antes de llegar a las páginas
+            # nuevas — que es justo lo que hacía que algunos bookmarks (y sus
+            # notas) nunca se terminaran de sincronizar.
+            start_page = progreso["pagina"]
             continue
 
     print(f"Bookmarks nuevos importados: {nuevos}")
@@ -211,12 +214,14 @@ def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> No
 
     inicio = time.monotonic()
     start_page = 1
+    progreso = {"pagina": start_page}
     nuevos = 0
     etiquetados = 0
     while True:
         try:
             for work_id in _walk_listing_work_ids(
-                client, HISTORY_MARKED_URL, username, parse_history_page, start_page=start_page
+                client, HISTORY_MARKED_URL, username, parse_history_page,
+                start_page=start_page, progreso=progreso,
             ):
                 try:
                     if work_id in conocidos:
@@ -241,10 +246,10 @@ def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> No
                 break
             print(f"AO3 falló listando páginas ({exc}). Esperando 5 min antes de reintentar...")
             time.sleep(ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
-            # Igual que en modo_bookmarks: reintentar desde la página 1 es
-            # barato (los ya etiquetados/importados se saltean por estar en
-            # `conocidos`, y a los ya-conocidos el re-etiquetado es idempotente).
-            start_page = 1
+            # Igual que en modo_bookmarks: reanudar desde progreso["pagina"]
+            # en vez de la página 1, para no quemar el presupuesto de tiempo
+            # re-pidiendo páginas de listado ya vistas.
+            start_page = progreso["pagina"]
             continue
 
     print(f"Marked for Later — nuevos importados: {nuevos}, ya conocidos etiquetados: {etiquetados}")

@@ -311,12 +311,20 @@ def _walk_listing_work_ids(
     *,
     start_page: int = 1,
     max_pages: int | None = None,
+    progreso: dict | None = None,
 ):
+    """`progreso`, si se pasa, se actualiza con la página que se está por
+    pedir ANTES de pedirla — así el que llama sabe desde dónde reanudar si
+    la request de esa página falla, en vez de tener que reintentar desde la
+    página 1 (ver gh_action_sync.py: con AO3 fallando seguido, reintentar
+    siempre desde el principio nunca llega a las páginas de más adelante)."""
     page_num = start_page
     total_pages = None
     while total_pages is None or page_num <= total_pages:
         if max_pages is not None and page_num - start_page >= max_pages:
             return
+        if progreso is not None:
+            progreso["pagina"] = page_num
         response = client.get(url_template.format(username=username, page=page_num))
         response.raise_for_status()
         listing: ListingPage = parse_page(response.text)
@@ -332,12 +340,17 @@ def _walk_bookmark_items(
     *,
     start_page: int = 1,
     max_pages: int | None = None,
+    progreso: dict | None = None,
 ):
+    """Ver la docstring de `_walk_listing_work_ids` — mismo propósito para
+    `progreso`."""
     page_num = start_page
     total_pages = None
     while total_pages is None or page_num <= total_pages:
         if max_pages is not None and page_num - start_page >= max_pages:
             return
+        if progreso is not None:
+            progreso["pagina"] = page_num
         response = client.get(BOOKMARKS_URL.format(username=username, page=page_num))
         response.raise_for_status()
         listing: BookmarksPage = parse_bookmarks_page(response.text)
