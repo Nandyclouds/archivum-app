@@ -130,7 +130,9 @@ BUCKETS_LONGITUD = [
 
 
 def distribucion_longitud(session: Session) -> list[tuple[str, int]]:
-    """Cantidad de fics por rango de word_count."""
+    """Cantidad de fics LEÍDOS por rango de word_count (no toda la
+    biblioteca: un fic pendiente no aporta a "cuánto leíste" de cada
+    tamaño). .distinct() por si hubo relecturas del mismo fic."""
     whens = []
     limite_anterior = 0
     for etiqueta, limite in BUCKETS_LONGITUD:
@@ -144,7 +146,9 @@ def distribucion_longitud(session: Session) -> list[tuple[str, int]]:
 
     bucket = case(*whens, else_="sin_clasificar")
     query = (
-        session.query(bucket.label("bucket"), func.count(Fic.id))
+        session.query(bucket.label("bucket"), func.count(func.distinct(Fic.id)))
+        .join(Lectura, Lectura.fic_id == Fic.id)
+        .filter(Lectura.estado == "leido")
         .group_by(bucket)
     )
     orden = {etiqueta: i for i, (etiqueta, _) in enumerate(BUCKETS_LONGITUD)}

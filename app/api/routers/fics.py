@@ -54,10 +54,12 @@ def listar_fics(
     q: str | None = Query(None, description="Busca en título y autor"),
     fandom: str | None = Query(None, description="Nombre exacto de fandom"),
     ship: str | None = Query(None, description="Nombre exacto de ship/relación"),
-    personaje: str | None = Query(None, description="Nombre exacto de personaje"),
-    tag: str | None = Query(None, description="Nombre exacto de tag adicional (freeform)"),
+    personaje: list[str] = Query([], description="Nombre(s) exacto(s) de personaje (AND si hay varios)"),
+    tag: list[str] = Query([], description="Nombre(s) exacto(s) de tag adicional (AND si hay varios)"),
     rating: str | None = Query(None, description="Rating exacto de AO3 (ej. 'Explicit')"),
     warning: str | None = Query(None, description="Un warning exacto de AO3 (ej. 'Major Character Death')"),
+    categoria: str | None = Query(None, description="Categoría exacta de AO3 (ej. 'F/F')"),
+    idioma: str | None = Query(None, description="Idioma exacto de AO3 (ej. 'English')"),
     etiqueta: str | None = Query(None, description="Nombre exacto de etiqueta personal"),
     coleccion: int | None = Query(None, description="Id de colección"),
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
@@ -83,10 +85,14 @@ def listar_fics(
         query = query.join(Fic.fandoms).filter(Fandom.nombre == fandom)
     if ship:
         query = query.join(Fic.ships).filter(Ship.nombre == ship)
-    if personaje:
-        query = query.join(Fic.personajes).filter(Personaje.nombre == personaje)
-    if tag:
-        query = query.join(Fic.tags_adicionales).filter(TagAdicional.nombre == tag)
+    for nombre in personaje:
+        # .any() por cada valor en vez de un solo join: un join normal por
+        # cada personaje seleccionado exigiría alias distintos para no
+        # pisarse; .any() genera un EXISTS correlacionado por selección, así
+        # que "Leia AND Han" (AND, no OR) sale gratis sin aliasing manual.
+        query = query.filter(Fic.personajes.any(Personaje.nombre == nombre))
+    for nombre in tag:
+        query = query.filter(Fic.tags_adicionales.any(TagAdicional.nombre == nombre))
     if rating:
         query = query.filter(Fic.rating == rating)
     if warning:
@@ -94,6 +100,10 @@ def listar_fics(
         # simple podría matchear una subcadena de otro warning por error, así
         # que se busca el segmento exacto entre delimitadores "|".
         query = query.filter(func.instr("|" + Fic.warnings + "|", f"|{warning}|") > 0)
+    if categoria:
+        query = query.filter(func.instr("|" + Fic.categorias + "|", f"|{categoria}|") > 0)
+    if idioma:
+        query = query.filter(Fic.idioma == idioma)
     if etiqueta:
         query = query.join(Fic.etiquetas_personales).filter(EtiquetaPersonal.nombre == etiqueta)
     if coleccion is not None:
@@ -159,22 +169,30 @@ WARNINGS_AO3 = [
     "Rape/Non-Con",
     "Underage",
 ]
+CATEGORIAS_AO3 = ["F/F", "F/M", "Gen", "M/M", "Multi", "Other"]
 
 
 @router.get("/opciones-filtro")
 def opciones_filtro(db: Session = Depends(get_session)):
     """Valores disponibles para los filtros de Buscar: fijos para rating/
-    warnings (vocabulario cerrado de AO3), sacados de la biblioteca para
-    personajes/tags (vocabulario abierto, no tiene sentido hardcodearlo)."""
+    warnings/categorías (vocabulario cerrado de AO3), sacados de la
+    biblioteca para personajes/tags/idiomas (vocabulario abierto, no tiene
+    sentido hardcodearlo)."""
     personajes = [
         n for (n,) in db.query(Personaje.nombre).order_by(Personaje.nombre).all()
     ]
     tags = [n for (n,) in db.query(TagAdicional.nombre).order_by(TagAdicional.nombre).all()]
+    idiomas = [
+        n
+        for (n,) in db.query(Fic.idioma).filter(Fic.idioma.isnot(None)).distinct().order_by(Fic.idioma).all()
+    ]
     return {
         "ratings": RATINGS_AO3,
         "warnings": WARNINGS_AO3,
+        "categorias": CATEGORIAS_AO3,
         "personajes": personajes,
         "tags": tags,
+        "idiomas": idiomas,
     }
 
 

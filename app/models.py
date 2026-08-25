@@ -173,6 +173,8 @@ class Fic(Base):
     # tablas de unión, a diferencia de fandoms/ships/personajes/tags.
     categorias: Mapped[str | None] = mapped_column(String(255), nullable=True)
     warnings: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # "Language:" de AO3, ej. "English", "Español". Single-valued.
+    idioma: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
 
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -344,3 +346,8 @@ class PerfilConfig(Base):
     portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     cita_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
     cita_fuente: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Ids de Fic elegidos a mano para el grid visible de Favoritos (los otros
+    # miembros de la colección "Favoritos" quedan igual, solo no se muestran
+    # ahí). CSV en orden, ej. "12,45,3,89". None = todavía no eligió ninguno,
+    # se sigue mostrando el fallback alfabético de siempre.
+    favoritos_destacados: Mapped[str | None] = mapped_column(String(255), nullable=True)

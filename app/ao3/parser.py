@@ -30,6 +30,7 @@ class ParsedFic:
     complete: bool
     restricted: bool
     rating: str | None
+    idioma: str | None
     categorias: list[str]
     warnings: list[str]
     summary: str | None
@@ -118,6 +119,9 @@ def parse_work_page(html: str, ao3_id: str) -> ParsedFic:
     rating_dd = meta.select_one("dd.rating.tags")
     rating = rating_dd.get_text(strip=True) if rating_dd else None
 
+    idioma_dd = meta.find("dd", class_="language")
+    idioma = idioma_dd.get_text(strip=True) if idioma_dd else None
+
     categorias = _text_list(meta, "category tags")
     warnings = _text_list(meta, "warning tags")
     fandoms = _text_list(meta, "fandom tags")
@@ -170,6 +174,7 @@ def parse_work_page(html: str, ao3_id: str) -> ParsedFic:
         complete=complete,
         restricted=restricted,
         rating=rating,
+        idioma=idioma,
         categorias=categorias,
         warnings=warnings,
         summary=summary,

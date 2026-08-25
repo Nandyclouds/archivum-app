@@ -132,6 +132,35 @@ function Favoritos() {
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState("");
   const resultados = useFetch(() => (q ? api.fics.list({ q, limit: 8 }) : Promise.resolve([])), [q]);
+  const [eligiendo, setEligiendo] = useState(false);
+  const [elegidos, setElegidos] = useState([]);
+  const [guardandoDestacados, setGuardandoDestacados] = useState(false);
+
+  function empezarAElegir() {
+    setElegidos(favoritos.data?.destacados_ids ?? []);
+    setEligiendo(true);
+  }
+
+  function alternarElegido(ficId) {
+    setElegidos((prev) => {
+      if (prev.includes(ficId)) return prev.filter((id) => id !== ficId);
+      if (prev.length >= 4) return prev;
+      return [...prev, ficId];
+    });
+  }
+
+  async function guardarDestacados() {
+    setGuardandoDestacados(true);
+    try {
+      await api.perfil.favoritos.setDestacados(elegidos);
+      setEligiendo(false);
+      favoritos.reload();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setGuardandoDestacados(false);
+    }
+  }
 
   async function agregar(ficId) {
     try {
@@ -158,12 +187,51 @@ function Favoritos() {
     <div className="arv-card">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <h3 style={{ marginBottom: 0 }}>{t("perfil.favoritos")}</h3>
-        {coleccionId && total > 4 && (
-          <Link to={`/colecciones/${coleccionId}`} className="arv-muted" style={{ fontSize: 12.5 }}>
-            {t("perfil.verLos", { count: total })}
-          </Link>
-        )}
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+          {total > 4 && !eligiendo && (
+            <button
+              onClick={empezarAElegir}
+              className="arv-muted"
+              style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 12.5, padding: 0 }}
+            >
+              {t("perfil.elegirDestacados")}
+            </button>
+          )}
+          {coleccionId && total > 4 && (
+            <Link to={`/colecciones/${coleccionId}`} className="arv-muted" style={{ fontSize: 12.5 }}>
+              {t("perfil.verLos", { count: total })}
+            </Link>
+          )}
+        </div>
       </div>
+
+      {eligiendo ? (
+        <div>
+          <p className="arv-muted" style={{ marginTop: 0 }}>{t("perfil.elegirDestacadosInfo")}</p>
+          <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 10 }}>
+            {(favoritos.data?.todos ?? []).map((f) => (
+              <label key={f.fic_id} className="arv-list-item" style={{ cursor: "pointer" }}>
+                <span>{f.titulo}</span>
+                <input
+                  type="checkbox"
+                  checked={elegidos.includes(f.fic_id)}
+                  disabled={!elegidos.includes(f.fic_id) && elegidos.length >= 4}
+                  onChange={() => alternarElegido(f.fic_id)}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="arv-btn" disabled={guardandoDestacados} onClick={guardarDestacados}>
+              {t("common.guardar")}
+            </button>
+            <button className="arv-btn arv-btn-secondary" onClick={() => setEligiendo(false)}>
+              {t("common.cancelar")}
+            </button>
+          </div>
+        </div>
+      ) : (
+      <>
       <div className="arv-favoritos-grid">
         {lista.map((f, i) => (
           <Link
@@ -209,6 +277,8 @@ function Favoritos() {
           ))}
           {q && resultados.data?.length === 0 && <p className="arv-muted">{t("perfil.sinResultados")}</p>}
         </div>
+      )}
+      </>
       )}
     </div>
   );

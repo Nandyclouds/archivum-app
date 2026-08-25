@@ -99,17 +99,59 @@ def _get_coleccion_favoritos(db: Session) -> Coleccion | None:
     return db.query(Coleccion).filter_by(nombre=FAVORITOS_NOMBRE).one_or_none()
 
 
+def _parse_destacados(raw: str | None) -> list[int]:
+    if not raw:
+        return []
+    return [int(x) for x in raw.split(",") if x]
+
+
 @router.get("/favoritos")
 def listar_favoritos(db: Session = Depends(get_session)):
     coleccion = _get_coleccion_favoritos(db)
     if coleccion is None:
-        return {"coleccion_id": None, "total": 0, "fics": []}
-    fics = sorted(coleccion.fics, key=lambda f: f.titulo)
+        return {"coleccion_id": None, "total": 0, "fics": [], "todos": [], "destacados_ids": []}
+
+    todos = sorted(coleccion.fics, key=lambda f: f.titulo)
+    fics_por_id = {f.id: f for f in todos}
+
+    config = db.get(PerfilConfig, 1)
+    destacados_ids = _parse_destacados(config.favoritos_destacados if config else None)
+    # Ids elegidos a mano que ya no están en la colección (se sacaron del
+    # favorito) se ignoran solos acá, sin necesidad de limpiar la config.
+    visibles = [fics_por_id[i] for i in destacados_ids if i in fics_por_id]
+    if not visibles:
+        # Nadie eligió destacados todavía: fallback de siempre, alfabético.
+        visibles = todos[:FAVORITOS_VISIBLES]
+
     return {
         "coleccion_id": coleccion.id,
-        "total": len(fics),
-        "fics": [{"fic_id": f.id, "titulo": f.titulo} for f in fics[:FAVORITOS_VISIBLES]],
+        "total": len(todos),
+        "fics": [{"fic_id": f.id, "titulo": f.titulo} for f in visibles[:FAVORITOS_VISIBLES]],
+        "todos": [{"fic_id": f.id, "titulo": f.titulo} for f in todos],
+        "destacados_ids": [i for i in destacados_ids if i in fics_por_id],
     }
+
+
+class DestacadosUpdate(BaseModel):
+    fic_ids: list[int]
+
+
+@router.put("/favoritos/destacados")
+def actualizar_destacados(payload: DestacadosUpdate, db: Session = Depends(get_session)):
+    """Elige a mano cuáles de los Favoritos se muestran en el grid visible
+    (máximo 4). Vacío = volver al fallback alfabético."""
+    if len(payload.fic_ids) > FAVORITOS_VISIBLES:
+        raise HTTPException(status_code=422, detail=f"Máximo {FAVORITOS_VISIBLES} favoritos destacados.")
+
+    coleccion = _get_coleccion_favoritos(db)
+    ids_validos = {f.id for f in coleccion.fics} if coleccion else set()
+    if any(fid not in ids_validos for fid in payload.fic_ids):
+        raise HTTPException(status_code=422, detail="Todos los ids deben ser fics que ya están en Favoritos.")
+
+    config = _get_or_create_config(db)
+    config.favoritos_destacados = ",".join(str(i) for i in payload.fic_ids) or None
+    db.commit()
+    return {"ok": True}
 
 
 class FavoritoCreate(BaseModel):

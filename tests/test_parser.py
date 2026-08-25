@@ -21,6 +21,7 @@ def test_parse_work_page_completo():
     assert fic.complete is True
     assert fic.restricted is False
     assert fic.rating == "Teen And Up Audiences"
+    assert fic.idioma == "English"
     assert fic.categorias == ["F/M"]
     assert fic.warnings == ["No Archive Warnings Apply"]
     assert fic.fandoms == ["Star Wars: Original Trilogy"]

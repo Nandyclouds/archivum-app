@@ -133,7 +133,13 @@ def test_borrar_cita_con_texto_vacio(client):
 
 
 def test_favoritos_vacio(client):
-    assert client.get("/api/perfil/favoritos").json() == {"coleccion_id": None, "total": 0, "fics": []}
+    assert client.get("/api/perfil/favoritos").json() == {
+        "coleccion_id": None,
+        "total": 0,
+        "fics": [],
+        "todos": [],
+        "destacados_ids": [],
+    }
 
 
 def test_agregar_y_listar_favoritos(client, db_session):
@@ -202,6 +208,63 @@ def test_quitar_favorito(client, db_session):
 def test_quitar_favorito_inexistente_no_falla(client):
     r = client.delete("/api/perfil/favoritos/999")
     assert r.status_code == 204
+
+
+def test_destacados_por_defecto_es_fallback_alfabetico(client, db_session):
+    for titulo in ["Zeta", "Alfa", "Beta"]:
+        fic = _crear_fic(db_session, ao3_id=titulo, titulo=titulo)
+        client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
+
+    body = client.get("/api/perfil/favoritos").json()
+    assert [f["titulo"] for f in body["fics"]] == ["Alfa", "Beta", "Zeta"]
+    assert body["destacados_ids"] == []
+
+
+def test_elegir_destacados_a_mano(client, db_session):
+    fics = [_crear_fic(db_session, ao3_id=str(i), titulo=f"Fic {i}") for i in range(6)]
+    for fic in fics:
+        client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
+
+    elegidos = [fics[5].id, fics[0].id]
+    r = client.put("/api/perfil/favoritos/destacados", json={"fic_ids": elegidos})
+    assert r.status_code == 200
+
+    body = client.get("/api/perfil/favoritos").json()
+    assert [f["fic_id"] for f in body["fics"]] == elegidos
+    assert body["destacados_ids"] == elegidos
+    assert body["total"] == 6
+    assert len(body["todos"]) == 6
+
+
+def test_destacados_maximo_cuatro(client, db_session):
+    fics = [_crear_fic(db_session, ao3_id=str(i), titulo=f"Fic {i}") for i in range(5)]
+    for fic in fics:
+        client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
+
+    r = client.put("/api/perfil/favoritos/destacados", json={"fic_ids": [f.id for f in fics]})
+    assert r.status_code == 422
+
+
+def test_destacados_rechaza_fic_fuera_de_favoritos(client, db_session):
+    dentro = _crear_fic(db_session, ao3_id="1", titulo="Dentro")
+    client.post("/api/perfil/favoritos", json={"fic_id": dentro.id})
+    fuera = _crear_fic(db_session, ao3_id="2", titulo="Fuera")
+
+    r = client.put("/api/perfil/favoritos/destacados", json={"fic_ids": [dentro.id, fuera.id]})
+    assert r.status_code == 422
+
+
+def test_destacados_vacio_vuelve_al_fallback(client, db_session):
+    fics = [_crear_fic(db_session, ao3_id=str(i), titulo=t) for i, t in enumerate(["Zeta", "Alfa"])]
+    for fic in fics:
+        client.post("/api/perfil/favoritos", json={"fic_id": fic.id})
+    client.put("/api/perfil/favoritos/destacados", json={"fic_ids": [fics[0].id]})
+
+    r = client.put("/api/perfil/favoritos/destacados", json={"fic_ids": []})
+    assert r.status_code == 200
+
+    body = client.get("/api/perfil/favoritos").json()
+    assert [f["titulo"] for f in body["fics"]] == ["Alfa", "Zeta"]
 
 
 def test_reemplazar_avatar_actualiza_la_ruta(client, tmp_path):

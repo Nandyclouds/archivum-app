@@ -39,9 +39,22 @@ async function request(path, options = {}) {
   return response.json();
 }
 
+function buildQuery(params) {
+  const query = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(params)) {
+    if (valor === null || valor === undefined || valor === "") continue;
+    if (Array.isArray(valor)) {
+      for (const v of valor) query.append(clave, v);
+    } else {
+      query.append(clave, valor);
+    }
+  }
+  return query;
+}
+
 export const api = {
   fics: {
-    list: (params = {}) => request(`/fics?${new URLSearchParams(params)}`),
+    list: (params = {}) => request(`/fics?${buildQuery(params)}`),
     get: (id) => request(`/fics/${id}`),
     opcionesFiltro: () => request("/fics/opciones-filtro"),
   },
@@ -143,6 +156,11 @@ export const api = {
       add: (ficId) =>
         request("/perfil/favoritos", { method: "POST", body: JSON.stringify({ fic_id: ficId }) }),
       remove: (ficId) => request(`/perfil/favoritos/${ficId}`, { method: "DELETE" }),
+      setDestacados: (ficIds) =>
+        request("/perfil/favoritos/destacados", {
+          method: "PUT",
+          body: JSON.stringify({ fic_ids: ficIds }),
+        }),
     },
   },
   stats: {

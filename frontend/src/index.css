@@ -687,6 +687,67 @@ select.arv-input {
   font-family: monospace;
   text-transform: lowercase;
 }
+.arv-multiselect {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.arv-multiselect-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.arv-multiselect-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+.arv-multiselect-chevron {
+  flex: none;
+  width: 10px;
+  height: 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236f6153' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+}
+.arv-multiselect-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: var(--shadow-card);
+}
+.arv-multiselect-lista {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.arv-multiselect-opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px;
+  font-size: 13.5px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.arv-multiselect-opcion:hover {
+  background: var(--color-surface-2);
+}
+.arv-multiselect-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .arv-color-swatch {
   width: 36px;
   height: 36px;

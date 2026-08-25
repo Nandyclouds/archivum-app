@@ -101,13 +101,19 @@ def test_top_ships_filtrado_por_anio(session):
 
 
 def test_distribucion_longitud(session):
-    _make_fic(session, ao3_id="1", titulo="Drabble", word_count=500, complete=True, fandom="F")
-    _make_fic(session, ao3_id="2", titulo="Epico", word_count=200_000, complete=True, fandom="F")
+    drabble = _make_fic(session, ao3_id="1", titulo="Drabble", word_count=500, complete=True, fandom="F")
+    epico = _make_fic(session, ao3_id="2", titulo="Epico", word_count=200_000, complete=True, fandom="F")
+    # Pendiente, con muchas palabras: no debería sumar a ningún bucket, solo
+    # lo leído cuenta acá (es un gráfico de "cuánto leíste", no de biblioteca).
+    _make_fic(session, ao3_id="3", titulo="Pendiente", word_count=300_000, complete=True, fandom="F")
+    session.add(Lectura(fic_id=drabble.id, estado="leido"))
+    session.add(Lectura(fic_id=epico.id, estado="leido"))
     session.commit()
 
     resultado = dict(stats.distribucion_longitud(session))
     assert resultado["drabble (<1k)"] == 1
     assert resultado["epico (100k+)"] == 1
+    assert sum(resultado.values()) == 2
 
 
 def test_ratio_wip_vs_completos(session):

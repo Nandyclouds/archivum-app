@@ -183,6 +183,54 @@ def test_filtrar_fics_por_tag_adicional(client, db_session):
     assert [f["titulo"] for f in r.json()] == ["A"]
 
 
+def test_filtrar_fics_por_varios_personajes_a_la_vez(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    frodo = Personaje(nombre="Frodo Baggins")
+    sam = Personaje(nombre="Samwise Gamgee")
+    a.personajes.extend([frodo, sam])
+    b.personajes.append(frodo)
+    db_session.commit()
+
+    # AND, no OR: solo el fic que tiene AMBOS personajes debe aparecer.
+    r = client.get("/api/fics", params=[("personaje", "Frodo Baggins"), ("personaje", "Samwise Gamgee")])
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_varios_tags_a_la_vez(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    slow_burn = TagAdicional(nombre="Slow Burn")
+    a.tags_adicionales.extend([slow_burn, TagAdicional(nombre="Fluff")])
+    b.tags_adicionales.append(slow_burn)
+    db_session.commit()
+
+    r = client.get("/api/fics", params=[("tag", "Slow Burn"), ("tag", "Fluff")])
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_categoria(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    a.categorias = "F/F"
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    b.categorias = "F/M|Multi"
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"categoria": "F/F"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
+def test_filtrar_fics_por_idioma(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    a.idioma = "Español"
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    b.idioma = "English"
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"idioma": "Español"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
 def test_filtrar_fics_por_rating(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     a.rating = "Explicit"
@@ -211,6 +259,7 @@ def test_opciones_filtro(client, db_session):
     fic = _crear_fic(db_session)
     fic.personajes.append(Personaje(nombre="Frodo Baggins"))
     fic.tags_adicionales.append(TagAdicional(nombre="Slow Burn"))
+    fic.idioma = "Español"
     db_session.commit()
 
     r = client.get("/api/fics/opciones-filtro")
@@ -218,8 +267,10 @@ def test_opciones_filtro(client, db_session):
     body = r.json()
     assert "Explicit" in body["ratings"]
     assert "Major Character Death" in body["warnings"]
+    assert "F/F" in body["categorias"]
     assert body["personajes"] == ["Frodo Baggins"]
     assert body["tags"] == ["Slow Burn"]
+    assert body["idiomas"] == ["Español"]
 
 
 def test_listar_fics_orden_palabras(client, db_session):

@@ -155,6 +155,7 @@ class ArchivoResumen(BaseModel):
 class FicDetail(FicListItem):
     autor_url: str | None = None
     rating: str | None = None
+    idioma: str | None = None
     categorias: list[str] = []
     warnings: list[str] = []
     summary: str | None = None

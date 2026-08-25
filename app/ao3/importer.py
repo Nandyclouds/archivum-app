@@ -112,6 +112,7 @@ def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool]:
     fic.complete = parsed.complete
     fic.restricted = parsed.restricted
     fic.rating = parsed.rating
+    fic.idioma = parsed.idioma
     fic.categorias = "|".join(parsed.categorias) or None
     fic.warnings = "|".join(parsed.warnings) or None
     fic.summary = parsed.summary
