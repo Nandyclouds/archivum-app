@@ -304,7 +304,7 @@ function Identidad() {
   }
 
   return (
-    <div className="arv-card" style={{ cursor: "pointer" }} onClick={empezarEdicion}>
+    <div style={{ cursor: "pointer", padding: "2px 4px 18px" }} onClick={empezarEdicion}>
       {perfil.data?.nombre_usuario ? (
         <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 26 }}>
           {perfil.data.nombre_usuario}
@@ -457,13 +457,13 @@ function Favoritos() {
       <>
       <div className="arv-favoritos-grid">
         {lista.map((f, i) => (
-          <Link
-            key={f.fic_id}
-            to={`/fics/${f.fic_id}`}
-            className="arv-favorito-card"
-            style={{ background: PALETA_FAVORITOS[i % 4].bg, color: PALETA_FAVORITOS[i % 4].fg }}
-          >
-            <span>{f.titulo}</span>
+          <Link key={f.fic_id} to={`/fics/${f.fic_id}`} className="arv-favorito-card">
+            <div className="arv-favorito-arco" style={{ background: PALETA_FAVORITOS[i % 4].bg }} />
+            <div className="arv-favorito-texto">
+              <span className="arv-favorito-titulo">{f.titulo}</span>
+              <span className="arv-favorito-linea" />
+              <span className="arv-favorito-autor">{t("perfil.porAutor", { autor: f.autor })}</span>
+            </div>
             <button
               className="arv-favorito-quitar"
               onClick={(e) => quitar(e, f.fic_id)}

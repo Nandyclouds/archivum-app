@@ -152,8 +152,8 @@ def listar_favoritos(db: Session = Depends(get_session)):
     return {
         "coleccion_id": coleccion.id,
         "total": len(todos),
-        "fics": [{"fic_id": f.id, "titulo": f.titulo} for f in visibles[:FAVORITOS_VISIBLES]],
-        "todos": [{"fic_id": f.id, "titulo": f.titulo} for f in todos],
+        "fics": [{"fic_id": f.id, "titulo": f.titulo, "autor": f.autor} for f in visibles[:FAVORITOS_VISIBLES]],
+        "todos": [{"fic_id": f.id, "titulo": f.titulo, "autor": f.autor} for f in todos],
         "destacados_ids": [i for i in destacados_ids if i in fics_por_id],
     }
 

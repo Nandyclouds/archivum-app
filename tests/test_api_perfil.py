@@ -204,7 +204,7 @@ def test_agregar_y_listar_favoritos(client, db_session):
 
     body = client.get("/api/perfil/favoritos").json()
     assert body["total"] == 1
-    assert body["fics"] == [{"fic_id": fic.id, "titulo": "Mi favorito"}]
+    assert body["fics"] == [{"fic_id": fic.id, "titulo": "Mi favorito", "autor": "autora"}]
     assert body["coleccion_id"] is not None
 
 

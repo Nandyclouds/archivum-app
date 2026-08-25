@@ -223,6 +223,7 @@
     "buscarFicPlaceholder": "Buscar un fic para agregar…",
     "sinResultados": "Sin resultados.",
     "quitarDeFavoritos": "Quitar de favoritos",
+    "porAutor": "por {{autor}}",
     "elegirDestacados": "Elegir destacados",
     "graficos": "Gráficos",
     "palabrasEnAnio": "palabras en {{anio}}",
