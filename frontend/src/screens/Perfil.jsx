@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { User } from "lucide-react";
+import { Pencil, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -311,9 +311,17 @@ function Favoritos() {
             <button
               onClick={empezarAElegir}
               className="arv-muted"
-              style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 12.5, padding: 0 }}
+              aria-label={t("perfil.elegirDestacados")}
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+              }}
             >
-              {t("perfil.elegirDestacados")}
+              <Pencil size={13} />
             </button>
           )}
           {coleccionId && total > 4 && (
