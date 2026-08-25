@@ -95,6 +95,19 @@ async def exigir_token(request: Request, call_next):
             return JSONResponse({"detail": "No autorizado"}, status_code=401)
     return await call_next(request)
 
+
+@app.middleware("http")
+async def sin_cache_en_api(request: Request, call_next):
+    """Evita que el navegador (sobre todo Chrome en Android) sirva una
+    respuesta de /api vieja desde su caché HTTP para la misma URL, en vez de
+    pedirla de nuevo — causaba que stats/gráficos mostraran datos que ya
+    habían cambiado en el server hasta hacer un hard refresh.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/api"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
 app.include_router(fics.router, prefix="/api")
 app.include_router(colecciones.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")

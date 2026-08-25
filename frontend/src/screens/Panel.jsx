@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -7,7 +6,12 @@ import { Cargando, ErrorCarga } from "../components/EstadoCarga";
 
 export function Panel() {
   const { t } = useTranslation();
-  const [anio, setAnio] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const anio = searchParams.get("anio") ?? "";
+
+  function setAnio(valor) {
+    setSearchParams(valor ? { anio: valor } : {}, { replace: true });
+  }
 
   const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio]);
   const anios = useFetch(() => api.stats.palabrasPorAnio());

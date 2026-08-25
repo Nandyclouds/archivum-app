@@ -309,7 +309,16 @@ function Identidad() {
   return (
     <div style={{ cursor: "pointer", padding: "2px 4px 18px" }} onClick={empezarEdicion}>
       {perfil.data?.nombre_usuario ? (
-        <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 26 }}>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: "var(--font-display)",
+            fontStyle: "italic",
+            fontWeight: 500,
+            fontSize: 18,
+            color: "var(--color-text)",
+          }}
+        >
           {perfil.data.nombre_usuario}
         </h2>
       ) : (
