@@ -70,6 +70,9 @@ img.emoji {
   margin: 0 0.04em;
   vertical-align: -0.2em;
 }
+img.emoji-personalizado {
+  object-fit: contain;
+}
 
 button,
 input,

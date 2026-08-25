@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthGate } from "./components/AuthGate";
 import { NavBar } from "./components/NavBar";
 import { NovedadesProvider } from "./lib/NovedadesContext";
+import { EmojiPersonalizadoProvider } from "./lib/EmojiPersonalizadoContext";
 import { Panel } from "./screens/Panel";
 import { TopCompleto } from "./screens/TopCompleto";
 import { Buscar } from "./screens/Buscar";
@@ -56,7 +57,9 @@ function AppAutenticada() {
   return (
     <AuthGate>
       <NovedadesProvider>
-        <AppShell />
+        <EmojiPersonalizadoProvider>
+          <AppShell />
+        </EmojiPersonalizadoProvider>
       </NovedadesProvider>
     </AuthGate>
   );

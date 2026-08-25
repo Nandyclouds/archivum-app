@@ -29,6 +29,7 @@ from app.api.routers import (
     ao3_import,
     archivos,
     colecciones,
+    emojis,
     etiquetas,
     fics,
     import_log,
@@ -132,6 +133,7 @@ app.include_router(sync.router, prefix="/api")
 app.include_router(perfil.router, prefix="/api")
 app.include_router(novedades.router, prefix="/api")
 app.include_router(recomendaciones.router, prefix="/api")
+app.include_router(emojis.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

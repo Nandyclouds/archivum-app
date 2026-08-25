@@ -301,6 +301,12 @@
     "temaClaro": "Día",
     "temaOscuro": "Noche",
     "colorDeAcento": "Color de acento",
-    "ajustes": "Ajustes"
+    "ajustes": "Ajustes",
+    "emojisPersonalizados": "Emojis personalizados",
+    "emojisPersonalizadosInfo": "Subí una imagen y ponele un nombre corto: después escribí :nombre: en tu bio, notas o reseñas y se va a mostrar como ese sticker.",
+    "nombreEmojiPlaceholder": "nombre (sin espacios)",
+    "subirEmoji": "Agregar",
+    "subiendoEmoji": "Agregando…",
+    "borrarEmoji": "Borrar emoji {{nombre}}"
   }
 }

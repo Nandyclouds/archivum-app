@@ -204,4 +204,29 @@ export const api = {
     relecturas: (limite = 10) => request(`/stats/relecturas?limite=${limite}`),
     ratingPorFandom: () => request("/stats/rating-por-fandom"),
   },
+  emojis: {
+    list: () => request("/emojis"),
+    create: async (nombre, archivo) => {
+      const formData = new FormData();
+      formData.append("nombre", nombre);
+      formData.append("archivo", archivo);
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/emojis`, {
+        method: "POST",
+        headers: token ? { "X-Archivum-Token": token } : {},
+        body: formData,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(`${response.status}: ${body.detail ?? response.statusText}`);
+      }
+      return response.json();
+    },
+    remove: (id) => request(`/emojis/${id}`, { method: "DELETE" }),
+    imagenUrl: (id) => {
+      const token = getToken();
+      const query = token ? `?token=${encodeURIComponent(token)}` : "";
+      return `${API_BASE}/emojis/${id}/imagen${query}`;
+    },
+  },
 };

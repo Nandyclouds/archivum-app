@@ -430,3 +430,17 @@ class PerfilConfig(Base):
     # ahí). CSV en orden, ej. "12,45,3,89". None = todavía no eligió ninguno,
     # se sigue mostrando el fallback alfabético de siempre.
     favoritos_destacados: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class EmojiPersonalizado(Base):
+    """Sticker subido a mano, referenciable como :nombre: en cualquier texto
+    que pase por <ConEmoji> (ver frontend/src/components/ConEmoji.jsx) — a
+    diferencia de un emoji de Unicode normal, esto es una imagen elegida
+    por la usuaria, sin depender de que exista en el estándar de Unicode."""
+
+    __tablename__ = "emojis_personalizados"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    ruta_archivo: Mapped[str] = mapped_column(String(500))
+    creado_en: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)

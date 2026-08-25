@@ -301,6 +301,12 @@
     "temaClaro": "Day",
     "temaOscuro": "Night",
     "colorDeAcento": "Accent color",
-    "ajustes": "Settings"
+    "ajustes": "Settings",
+    "emojisPersonalizados": "Custom emojis",
+    "emojisPersonalizadosInfo": "Upload an image and give it a short name: then type :name: in your bio, notes, or reviews and it'll show as that sticker.",
+    "nombreEmojiPlaceholder": "name (no spaces)",
+    "subirEmoji": "Add",
+    "subiendoEmoji": "Adding…",
+    "borrarEmoji": "Delete emoji {{nombre}}"
   }
 }

@@ -53,5 +53,9 @@ class Settings(BaseSettings):
     def perfil_dir(self) -> Path:
         return BASE_DIR / "data" / "perfil"
 
+    @property
+    def emojis_dir(self) -> Path:
+        return BASE_DIR / "data" / "emojis"
+
 
 settings = Settings()

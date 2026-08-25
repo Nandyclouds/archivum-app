@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, User } from "lucide-react";
+import { Pencil, Trash2, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { ConEmoji } from "../components/ConEmoji";
 import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
+import { useEmojisPersonalizados } from "../lib/EmojiPersonalizadoContext";
 import { cambiarIdioma } from "../i18n";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
 
@@ -32,6 +33,7 @@ export function Perfil() {
       <Graficos />
       <CitaFavorita />
       <Ajustes />
+      <EmojisPersonalizados />
 
       <div className="arv-card">
         <h3>{t("perfil.historialDeLectura")}</h3>
@@ -869,6 +871,95 @@ function Ajustes() {
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function EmojisPersonalizados() {
+  const { t } = useTranslation();
+  const { lista, recargar } = useEmojisPersonalizados();
+  const [nombre, setNombre] = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState("");
+  const inputArchivoRef = useRef(null);
+
+  async function subir() {
+    if (!nombre.trim() || !archivo) return;
+    setSubiendo(true);
+    setError("");
+    try {
+      await api.emojis.create(nombre.trim().toLowerCase(), archivo);
+      setNombre("");
+      setArchivo(null);
+      if (inputArchivoRef.current) inputArchivoRef.current.value = "";
+      recargar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  async function borrar(id) {
+    await api.emojis.remove(id);
+    recargar();
+  }
+
+  return (
+    <div className="arv-card">
+      <h3>{t("perfil.emojisPersonalizados")}</h3>
+      <p className="arv-muted" style={{ marginBottom: 14 }}>
+        {t("perfil.emojisPersonalizadosInfo")}
+      </p>
+
+      {lista.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+          {lista.map((e) => (
+            <div
+              key={e.id}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: 60 }}
+            >
+              <img
+                src={api.emojis.imagenUrl(e.id)}
+                alt={e.nombre}
+                style={{ width: 36, height: 36, objectFit: "contain" }}
+              />
+              <span className="arv-muted" style={{ fontSize: 10, textAlign: "center", wordBreak: "break-all" }}>
+                :{e.nombre}:
+              </span>
+              <button
+                onClick={() => borrar(e.id)}
+                aria-label={t("perfil.borrarEmoji", { nombre: e.nombre })}
+                style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--color-text-muted)", padding: 0 }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <input
+          ref={inputArchivoRef}
+          type="file"
+          accept="image/png,image/webp,image/gif,image/jpeg,image/svg+xml"
+          onChange={(e) => setArchivo(e.target.files[0] ?? null)}
+          style={{ flex: "1 1 160px", minWidth: 0 }}
+        />
+        <input
+          className="arv-input"
+          style={{ flex: "1 1 140px", minWidth: 0 }}
+          placeholder={t("perfil.nombreEmojiPlaceholder")}
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+        />
+        <button className="arv-btn arv-btn-secondary" disabled={subiendo || !nombre.trim() || !archivo} onClick={subir}>
+          {subiendo ? t("perfil.subiendoEmoji") : t("perfil.subirEmoji")}
+        </button>
+      </div>
+      {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

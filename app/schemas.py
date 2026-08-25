@@ -293,3 +293,9 @@ class ImportLogOut(BaseModel):
     fics_actualizados: int
     errores: int
     errores_detalle: str | None = None
+
+
+class EmojiPersonalizadoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nombre: str
