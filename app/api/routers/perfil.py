@@ -52,6 +52,9 @@ def obtener_perfil(db: Session = Depends(get_session)):
         "cita_texto": config.cita_texto if config else None,
         "cita_fuente": config.cita_fuente if config else None,
         "nombre_usuario": config.nombre_usuario if config else None,
+        "handle": config.handle if config else None,
+        "pronombres": config.pronombres if config else None,
+        "insignia": config.insignia if config else None,
         "bio": config.bio if config else None,
     }
 
@@ -60,6 +63,9 @@ class PerfilUpdate(BaseModel):
     cita_texto: str | None = None
     cita_fuente: str | None = None
     nombre_usuario: str | None = None
+    handle: str | None = None
+    pronombres: str | None = None
+    insignia: str | None = None
     bio: str | None = None
 
 

@@ -410,6 +410,11 @@ class PerfilConfig(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre_usuario: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    handle: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    pronombres: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Etiqueta corta y libre debajo del nombre (ej. "Protagonist", "she who
+    # reads at 3am") — texto propio, no un preset fijo.
+    insignia: Mapped[str | None] = mapped_column(String(50), nullable=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
     portada_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)

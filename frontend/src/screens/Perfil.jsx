@@ -254,11 +254,17 @@ function Identidad() {
   const perfil = useFetch(() => api.perfil.get());
   const [editando, setEditando] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
+  const [handle, setHandle] = useState("");
+  const [pronombres, setPronombres] = useState("");
+  const [insignia, setInsignia] = useState("");
   const [bio, setBio] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   function empezarEdicion() {
     setNombreUsuario(perfil.data?.nombre_usuario ?? "");
+    setHandle(perfil.data?.handle ?? "");
+    setPronombres(perfil.data?.pronombres ?? "");
+    setInsignia(perfil.data?.insignia ?? "");
     setBio(perfil.data?.bio ?? "");
     setEditando(true);
   }
@@ -266,7 +272,7 @@ function Identidad() {
   async function guardar() {
     setGuardando(true);
     try {
-      await api.perfil.actualizarIdentidad(nombreUsuario, bio);
+      await api.perfil.actualizarIdentidad(nombreUsuario, handle, pronombres, insignia, bio);
       setEditando(false);
       perfil.reload();
     } catch (err) {
@@ -287,6 +293,27 @@ function Identidad() {
           onChange={(e) => setNombreUsuario(e.target.value)}
           autoFocus
         />
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <input
+            className="arv-input"
+            placeholder={t("perfil.handlePlaceholder")}
+            value={handle}
+            onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))}
+          />
+          <input
+            className="arv-input"
+            placeholder={t("perfil.pronombresPlaceholder")}
+            value={pronombres}
+            onChange={(e) => setPronombres(e.target.value)}
+          />
+        </div>
+        <input
+          className="arv-input"
+          style={{ marginBottom: 8 }}
+          placeholder={t("perfil.insigniaPlaceholder")}
+          value={insignia}
+          onChange={(e) => setInsignia(e.target.value)}
+        />
         <textarea
           className="arv-input"
           style={{ resize: "vertical", minHeight: 60, marginBottom: 10 }}
@@ -305,6 +332,8 @@ function Identidad() {
       </div>
     );
   }
+
+  const { handle: handleActual, pronombres: pronombresActual, insignia: insigniaActual } = perfil.data ?? {};
 
   return (
     <div style={{ cursor: "pointer", padding: "2px 4px 18px" }} onClick={empezarEdicion}>
@@ -326,10 +355,22 @@ function Identidad() {
           {t("perfil.agregarUsuario")}
         </p>
       )}
+      {(handleActual || pronombresActual) && (
+        <p className="arv-muted" style={{ margin: "3px 0 0", fontSize: 13 }}>
+          {handleActual && `@${handleActual}`}
+          {handleActual && pronombresActual && " · "}
+          {pronombresActual}
+        </p>
+      )}
+      {insigniaActual && (
+        <span className="arv-insignia" style={{ marginTop: 8 }}>
+          {insigniaActual}
+        </span>
+      )}
       {perfil.data?.bio && (
         <p
           className="arv-muted"
-          style={{ marginBottom: 0, marginTop: 6, fontStyle: "italic", fontSize: 14.5, lineHeight: 1.5 }}
+          style={{ marginBottom: 0, marginTop: 8, fontStyle: "italic", fontSize: 14.5, lineHeight: 1.5 }}
         >
           {perfil.data.bio}
         </p>

@@ -646,6 +646,7 @@ a {
   border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 600;
+  text-decoration: none;
 }
 .arv-tag-accent {
   background: var(--color-accent-soft);
@@ -654,6 +655,18 @@ a {
 .arv-tag-accent-2 {
   background: var(--color-accent-2-soft);
   color: var(--color-accent-2);
+}
+
+.arv-insignia {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .arv-bar-row {

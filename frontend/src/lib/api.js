@@ -156,8 +156,11 @@ export const api = {
     },
     actualizarCita: (cita_texto, cita_fuente) =>
       request("/perfil", { method: "PATCH", body: JSON.stringify({ cita_texto, cita_fuente }) }),
-    actualizarIdentidad: (nombre_usuario, bio) =>
-      request("/perfil", { method: "PATCH", body: JSON.stringify({ nombre_usuario, bio }) }),
+    actualizarIdentidad: (nombre_usuario, handle, pronombres, insignia, bio) =>
+      request("/perfil", {
+        method: "PATCH",
+        body: JSON.stringify({ nombre_usuario, handle, pronombres, insignia, bio }),
+      }),
     actualizarPosicion: (tipo, x, y) =>
       request(`/perfil/posicion/${tipo}`, { method: "PUT", body: JSON.stringify({ x, y }) }),
     favoritos: {

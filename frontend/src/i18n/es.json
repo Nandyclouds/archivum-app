@@ -242,6 +242,9 @@
   },
   "perfil": {
     "nombreUsuarioPlaceholder": "Tu nombre de usuario…",
+    "handlePlaceholder": "handle (sin @)",
+    "pronombresPlaceholder": "Pronombres",
+    "insigniaPlaceholder": "Una etiqueta corta (ej: Protagonist)",
     "bioPlaceholder": "Una bio corta…",
     "agregarUsuario": "Agregar nombre de usuario",
     "cambiarFoto": "Cambiar foto",

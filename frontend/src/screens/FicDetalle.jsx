@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Droplet, Check } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
@@ -40,14 +40,22 @@ export function FicDetalle() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
           {f.fandoms.map((fd) => (
-            <span className="arv-tag arv-tag-accent" key={fd.id}>
+            <Link
+              to={`/buscar?fandom=${encodeURIComponent(fd.nombre)}`}
+              className="arv-tag arv-tag-accent"
+              key={fd.id}
+            >
               {fd.nombre}
-            </span>
+            </Link>
           ))}
           {f.ships.map((s) => (
-            <span className="arv-tag arv-tag-accent-2" key={s.id}>
+            <Link
+              to={`/buscar?ship=${encodeURIComponent(s.nombre)}`}
+              className="arv-tag arv-tag-accent-2"
+              key={s.id}
+            >
               {s.nombre}
-            </span>
+            </Link>
           ))}
         </div>
 
@@ -105,9 +113,14 @@ function MisColecciones({ fic, onChange }) {
   const [guardando, setGuardando] = useState(false);
 
   const idsDelFic = new Set(fic.colecciones.map((c) => c.id));
-  const ordenadas = [...(colecciones.data ?? [])].sort((a, b) =>
-    a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
-  );
+  // Las colecciones donde ya está este fic van primero (para verlas de un
+  // vistazo sin tener que buscarlas entre el resto), después alfabético.
+  const ordenadas = [...(colecciones.data ?? [])].sort((a, b) => {
+    const yaEstaA = idsDelFic.has(a.id);
+    const yaEstaB = idsDelFic.has(b.id);
+    if (yaEstaA !== yaEstaB) return yaEstaA ? -1 : 1;
+    return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" });
+  });
 
   async function alternar(coleccionId, yaEsta) {
     setGuardando(true);

@@ -69,6 +69,9 @@ def test_obtener_perfil_vacio(client):
         "cita_texto": None,
         "cita_fuente": None,
         "nombre_usuario": None,
+        "handle": None,
+        "pronombres": None,
+        "insignia": None,
         "bio": None,
     }
 
@@ -159,11 +162,23 @@ def test_borrar_cita_con_texto_vacio(client):
 
 
 def test_actualizar_identidad(client):
-    r = client.patch("/api/perfil", json={"nombre_usuario": "mafe", "bio": "throw a punch, fall in love"})
+    r = client.patch(
+        "/api/perfil",
+        json={
+            "nombre_usuario": "mafe",
+            "handle": "crislvsbooks",
+            "pronombres": "she/her",
+            "insignia": "Protagonist",
+            "bio": "throw a punch, fall in love",
+        },
+    )
     assert r.status_code == 200
 
     body = client.get("/api/perfil").json()
     assert body["nombre_usuario"] == "mafe"
+    assert body["handle"] == "crislvsbooks"
+    assert body["pronombres"] == "she/her"
+    assert body["insignia"] == "Protagonist"
     assert body["bio"] == "throw a punch, fall in love"
 
 
