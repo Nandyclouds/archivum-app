@@ -8,11 +8,14 @@ import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { cambiarIdioma } from "../i18n";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
 
+// Degradé derivado del color de acento actual (el que elijas en Ajustes),
+// no colores fijos — color-mix() lee la custom property en vivo, así que
+// cambiar el acento actualiza esta paleta solo, sin tocar nada acá.
 const PALETA_FAVORITOS = [
-  { bg: "var(--color-text)", fg: "var(--color-surface)" },
-  { bg: "var(--color-accent)", fg: "var(--color-surface)" },
-  { bg: "var(--color-accent-2)", fg: "var(--color-surface)" },
-  { bg: "var(--color-surface-2)", fg: "var(--color-text)" },
+  "var(--color-accent)",
+  "color-mix(in srgb, var(--color-accent) 70%, var(--color-surface))",
+  "color-mix(in srgb, var(--color-accent) 40%, var(--color-surface))",
+  "color-mix(in srgb, var(--color-accent) 22%, var(--color-surface))",
 ];
 
 export function Perfil() {
@@ -458,7 +461,7 @@ function Favoritos() {
       <div className="arv-favoritos-grid">
         {lista.map((f, i) => (
           <Link key={f.fic_id} to={`/fics/${f.fic_id}`} className="arv-favorito-card">
-            <div className="arv-favorito-arco" style={{ background: PALETA_FAVORITOS[i % 4].bg }} />
+            <div className="arv-favorito-arco" style={{ background: PALETA_FAVORITOS[i % 4] }} />
             <div className="arv-favorito-texto">
               <span className="arv-favorito-titulo">{f.titulo}</span>
               <span className="arv-favorito-linea" />
