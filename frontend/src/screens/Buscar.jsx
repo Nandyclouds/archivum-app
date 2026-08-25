@@ -23,6 +23,7 @@ export function Buscar() {
   const estado = searchParams.get("estado") || "";
   const completo = searchParams.get("completo"); // "true" | "false" | null
   const conNota = searchParams.get("con_nota") === "1";
+  const anio = searchParams.get("anio") || "";
 
   function setFiltro(clave, valor) {
     const next = new URLSearchParams(searchParams);
@@ -55,6 +56,7 @@ export function Buscar() {
         categoria,
         idioma,
         estado,
+        anio,
         ...(completo !== null ? { completo } : {}),
         ...(conNota ? { con_nota: true } : {}),
         limit: 100,
@@ -73,6 +75,7 @@ export function Buscar() {
       estado,
       completo,
       conNota,
+      anio,
     ]
   );
 
@@ -87,7 +90,8 @@ export function Buscar() {
     idioma ||
     estado ||
     completo !== null ||
-    conNota;
+    conNota ||
+    anio;
 
   return (
     <div>
@@ -217,6 +221,7 @@ export function Buscar() {
             <span className="arv-tag arv-tag-accent-2">{completo === "true" ? t("buscar.completos") : t("buscar.wip")}</span>
           )}
           {conNota && <span className="arv-tag arv-tag-accent-2">{t("buscar.conNota")}</span>}
+          {anio && <span className="arv-tag arv-tag-accent-2">{anio}</span>}
           <button
             className="arv-tab"
             onClick={() => {

@@ -86,7 +86,11 @@ export function Panel() {
           </p>
         )}
         {topFandoms.data?.map((f) => (
-          <Link to={`/buscar?fandom=${encodeURIComponent(f.nombre)}`} className="arv-bar-row arv-row-link" key={f.nombre}>
+          <Link
+            to={`/buscar?fandom=${encodeURIComponent(f.nombre)}${anio ? `&anio=${anio}` : ""}`}
+            className="arv-bar-row arv-row-link"
+            key={f.nombre}
+          >
             <span style={{ flex: "0 0 40%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {f.nombre}
             </span>
@@ -121,7 +125,11 @@ export function Panel() {
         </h3>
         {topShips.loading && <Cargando />}
         {topShips.data?.map((s) => (
-          <Link to={`/buscar?ship=${encodeURIComponent(s.nombre)}`} className="arv-list-item arv-row-link" key={s.nombre}>
+          <Link
+            to={`/buscar?ship=${encodeURIComponent(s.nombre)}${anio ? `&anio=${anio}` : ""}`}
+            className="arv-list-item arv-row-link"
+            key={s.nombre}
+          >
             <span>{s.nombre}</span>
             <span className="arv-muted">×{s.total}</span>
           </Link>
@@ -139,7 +147,11 @@ export function Panel() {
         </h3>
         {topRelaciones.loading && <Cargando />}
         {topRelaciones.data?.map((s) => (
-          <Link to={`/buscar?ship=${encodeURIComponent(s.nombre)}`} className="arv-list-item arv-row-link" key={s.nombre}>
+          <Link
+            to={`/buscar?ship=${encodeURIComponent(s.nombre)}${anio ? `&anio=${anio}` : ""}`}
+            className="arv-list-item arv-row-link"
+            key={s.nombre}
+          >
             <span>{s.nombre}</span>
             <span className="arv-muted">×{s.total}</span>
           </Link>
