@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Eye, Download, Trash2 } from "lucide-react";
+import { Eye, Download, FileX, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
@@ -110,8 +110,13 @@ export function Archivo() {
                       </button>
                     </>
                   ) : (
-                    <span className="arv-tag arv-tag-accent" style={{ fontSize: 11 }}>
-                      {t("archivo.faltaEnDisco")}
+                    <span
+                      className="arv-icon-btn arv-icon-btn-alerta"
+                      role="img"
+                      aria-label={t("archivo.faltaEnDisco")}
+                      title={t("archivo.faltaEnDisco")}
+                    >
+                      <FileX size={16} />
                     </span>
                   )}
                   <button
@@ -139,8 +144,13 @@ export function Archivo() {
                       <Download size={16} />
                     </button>
                   ) : (
-                    <span className="arv-tag arv-tag-accent" style={{ fontSize: 11 }}>
-                      {t("archivo.faltaEnDisco")}
+                    <span
+                      className="arv-icon-btn arv-icon-btn-alerta"
+                      role="img"
+                      aria-label={t("archivo.faltaEnDisco")}
+                      title={t("archivo.faltaEnDisco")}
+                    >
+                      <FileX size={16} />
                     </span>
                   )}
                   <button

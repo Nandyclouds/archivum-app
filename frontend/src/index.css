@@ -650,6 +650,11 @@ a {
 .arv-icon-btn:hover {
   background: var(--color-border);
 }
+.arv-icon-btn-alerta {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  cursor: default;
+}
 
 .arv-input {
   width: 100%;
