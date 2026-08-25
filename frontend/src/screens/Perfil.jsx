@@ -306,14 +306,21 @@ function Identidad() {
   return (
     <div className="arv-card" style={{ cursor: "pointer" }} onClick={empezarEdicion}>
       {perfil.data?.nombre_usuario ? (
-        <h2 style={{ margin: 0 }}>{perfil.data.nombre_usuario}</h2>
+        <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontStyle: "italic", fontSize: 26 }}>
+          {perfil.data.nombre_usuario}
+        </h2>
       ) : (
         <p className="arv-muted" style={{ margin: 0 }}>
           {t("perfil.agregarUsuario")}
         </p>
       )}
       {perfil.data?.bio && (
-        <p style={{ marginBottom: 0, marginTop: 6 }}>{perfil.data.bio}</p>
+        <p
+          className="arv-muted"
+          style={{ marginBottom: 0, marginTop: 6, fontStyle: "italic", fontSize: 14.5, lineHeight: 1.5 }}
+        >
+          {perfil.data.bio}
+        </p>
       )}
     </div>
   );

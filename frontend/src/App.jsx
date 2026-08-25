@@ -44,7 +44,7 @@ function AppShell() {
           <Route path="/compartir" element={<Compartir />} />
         </Routes>
       </main>
-      {esPerfil && <NavBar className="arv-navbar-abajo" />}
+      {esPerfil && <NavBar className="arv-navbar-abajo" minimal />}
     </div>
   );
 }

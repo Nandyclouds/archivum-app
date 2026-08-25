@@ -172,6 +172,15 @@ a {
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
   box-shadow: 0 -2px 10px rgba(43, 33, 24, 0.12);
 }
+.arv-scrollnav-minimal {
+  justify-content: center;
+  gap: 48px;
+  overflow: visible;
+}
+.arv-scrollnav-minimal .arv-tab {
+  padding: 10px;
+  border-radius: 50%;
+}
 
 .arv-card {
   background: var(--color-surface);

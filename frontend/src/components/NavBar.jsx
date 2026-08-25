@@ -13,22 +13,29 @@ const TABS = [
   { to: "/archivo", key: "archivo", icon: Archive },
 ];
 
-export function NavBar({ className = "" }) {
+export function NavBar({ className = "", minimal = false }) {
   const { t } = useTranslation();
   const { lista } = useNovedades();
   const noLeidas = lista.length;
+  // En Perfil la barra de abajo solo muestra volver a Perfil (ya estás acá,
+  // pero sirve de referencia) y saltar al Panel, desde donde se accede al
+  // resto de las pestañas con la barra normal de arriba.
+  const tabs = minimal ? TABS.filter((tab) => tab.key === "perfil" || tab.key === "panel") : TABS;
 
   return (
-    <nav className={`arv-scrollnav${className ? ` ${className}` : ""}`}>
-      {TABS.map(({ to, key, icon: Icon, end }) => (
+    <nav
+      className={`arv-scrollnav${minimal ? " arv-scrollnav-minimal" : ""}${className ? ` ${className}` : ""}`}
+    >
+      {tabs.map(({ to, key, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
           end={end}
           className={({ isActive }) => `arv-tab${isActive ? " active" : ""}`}
+          aria-label={minimal ? t(`nav.${key}`) : undefined}
         >
-          <Icon size={15} />
-          <span>{t(`nav.${key}`)}</span>
+          <Icon size={minimal ? 20 : 15} />
+          {!minimal && <span>{t(`nav.${key}`)}</span>}
           {key === "novedades" && noLeidas > 0 && <span className="arv-tab-badge">{noLeidas}</span>}
         </NavLink>
       ))}
