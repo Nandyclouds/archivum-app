@@ -12,6 +12,7 @@ on:
         type: choice
         options:
           - bookmarks
+          - bookmarks-rapido
           - fic
           - epub
           - marcados

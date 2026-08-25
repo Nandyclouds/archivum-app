@@ -19,6 +19,11 @@ export function Ao3() {
       </div>
 
       <BotonSync modo="bookmarks" tituloKey="ao3.actualizarBookmarks" infoKey="ao3.actualizarBookmarksInfo" />
+      <BotonSync
+        modo="bookmarks-rapido"
+        tituloKey="ao3.actualizarBookmarksRapido"
+        infoKey="ao3.actualizarBookmarksRapidoInfo"
+      />
       <BotonSync modo="marcados" tituloKey="ao3.actualizarMarcados" infoKey="ao3.actualizarMarcadosInfo" />
       <BotonSync modo="wips" tituloKey="ao3.actualizarWips" infoKey="ao3.actualizarWipsInfo" />
 

@@ -101,15 +101,23 @@ export function Recomendar() {
         />
 
         <h4 style={{ marginBottom: 8 }}>{t("recomendar.desdeColeccion")}</h4>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           {colecciones.data?.map((c) => (
             <button
               key={c.id}
-              className="arv-tag arv-tag-accent-2"
-              style={{ border: "none", cursor: "pointer" }}
+              className="arv-list-item"
+              style={{ width: "100%", border: "none", background: "transparent", textAlign: "left", cursor: "pointer" }}
               onClick={() => agregarDesdeColeccion(c.id)}
             >
-              + {c.nombre} ({c.cantidad_fics})
+              <div style={{ minWidth: 0 }}>
+                <span className="arv-tag arv-tag-accent-2" style={{ marginRight: 8 }}>
+                  {t(`colecciones.tipoLabel.${c.tipo}`, c.tipo)}
+                </span>
+                {c.nombre}
+              </div>
+              <span className="arv-muted" style={{ flex: "none" }}>
+                {t("colecciones.fics", { count: c.cantidad_fics })}
+              </span>
             </button>
           ))}
           {colecciones.data?.length === 0 && (

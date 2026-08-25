@@ -187,6 +187,8 @@
     "errores": "{{count}} errors",
     "actualizarBookmarks": "Update bookmarks",
     "actualizarBookmarksInfo": "Fetches the new bookmarks you added on AO3 since last time. Runs on GitHub Actions, so your PC doesn't need to be on — it can take several minutes (or more, if AO3 is rate-limiting).",
+    "actualizarBookmarksRapido": "Update bookmarks (quick)",
+    "actualizarBookmarksRapidoInfo": "Like \"Update bookmarks\", but stops as soon as it finds a long streak of already-known bookmarks in a row, instead of always walking every page. Much faster when you only added a few new bookmarks. The tradeoff: if you edited the tag or note on an old bookmark, this mode might miss it — run the full one every so often for that.",
     "actualizarMarcados": "Update Marked for Later",
     "actualizarMarcadosInfo": "Fetches the fics you marked as \"Marked for Later\" on your AO3 History (not a bookmark). For ones you already have, it just adds the \"Marked for Later\" tag so you can find them in Collections, without touching whatever reading status they already have.",
     "actualizarWips": "Check WIPs",

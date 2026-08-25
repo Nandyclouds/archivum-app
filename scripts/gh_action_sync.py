@@ -131,7 +131,21 @@ def modo_epub(client: RateLimitedClient, base_url: str, headers: dict, ao3_id: s
     print(f"  ingest-epub {ao3_id}: {response.json()}")
 
 
-def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> None:
+# Cuántos bookmarks YA conocidos seguidos hacen falta para que el modo
+# rápido asuma "de acá para atrás es todo viejo" y corte — AO3 lista los
+# bookmarks del más reciente al más viejo por defecto, así que una racha
+# larga de conocidos sin cortes es buena señal de que no queda nada nuevo.
+# Una página de bookmarks trae 20, así que esto es ~2 páginas de margen.
+RAPIDO_CORTE_CONSECUTIVOS = 40
+
+
+def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict, *, rapido: bool = False) -> None:
+    """Con rapido=True corta apenas ve una racha larga de bookmarks ya
+    conocidos seguidos, en vez de recorrer TODAS las páginas siempre — mucho
+    más rápido cuando lo único que cambió desde la última vez son un puñado
+    de bookmarks nuevos. La contra: si editaste el tag/nota de un bookmark
+    viejo (que ya quedó "atrás" en el listado), el modo rápido no se entera
+    hasta que corras el sync completo."""
     username = os.environ.get("AO3_USERNAME", "")
 
     response = requests.get(f"{base_url}/api/sync/known-ids", headers=headers, timeout=30)
@@ -143,6 +157,7 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
     start_page = 1
     progreso = {"pagina": start_page}
     nuevos = 0
+    consecutivos_conocidos = 0
     while True:
         try:
             for item in _walk_bookmark_items(client, username, start_page=start_page, progreso=progreso):
@@ -177,7 +192,16 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
                         nuevos += 1
                 except (RequestFailedError, requests.exceptions.RequestException) as exc:
                     print(f"  ! {item.work_id}: {exc}", file=sys.stderr)
-            break  # terminó de recorrer todas las páginas sin cortarse
+
+                if rapido:
+                    consecutivos_conocidos = consecutivos_conocidos + 1 if ya_conocido else 0
+                    if consecutivos_conocidos >= RAPIDO_CORTE_CONSECUTIVOS:
+                        print(
+                            f"Modo rápido: {consecutivos_conocidos} bookmarks conocidos seguidos, "
+                            "asumo que ya no queda nada nuevo y corto acá."
+                        )
+                        break
+            break  # terminó de recorrer todas las páginas, o cortó por rapido — ninguno es una falla
         except SessionRequestLimitReached as exc:
             print(f"Límite de sesión alcanzado: {exc}. Terminando esta corrida.")
             break
@@ -285,7 +309,9 @@ def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modo", required=True, choices=["fic", "epub", "bookmarks", "marcados", "wips"])
+    parser.add_argument(
+        "--modo", required=True, choices=["fic", "epub", "bookmarks", "bookmarks-rapido", "marcados", "wips"]
+    )
     parser.add_argument("--url", default=None)
     parser.add_argument("--ao3-id", default=None)
     args = parser.parse_args()
@@ -309,6 +335,8 @@ def main() -> None:
         modo_marcados(client, base_url, headers)
     elif args.modo == "wips":
         modo_wips(client, base_url, headers)
+    elif args.modo == "bookmarks-rapido":
+        modo_bookmarks(client, base_url, headers, rapido=True)
     else:
         modo_bookmarks(client, base_url, headers)
 
