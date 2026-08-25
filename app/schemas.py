@@ -159,6 +159,7 @@ class FicDetail(FicListItem):
     categorias: list[str] = []
     warnings: list[str] = []
     summary: str | None = None
+    nota_bookmark: str | None = None
     fecha_publicacion: datetime.date | None = None
     fecha_actualizacion: datetime.date | None = None
     fecha_primer_import: datetime.datetime

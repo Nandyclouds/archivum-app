@@ -175,6 +175,36 @@ def test_ingest_fic_sin_html_actualiza_tags_de_fic_existente(client, con_sync_se
     assert fic.lecturas[0].estado == "pendiente"
 
 
+def test_ingest_fic_con_nota_la_guarda(client, con_sync_secret, db_session):
+    client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "1", "html": _read("work_page.html"), "nota": "qué lindo esto"},
+    )
+    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
+    assert fic.nota_bookmark == "qué lindo esto"
+
+
+def test_ingest_fic_sin_clave_nota_no_borra_la_que_ya_habia(client, con_sync_secret, db_session):
+    """El sync de Marked for Later/WIPs manda ingest-fic sin la clave
+    "nota" en absoluto (nunca vio la página de bookmarks) — no debe
+    pisar con None una nota que ya estaba guardada."""
+    client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "1", "html": _read("work_page.html"), "nota": "nota original"},
+    )
+
+    client.post(
+        "/api/sync/ingest-fic",
+        headers=_headers(con_sync_secret),
+        json={"ao3_id": "1", "bookmark_tags": ["Marked for Later"]},
+    )
+
+    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
+    assert fic.nota_bookmark == "nota original"
+
+
 def test_ingest_fic_sin_html_ni_fic_existente_da_404(client, con_sync_secret):
     response = client.post(
         "/api/sync/ingest-fic",

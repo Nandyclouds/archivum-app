@@ -221,14 +221,28 @@ def guardar_snapshot_html(db: Session, fic: Fic, html: str, archivo_dir: Path | 
     return archivo
 
 
-def apply_bookmark_tags(db: Session, fic: Fic, tags: list[str], bookmarked_at: str | None) -> None:
-    """Traduce los bookmark tags de un fic a `lecturas`/`colecciones`.
+_SIN_INFO_DE_NOTA = object()  # distingue "no vino de bookmarks" de "vino, y no tiene nota"
+
+
+def apply_bookmark_tags(
+    db: Session, fic: Fic, tags: list[str], bookmarked_at: str | None, nota=_SIN_INFO_DE_NOTA
+) -> None:
+    """Traduce los bookmark tags de un fic a `lecturas`/`colecciones`, y de
+    paso guarda la nota privada del bookmark si mandaron una.
+
+    `nota` solo se pisa si el llamador la pasó explícitamente (viene de la
+    página de bookmarks, que es la única que la tiene) — así el sync de
+    "Marked for Later"/WIPs, que llama a esta misma función pero sin haber
+    visto la página de bookmarks, no borra una nota que ya estaba guardada.
 
     Idempotente: correr esto de nuevo sobre el mismo fic con los mismos tags
     no duplica filas (se fija si ya existe una lectura 'leido' para ese año,
     una lectura 'pendiente'/'abandonado' para ese fic, o si ya está en la
     colección correspondiente, antes de crear algo).
     """
+    if nota is not _SIN_INFO_DE_NOTA:
+        fic.nota_bookmark = nota
+
     if not tags:
         return
 
@@ -360,11 +374,11 @@ def _run_bookmarks_import(
                     result.fics_actualizados += 1
                 else:
                     result.fics_sin_cambios += 1
-                apply_bookmark_tags(db, fic, item.tags, item.bookmarked_at)
+                apply_bookmark_tags(db, fic, item.tags, item.bookmarked_at, nota=item.nota)
                 db.commit()
             except FicNotFoundError as exc:
                 if exc.fic is not None:
-                    apply_bookmark_tags(db, exc.fic, item.tags, item.bookmarked_at)
+                    apply_bookmark_tags(db, exc.fic, item.tags, item.bookmarked_at, nota=item.nota)
                 db.commit()
                 result.errores += 1
                 result.detalles_error.append(str(exc))

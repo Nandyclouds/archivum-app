@@ -59,8 +59,10 @@ def test_parse_bookmarks_page():
     fic1, fic2 = page.items
     assert fic1.tags == ["Leídos 2026", "Favoritos"]
     assert fic1.bookmarked_at == "2026-03-15"
+    assert fic1.nota == "La mitad de esto fue smut y aun así lo disfruté, increíble"
     assert fic2.tags == ["por leer"]
     assert fic2.bookmarked_at == "2026-01-11"
+    assert fic2.nota is None
 
 
 def test_parse_history_page():

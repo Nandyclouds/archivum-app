@@ -177,6 +177,10 @@ class Fic(Base):
     idioma: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
 
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Nota privada del bookmark ("Bookmarker's Notes" en AO3, si escribió
+    # una) — se pisa con lo último visto en la página de bookmarks, así que
+    # si la borra en AO3 también desaparece de acá.
+    nota_bookmark: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     fecha_publicacion: Mapped[datetime.date | None] = mapped_column(
         Date, nullable=True, index=True

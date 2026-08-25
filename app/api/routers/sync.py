@@ -132,6 +132,11 @@ class IngestFicRequest(BaseModel):
     html: str | None = None
     bookmark_tags: list[str] | None = None
     bookmarked_at: str | None = None
+    # Ausente a propósito (no un simple None) para el sync de "Marked for
+    # Later"/WIPs, que llama a este mismo endpoint pero nunca vio la página
+    # de bookmarks — no tiene que borrar una nota que ya estaba guardada.
+    # Ver apply_bookmark_tags/_SIN_INFO_DE_NOTA.
+    nota: str | None = None
 
 
 @router.post("/ingest-fic")
@@ -149,8 +154,10 @@ def ingest_fic(payload: IngestFicRequest, db: Session = Depends(get_session)):
             )
         es_nuevo = False
 
-    if payload.bookmark_tags:
-        apply_bookmark_tags(db, fic, payload.bookmark_tags, payload.bookmarked_at)
+    nota_provista = "nota" in payload.model_fields_set
+    if payload.bookmark_tags or nota_provista:
+        kwargs = {"nota": payload.nota} if nota_provista else {}
+        apply_bookmark_tags(db, fic, payload.bookmark_tags or [], payload.bookmarked_at, **kwargs)
     db.commit()
     return {"ao3_id": fic.ao3_id, "es_nuevo": es_nuevo}
 

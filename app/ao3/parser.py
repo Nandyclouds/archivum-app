@@ -58,6 +58,7 @@ class BookmarkItem:
     work_id: str
     tags: list[str] = field(default_factory=list)
     bookmarked_at: str | None = None  # "YYYY-MM-DD" si se pudo parsear
+    nota: str | None = None  # "Bookmarker's Notes", si escribió una
 
 
 @dataclass
@@ -233,13 +234,10 @@ def _total_pages(soup) -> int:
 def _bookmark_tags_and_date(item) -> tuple[list[str], str | None]:
     """Extrae los 'Bookmarker's Tags' y la fecha de bookmarkeo de un item.
 
-    OJO: a diferencia del resto de este módulo (calcado de la página de un
-    fic, que sí pudimos verificar contra una librería probada), esto está
-    reconstruido de memoria de cómo AO3 arma el bloque de un bookmark. No se
-    pudo confirmar contra HTML real. Matchea por texto visible ("Bookmarker's
-    Tags") en vez de por clase CSS exacta, para ser más tolerante a que me
-    haya equivocado en el nombre de alguna clase. Si en un import real no
-    aparecen tags que deberían, revisar esta función primero.
+    Matchea por texto visible ("Bookmarker's Tags") en vez de por clase CSS
+    exacta, para ser tolerante a variaciones — confirmado contra HTML real
+    de la página de bookmarks (el heading es <h6 class="meta heading"> con
+    ese texto, seguido de un <ul class="meta tags commas">).
     """
     tags: list[str] = []
     tags_heading = item.find(
@@ -264,6 +262,17 @@ def _bookmark_tags_and_date(item) -> tuple[list[str], str | None]:
     return tags, bookmarked_at
 
 
+def _bookmark_nota(item) -> str | None:
+    """Extrae la nota privada del bookmark ("Bookmarker's Notes"), si
+    escribió una. Confirmado contra HTML real: <blockquote class="userstuff
+    notes"><p>...</p></blockquote>, hermano del heading correspondiente."""
+    nota_el = item.select_one("blockquote.userstuff.notes")
+    if nota_el is None:
+        return None
+    texto = nota_el.get_text("\n", strip=True)
+    return texto or None
+
+
 def parse_bookmarks_page(html: str) -> BookmarksPage:
     soup = BeautifulSoup(html, "html.parser")
     container = soup.find("ol", class_="bookmark")
@@ -283,7 +292,8 @@ def parse_bookmarks_page(html: str) -> BookmarksPage:
         if work_id is None:
             continue
         tags, bookmarked_at = _bookmark_tags_and_date(item)
-        items.append(BookmarkItem(work_id=work_id, tags=tags, bookmarked_at=bookmarked_at))
+        nota = _bookmark_nota(item)
+        items.append(BookmarkItem(work_id=work_id, tags=tags, bookmarked_at=bookmarked_at, nota=nota))
 
     return BookmarksPage(items=items, total_pages=_total_pages(soup))
 

@@ -83,7 +83,12 @@ def _login(client: RateLimitedClient) -> None:
         sys.exit(1)
 
 
-def _ingest_fic(base_url: str, headers: dict, ao3_id: str, html: str | None = None, *, tags=None, bookmarked_at=None) -> None:
+_SIN_NOTA = object()  # sentinel: no mandar la clave "nota" en absoluto (ver IngestFicRequest)
+
+
+def _ingest_fic(
+    base_url: str, headers: dict, ao3_id: str, html: str | None = None, *, tags=None, bookmarked_at=None, nota=_SIN_NOTA
+) -> None:
     payload = {"ao3_id": ao3_id}
     if html:
         payload["html"] = html
@@ -91,6 +96,8 @@ def _ingest_fic(base_url: str, headers: dict, ao3_id: str, html: str | None = No
         payload["bookmark_tags"] = tags
     if bookmarked_at:
         payload["bookmarked_at"] = bookmarked_at
+    if nota is not _SIN_NOTA:
+        payload["nota"] = nota
     response = requests.post(f"{base_url}/api/sync/ingest-fic", json=payload, headers=headers, timeout=30)
     response.raise_for_status()
     print(f"  ingest-fic {ao3_id}: {response.json()}")
@@ -145,7 +152,14 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
                         # pero SÍ hay que re-mandar los tags: si cambiaste
                         # el tag en AO3 (ej. de "por leer" a "Leídos 2026"),
                         # esto es lo único que se entera de eso.
-                        _ingest_fic(base_url, headers, item.work_id, tags=item.tags, bookmarked_at=item.bookmarked_at)
+                        _ingest_fic(
+                            base_url,
+                            headers,
+                            item.work_id,
+                            tags=item.tags,
+                            bookmarked_at=item.bookmarked_at,
+                            nota=item.nota,
+                        )
                     else:
                         fic_response = client.get(WORK_URL.format(ao3_id=item.work_id))
                         fic_response.raise_for_status()
@@ -156,6 +170,7 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict) -> N
                             fic_response.text,
                             tags=item.tags,
                             bookmarked_at=item.bookmarked_at,
+                            nota=item.nota,
                         )
                         conocidos.add(item.work_id)
                         nuevos += 1

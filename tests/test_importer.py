@@ -468,3 +468,31 @@ def test_upsert_fic_ya_completo_no_repite_novedad(db):
     importer.upsert_fic(db, _parsed_fic(chapters_published=10, chapters_total=10, complete=True))
 
     assert db.query(Novedad).filter_by(tipo="completado").count() == 0
+
+
+def test_apply_bookmark_tags_guarda_la_nota(db):
+    fic, _ = importer.upsert_fic(db, _parsed_fic())
+    importer.apply_bookmark_tags(db, fic, [], None, nota="qué lindo esto")
+    assert fic.nota_bookmark == "qué lindo esto"
+
+
+def test_apply_bookmark_tags_sin_nota_no_toca_la_que_ya_habia(db):
+    """El sync de Marked for Later/WIPs llama a esta misma función pero
+    nunca vio la página de bookmarks — no debe borrar una nota guardada."""
+    fic, _ = importer.upsert_fic(db, _parsed_fic())
+    importer.apply_bookmark_tags(db, fic, [], None, nota="nota original")
+
+    importer.apply_bookmark_tags(db, fic, ["Marked for Later"], None)  # sin kwarg nota
+
+    assert fic.nota_bookmark == "nota original"
+
+
+def test_apply_bookmark_tags_nota_none_explicito_borra_la_nota(db):
+    """Si la página de bookmarks ya no tiene nota (la borró en AO3), mandar
+    nota=None a propósito sí tiene que limpiarla."""
+    fic, _ = importer.upsert_fic(db, _parsed_fic())
+    importer.apply_bookmark_tags(db, fic, [], None, nota="nota vieja")
+
+    importer.apply_bookmark_tags(db, fic, [], None, nota=None)
+
+    assert fic.nota_bookmark is None
