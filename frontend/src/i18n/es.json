@@ -142,6 +142,7 @@
   },
   "colecciones": {
     "sinColecciones": "Todavía no tenés colecciones.",
+    "ordenar": "Ordenar",
     "fics": "{{count}} fics",
     "nuevaColeccion": "Nueva colección",
     "nombrePlaceholder": "Nombre",
