@@ -306,7 +306,7 @@ function Favoritos() {
     <div className="arv-card">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
         <h3 style={{ marginBottom: 0 }}>{t("perfil.favoritos")}</h3>
-        <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {total > 4 && !eligiendo && (
             <button
               onClick={empezarAElegir}
