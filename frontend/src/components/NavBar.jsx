@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { LayoutDashboard, User, Search, Library, Archive, Cloud } from "lucide-react";
 
 const TABS = [
-  { to: "/", key: "panel", icon: LayoutDashboard, end: true },
   { to: "/perfil", key: "perfil", icon: User },
+  { to: "/", key: "panel", icon: LayoutDashboard, end: true },
   { to: "/buscar", key: "buscar", icon: Search },
   { to: "/colecciones", key: "colecciones", icon: Library },
   { to: "/ao3", key: "ao3", icon: Cloud },
