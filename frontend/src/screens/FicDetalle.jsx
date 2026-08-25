@@ -275,6 +275,18 @@ function EstadoLectura({ fic, lecturas, onChange }) {
   const ultimaLectura = lecturas.at(-1);
   const [guardando, setGuardando] = useState(false);
   const [fechaRelectura, setFechaRelectura] = useState(hoyISO());
+  const [editandoFechaId, setEditandoFechaId] = useState(null);
+
+  async function cambiarFecha(lecturaId, fecha) {
+    setGuardando(true);
+    try {
+      await api.lecturas.update(fic.id, lecturaId, { fecha_fin: fecha || null });
+      setEditandoFechaId(null);
+      onChange();
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   async function cambiarEstado(estado) {
     setGuardando(true);
@@ -342,7 +354,26 @@ function EstadoLectura({ fic, lecturas, onChange }) {
                 {l.es_relectura && <span className="arv-muted"> · {t("ficDetalle.relectura")}</span>}
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="arv-muted">{l.fecha_fin ?? t("ficDetalle.sinFecha")}</span>
+                {editandoFechaId === l.id ? (
+                  <input
+                    className="arv-input"
+                    type="date"
+                    autoFocus
+                    defaultValue={l.fecha_fin ?? ""}
+                    disabled={guardando}
+                    onBlur={(e) => cambiarFecha(l.id, e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && cambiarFecha(l.id, e.target.value)}
+                    style={{ maxWidth: 150, padding: "4px 10px" }}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setEditandoFechaId(l.id)}
+                    className="arv-muted"
+                    style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, font: "inherit" }}
+                  >
+                    {l.fecha_fin ?? t("ficDetalle.sinFecha")}
+                  </button>
+                )}
                 <button
                   onClick={() => borrarLectura(l.id)}
                   disabled={guardando}

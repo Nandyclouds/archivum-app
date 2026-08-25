@@ -164,7 +164,9 @@
     "originalEliminado": "Original deleted",
     "verCopia": "View copy",
     "descargarEpub": "Download EPUB",
-    "descargar": "Download"
+    "descargar": "Download",
+    "borrarCopia": "Delete this copy",
+    "confirmarBorrar": "Delete the archived copy of \"{{titulo}}\"? This can't be undone."
   },
   "ao3": {
     "titulo": "Import / connect AO3",

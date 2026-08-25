@@ -119,6 +119,18 @@ export function Buscar() {
         </select>
       </div>
 
+      <div className="arv-segmentado" style={{ marginBottom: 10, width: "fit-content" }}>
+        <button className={completo === null ? "active" : ""} onClick={() => setFiltro("completo", "")}>
+          {t("buscar.todos")}
+        </button>
+        <button className={completo === "true" ? "active" : ""} onClick={() => setFiltro("completo", "true")}>
+          {t("buscar.completos")}
+        </button>
+        <button className={completo === "false" ? "active" : ""} onClick={() => setFiltro("completo", "false")}>
+          {t("buscar.wip")}
+        </button>
+      </div>
+
       {hayFiltrosExtra && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
           {ship && <span className="arv-tag arv-tag-accent-2">{ship}</span>}

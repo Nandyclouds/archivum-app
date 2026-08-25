@@ -164,7 +164,9 @@
     "originalEliminado": "Original eliminado",
     "verCopia": "Ver copia",
     "descargarEpub": "Descargar EPUB",
-    "descargar": "Descargar"
+    "descargar": "Descargar",
+    "borrarCopia": "Borrar esta copia",
+    "confirmarBorrar": "¿Borrar la copia archivada de \"{{titulo}}\"? No se puede deshacer."
   },
   "ao3": {
     "titulo": "Importar / conectar AO3",

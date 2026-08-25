@@ -104,6 +104,7 @@ export const api = {
   },
   archivos: {
     list: () => request("/archivos"),
+    remove: (archivoId) => request(`/archivos/${archivoId}`, { method: "DELETE" }),
     contenidoUrl: (archivoId) => {
       const token = getToken();
       const query = token ? `?token=${encodeURIComponent(token)}` : "";

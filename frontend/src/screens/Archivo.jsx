@@ -5,6 +5,26 @@ import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { abrirEnNavegadorExterno, descargarArchivo } from "../lib/abrirExterno";
 import { InfoPopover } from "../components/InfoPopover";
 
+function agruparPorFic(archivos) {
+  const porFic = new Map();
+  for (const a of archivos) {
+    if (!porFic.has(a.fic_id)) {
+      porFic.set(a.fic_id, {
+        fic_id: a.fic_id,
+        fic_titulo: a.fic_titulo,
+        fic_deleted_detected_at: a.fic_deleted_detected_at,
+        fecha_descarga: a.fecha_descarga,
+        html: null,
+        epub: null,
+      });
+    }
+    const grupo = porFic.get(a.fic_id);
+    grupo[a.formato] = a;
+    if (a.fecha_descarga > grupo.fecha_descarga) grupo.fecha_descarga = a.fecha_descarga;
+  }
+  return [...porFic.values()].sort((a, b) => (a.fecha_descarga < b.fecha_descarga ? 1 : -1));
+}
+
 export function Archivo() {
   const { t, i18n } = useTranslation();
   const archivos = useFetch(() => api.archivos.list());
@@ -20,7 +40,17 @@ export function Archivo() {
     }
   }
 
-  const FORMATO_LABEL = { html: t("archivo.verCopia"), epub: t("archivo.descargarEpub") };
+  async function borrar(a) {
+    if (!confirm(t("archivo.confirmarBorrar", { titulo: a.fic_titulo }))) return;
+    try {
+      await api.archivos.remove(a.id);
+      archivos.reload();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  const grupos = agruparPorFic(archivos.data);
 
   return (
     <div>
@@ -33,34 +63,66 @@ export function Archivo() {
         </h2>
       </div>
 
-      {archivos.data.length === 0 && <Vacio>{t("archivo.sinArchivos")}</Vacio>}
+      {grupos.length === 0 && <Vacio>{t("archivo.sinArchivos")}</Vacio>}
 
       <div className="arv-card">
-        {archivos.data.map((a) => (
-          <div className="arv-list-item" key={a.id}>
+        {grupos.map((g) => (
+          <div className="arv-list-item" key={g.fic_id} style={{ alignItems: "flex-start" }}>
             <div>
-              <div style={{ fontWeight: 600 }}>{a.fic_titulo}</div>
+              <div style={{ fontWeight: 600 }}>{g.fic_titulo}</div>
               <div className="arv-muted">
-                {t("archivo.guardado", { fecha: new Date(a.fecha_descarga).toLocaleDateString(i18n.language) })}
+                {t("archivo.guardado", { fecha: new Date(g.fecha_descarga).toLocaleDateString(i18n.language) })}
               </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, width: 130 }}>
               <span
-                className={`arv-tag ${a.fic_deleted_detected_at ? "arv-tag-accent" : "arv-tag-accent-2"}`}
-                style={{ justifyContent: "center" }}
+                className={`arv-tag ${g.fic_deleted_detected_at ? "arv-tag-accent" : "arv-tag-accent-2"}`}
+                style={{ marginTop: 6, display: "inline-flex" }}
               >
-                {a.fic_deleted_detected_at ? t("archivo.originalEliminado") : t("archivo.disponible")}
+                {g.fic_deleted_detected_at ? t("archivo.originalEliminado") : t("archivo.disponible")}
               </span>
-              <button
-                className="arv-btn arv-btn-secondary"
-                onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(a.id))}
-              >
-                {FORMATO_LABEL[a.formato] ?? a.formato}
-              </button>
-              {a.formato === "html" && (
-                <button className="arv-btn arv-btn-secondary" onClick={() => descargarHtml(a)}>
-                  {t("archivo.descargar")}
-                </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, width: 150 }}>
+              {g.html && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button
+                    className="arv-btn arv-btn-secondary"
+                    style={{ flex: 1 }}
+                    onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.html.id))}
+                  >
+                    {t("archivo.verCopia")}
+                  </button>
+                  <button
+                    className="arv-btn arv-btn-secondary"
+                    onClick={() => descargarHtml(g.html)}
+                    aria-label={t("archivo.descargar")}
+                  >
+                    ⭳
+                  </button>
+                  <button
+                    className="arv-btn arv-btn-secondary"
+                    onClick={() => borrar(g.html)}
+                    aria-label={t("archivo.borrarCopia")}
+                  >
+                    🗑
+                  </button>
+                </div>
+              )}
+              {g.epub && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button
+                    className="arv-btn arv-btn-secondary"
+                    style={{ flex: 1 }}
+                    onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.epub.id))}
+                  >
+                    {t("archivo.descargarEpub")}
+                  </button>
+                  <button
+                    className="arv-btn arv-btn-secondary"
+                    onClick={() => borrar(g.epub)}
+                    aria-label={t("archivo.borrarCopia")}
+                  >
+                    🗑
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -95,3 +95,20 @@ def obtener_contenido_archivo(archivo_id: int, db: Session = Depends(get_session
 
     nombre = f"{archivo.fic.titulo}.{archivo.formato}".replace("/", "-")
     return FileResponse(ruta, media_type=media_type, filename=nombre)
+
+
+@router.delete("/{archivo_id}", status_code=204)
+def borrar_archivo(archivo_id: int, db: Session = Depends(get_session)):
+    """Borra una copia archivada (html o epub) a pedido: espacio en disco es
+    limitado y no todo fic amerita quedar guardado ahí para siempre. Solo
+    borra este `Archivo` puntual, nunca el `Fic` ni su historial de lectura."""
+    archivo = db.get(Archivo, archivo_id)
+    if archivo is None:
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+    ruta = Path(archivo.ruta_local)
+    if ruta.is_file():
+        ruta.unlink()
+
+    db.delete(archivo)
+    db.commit()

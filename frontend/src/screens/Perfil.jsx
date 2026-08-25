@@ -306,7 +306,9 @@ function Graficos() {
           <GraficoAnios datos={porAnio.data} />
           <div className="arv-graf-anio-labels">
             {porAnio.data.map((p) => (
-              <span key={p.periodo}>{p.periodo}</span>
+              <Link key={p.periodo} to={`/panel/top/palabras?anio=${p.periodo}`}>
+                {p.periodo}
+              </Link>
             ))}
           </div>
         </>

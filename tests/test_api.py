@@ -569,3 +569,25 @@ def test_contenido_archivo_borrado_del_disco(client, db_session, tmp_path):
 
     r = client.get(f"/api/archivos/{archivo.id}/contenido")
     assert r.status_code == 410
+
+
+def test_borrar_archivo(client, db_session, tmp_path):
+    fic = _crear_fic(db_session)
+    ruta = tmp_path / "1.epub"
+    ruta.write_bytes(b"contenido epub falso")
+    archivo = Archivo(
+        fic_id=fic.id, formato="epub", ruta_local=str(ruta), hash_sha256="x", tamano=10,
+    )
+    db_session.add(archivo)
+    db_session.commit()
+    archivo_id = archivo.id
+
+    r = client.delete(f"/api/archivos/{archivo_id}")
+    assert r.status_code == 204
+    assert not ruta.exists()
+    assert client.get(f"/api/archivos/{archivo_id}/contenido").status_code == 404
+
+
+def test_borrar_archivo_inexistente(client):
+    r = client.delete("/api/archivos/999")
+    assert r.status_code == 404
