@@ -50,7 +50,7 @@ from app.ao3.parser import (
 )
 from app.ao3.reading_status import clasificar_tags
 from app.config import settings
-from app.models import Archivo, Coleccion, Fandom, Fic, Lectura, Personaje, Ship, TagAdicional
+from app.models import Archivo, Coleccion, Fandom, Fic, Lectura, Novedad, Personaje, Ship, TagAdicional
 
 WORK_URL = "https://archiveofourown.org/works/{ao3_id}?view_adult=true&view_full_work=true"
 BOOKMARKS_URL = "https://archiveofourown.org/users/{username}/bookmarks?page={page}"
@@ -99,6 +99,21 @@ def needs_refresh(fic: Fic | None, *, force: bool, stale_days: int) -> bool:
     return edad.days >= stale_days
 
 
+def _detectar_novedades(db: Session, fic: Fic, parsed: ParsedFic) -> None:
+    """Compara el estado viejo del fic contra lo recién parseado, ANTES de
+    pisarlo, y deja una Novedad si sumó capítulo(s) o pasó a completo. Se
+    llama solo para fics ya conocidos (uno nuevo no tiene "antes" con qué
+    comparar) — ver upsert_fic."""
+    if parsed.chapters_published > fic.chapters_published:
+        db.add(
+            Novedad(fic_id=fic.id, tipo="capitulo_nuevo", capitulos_publicados=parsed.chapters_published)
+        )
+    if parsed.complete and not fic.complete:
+        db.add(
+            Novedad(fic_id=fic.id, tipo="completado", capitulos_publicados=parsed.chapters_published)
+        )
+
+
 def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool]:
     """Crea o actualiza el Fic y sus relaciones many-to-many. Devuelve (fic, es_nuevo)."""
 
@@ -107,6 +122,8 @@ def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool]:
     if fic is None:
         fic = Fic(ao3_id=parsed.ao3_id, url=WORK_URL.format(ao3_id=parsed.ao3_id))
         db.add(fic)
+    else:
+        _detectar_novedades(db, fic, parsed)
 
     fic.titulo = parsed.titulo
     fic.autor = parsed.autor

@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 from app.ao3 import importer
 from app.ao3.client import RateLimitedClient, RequestFailedError
 from app.database import Base
-from app.models import Archivo, Coleccion, Fic, Lectura
+from app.ao3.parser import ParsedFic
+from app.models import Archivo, Coleccion, Fic, Lectura, Novedad
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -401,3 +402,69 @@ def test_run_history_import_no_toca_lecturas(db, client):
 
     assert result.fics_nuevos == 2
     assert db.query(Lectura).count() == 0  # el historial nunca crea lecturas
+
+
+def _parsed_fic(**overrides) -> ParsedFic:
+    base = dict(
+        ao3_id="1",
+        titulo="Un fic",
+        autor="autora",
+        autor_url=None,
+        word_count=1000,
+        chapters_published=3,
+        chapters_total=10,
+        complete=False,
+        restricted=False,
+        rating=None,
+        idioma=None,
+        categorias=[],
+        warnings=[],
+        summary=None,
+        fecha_publicacion=None,
+        fecha_actualizacion=None,
+        fandoms=[],
+        ships=[],
+        personajes=[],
+        tags_adicionales=[],
+    )
+    base.update(overrides)
+    return ParsedFic(**base)
+
+
+def test_upsert_fic_nuevo_no_genera_novedad(db):
+    importer.upsert_fic(db, _parsed_fic())
+    assert db.query(Novedad).count() == 0
+
+
+def test_upsert_fic_capitulo_nuevo_genera_novedad(db):
+    importer.upsert_fic(db, _parsed_fic(chapters_published=3))
+    importer.upsert_fic(db, _parsed_fic(chapters_published=5))
+
+    novedades = db.query(Novedad).all()
+    assert len(novedades) == 1
+    assert novedades[0].tipo == "capitulo_nuevo"
+    assert novedades[0].capitulos_publicados == 5
+
+
+def test_upsert_fic_se_completa_genera_novedad(db):
+    importer.upsert_fic(db, _parsed_fic(chapters_published=9, chapters_total=10, complete=False))
+    importer.upsert_fic(db, _parsed_fic(chapters_published=10, chapters_total=10, complete=True))
+
+    novedades = db.query(Novedad).all()
+    tipos = {n.tipo for n in novedades}
+    assert "capitulo_nuevo" in tipos
+    assert "completado" in tipos
+
+
+def test_upsert_fic_sin_cambios_no_genera_novedad(db):
+    importer.upsert_fic(db, _parsed_fic(chapters_published=5, complete=False))
+    importer.upsert_fic(db, _parsed_fic(chapters_published=5, complete=False))
+
+    assert db.query(Novedad).count() == 0
+
+
+def test_upsert_fic_ya_completo_no_repite_novedad(db):
+    importer.upsert_fic(db, _parsed_fic(chapters_published=10, chapters_total=10, complete=True))
+    importer.upsert_fic(db, _parsed_fic(chapters_published=10, chapters_total=10, complete=True))
+
+    assert db.query(Novedad).filter_by(tipo="completado").count() == 0

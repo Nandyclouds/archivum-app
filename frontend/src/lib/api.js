@@ -115,6 +115,11 @@ export const api = {
     removeFromFic: (ficId, etiquetaId) =>
       request(`/fics/${ficId}/etiquetas/${etiquetaId}`, { method: "DELETE" }),
   },
+  novedades: {
+    list: (soloNoLeidas = true) => request(`/novedades?${buildQuery({ solo_no_leidas: soloNoLeidas })}`),
+    marcarLeida: (id) => request(`/novedades/${id}/marcar-leida`, { method: "POST" }),
+    marcarTodasLeidas: () => request("/novedades/marcar-todas-leidas", { method: "POST" }),
+  },
   archivos: {
     list: () => request("/archivos"),
     remove: (archivoId) => request(`/archivos/${archivoId}`, { method: "DELETE" }),

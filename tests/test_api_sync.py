@@ -87,6 +87,33 @@ def test_known_ids_devuelve_los_fics_existentes(client, con_sync_secret, db_sess
     assert response.json() == {"ao3_ids": ["42"]}
 
 
+def test_incompletos_rechaza_sin_secreto(client, con_sync_secret):
+    assert client.get("/api/sync/incompletos").status_code == 401
+
+
+def test_incompletos_devuelve_solo_wips_nunca_revisados(client, con_sync_secret, db_session):
+    import datetime
+
+    wip = Fic(ao3_id="1", titulo="WIP", autor="a", url="https://archiveofourown.org/works/1", complete=False)
+    completo = Fic(
+        ao3_id="2", titulo="Completo", autor="a", url="https://archiveofourown.org/works/2", complete=True
+    )
+    wip_reciente = Fic(
+        ao3_id="3",
+        titulo="WIP revisado hoy",
+        autor="a",
+        url="https://archiveofourown.org/works/3",
+        complete=False,
+        ultima_revision=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+    )
+    db_session.add_all([wip, completo, wip_reciente])
+    db_session.commit()
+
+    response = client.get("/api/sync/incompletos", headers=_headers(con_sync_secret))
+    assert response.status_code == 200
+    assert response.json() == {"ao3_ids": ["1"]}
+
+
 def test_ingest_fic_rechaza_sin_secreto(client):
     response = client.post("/api/sync/ingest-fic", json={"ao3_id": "1", "html": "<html></html>"})
     assert response.status_code == 401
@@ -223,6 +250,23 @@ def test_trigger_modo_marcados(client, monkeypatch):
     )
 
     response = client.post("/api/sync/trigger", json={"modo": "marcados"})
+    assert response.status_code == 200
+    assert response.json() == {"disparado": True}
+
+
+@responses.activate
+def test_trigger_modo_wips(client, monkeypatch):
+    monkeypatch.setattr(settings, "github_pat", "token-falso")
+    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
+    monkeypatch.setattr(settings, "github_workflow_file", "ao3-sync.yml")
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
+        status=204,
+    )
+
+    response = client.post("/api/sync/trigger", json={"modo": "wips"})
     assert response.status_code == 200
     assert response.json() == {"disparado": True}
 

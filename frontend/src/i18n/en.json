@@ -18,6 +18,7 @@
     "perfil": "Profile",
     "buscar": "Search",
     "colecciones": "Collections",
+    "novedades": "Updates",
     "ao3": "AO3",
     "archivo": "Archive"
   },
@@ -182,9 +183,20 @@
     "actualizarBookmarksInfo": "Fetches the new bookmarks you added on AO3 since last time. Runs on GitHub Actions, so your PC doesn't need to be on — it can take several minutes (or more, if AO3 is rate-limiting).",
     "actualizarMarcados": "Update Marked for Later",
     "actualizarMarcadosInfo": "Fetches the fics you marked as \"Marked for Later\" on your AO3 History (not a bookmark). For ones you already have, it just adds the \"Marked for Later\" tag so you can find them in Collections, without touching whatever reading status they already have.",
+    "actualizarWips": "Check WIPs",
+    "actualizarWipsInfo": "Asks AO3 again about the fics you have marked as incomplete, to detect if they got a new chapter or finished — that shows up in Updates. Only checks ones that weren't checked in the last few days, so running it back to back won't waste requests.",
     "actualizarAhora": "Update now",
     "disparando": "Starting…",
     "syncEnCamino": "Sync underway — check back on your library in a bit."
+  },
+  "novedades": {
+    "titulo": "Updates",
+    "sinNovedades": "No updates for now.",
+    "marcarTodas": "Mark all as read",
+    "marcarLeida": "Mark as read",
+    "completado": "It's complete!",
+    "capituloNuevo_one": "Now has {{count}} chapter",
+    "capituloNuevo_other": "Now has {{count}} chapters"
   },
   "compartir": {
     "importando": "Importing…",

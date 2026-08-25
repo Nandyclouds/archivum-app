@@ -15,6 +15,7 @@ on:
           - fic
           - epub
           - marcados
+          - wips
       url:
         description: "URL del fic (solo modo=fic)"
         required: false

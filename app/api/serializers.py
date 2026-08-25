@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.models import Archivo, Fic
-from app.schemas import ArchivoOut, FicDetail, FicListItem
+from app.models import Archivo, Fic, Novedad
+from app.schemas import ArchivoOut, FicDetail, FicListItem, NovedadOut
 
 
 def estado_actual(fic: Fic) -> str | None:
@@ -39,4 +39,16 @@ def to_archivo_out(archivo: Archivo) -> ArchivoOut:
         fic_url=archivo.fic.url,
         fic_deleted_detected_at=archivo.fic.deleted_detected_at,
         existe_en_disco=Path(archivo.ruta_local).is_file(),
+    )
+
+
+def to_novedad_out(novedad: Novedad) -> NovedadOut:
+    return NovedadOut(
+        id=novedad.id,
+        fic_id=novedad.fic_id,
+        tipo=novedad.tipo,
+        capitulos_publicados=novedad.capitulos_publicados,
+        detectado_en=novedad.detectado_en,
+        leida=novedad.leida,
+        fic_titulo=novedad.fic.titulo,
     )

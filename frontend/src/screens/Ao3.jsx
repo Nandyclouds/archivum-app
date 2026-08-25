@@ -20,6 +20,7 @@ export function Ao3() {
 
       <BotonSync modo="bookmarks" tituloKey="ao3.actualizarBookmarks" infoKey="ao3.actualizarBookmarksInfo" />
       <BotonSync modo="marcados" tituloKey="ao3.actualizarMarcados" infoKey="ao3.actualizarMarcadosInfo" />
+      <BotonSync modo="wips" tituloKey="ao3.actualizarWips" infoKey="ao3.actualizarWipsInfo" />
 
       {logs.loading && <Cargando />}
       {logs.error && <ErrorCarga error={logs.error} onReintentar={logs.reload} />}

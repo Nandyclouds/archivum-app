@@ -16,6 +16,7 @@ Uso (variables de entorno, seteadas como GitHub Secrets en el workflow):
     python scripts/gh_action_sync.py --modo epub --ao3-id 123
     python scripts/gh_action_sync.py --modo bookmarks
     python scripts/gh_action_sync.py --modo marcados
+    python scripts/gh_action_sync.py --modo wips
 """
 
 from __future__ import annotations
@@ -234,9 +235,37 @@ def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> No
     print(f"Marked for Later — nuevos importados: {nuevos}, ya conocidos etiquetados: {etiquetados}")
 
 
+def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
+    """Vuelve a pedirle a AO3 los fics incompletos que hace rato no se
+    revisan (ver /sync/incompletos), para que _detectar_novedades note si
+    sumaron capítulo o se completaron. A diferencia de bookmarks/marcados no
+    hay páginas de listado que recorrer — la lista ya viene de nuestra
+    propia base — así que el único límite es el presupuesto de tiempo."""
+    response = requests.get(f"{base_url}/api/sync/incompletos", headers=headers, timeout=30)
+    response.raise_for_status()
+    ids = response.json()["ao3_ids"]
+    print(f"WIPs a revisar: {len(ids)}")
+
+    inicio = time.monotonic()
+    revisados = 0
+    for ao3_id in ids:
+        if time.monotonic() - inicio > PRESUPUESTO_TOTAL_SEGUNDOS:
+            print("Se acabó el presupuesto de tiempo para esta corrida, corto acá.")
+            break
+        try:
+            fic_response = client.get(WORK_URL.format(ao3_id=ao3_id))
+            fic_response.raise_for_status()
+            _ingest_fic(base_url, headers, ao3_id, fic_response.text)
+            revisados += 1
+        except (RequestFailedError, requests.exceptions.RequestException) as exc:
+            print(f"  ! {ao3_id}: {exc}", file=sys.stderr)
+
+    print(f"WIPs revisados: {revisados}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modo", required=True, choices=["fic", "epub", "bookmarks", "marcados"])
+    parser.add_argument("--modo", required=True, choices=["fic", "epub", "bookmarks", "marcados", "wips"])
     parser.add_argument("--url", default=None)
     parser.add_argument("--ao3-id", default=None)
     args = parser.parse_args()
@@ -258,6 +287,8 @@ def main() -> None:
         modo_epub(client, base_url, headers, args.ao3_id)
     elif args.modo == "marcados":
         modo_marcados(client, base_url, headers)
+    elif args.modo == "wips":
+        modo_wips(client, base_url, headers)
     else:
         modo_bookmarks(client, base_url, headers)
 

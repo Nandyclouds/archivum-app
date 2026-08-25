@@ -25,7 +25,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routers import ao3_import, archivos, colecciones, etiquetas, fics, import_log, perfil, stats, sync
+from app.api.routers import (
+    ao3_import,
+    archivos,
+    colecciones,
+    etiquetas,
+    fics,
+    import_log,
+    novedades,
+    perfil,
+    stats,
+    sync,
+)
 from app.config import settings
 
 app = FastAPI(title="Archivum API", version="0.1.0")
@@ -47,7 +58,7 @@ _RUTAS_PUBLICAS = {"/api/health"}
 # ARCHIVUM_SYNC_SECRET por header en vez del token de usuario. Ver
 # app/api/routers/sync.py — mandan de vuelta lo que scrapearon de AO3 desde
 # una máquina que sí tiene salida a internet, a diferencia de PythonAnywhere.
-_RUTAS_SYNC = {"/api/sync/known-ids", "/api/sync/ingest-fic", "/api/sync/ingest-epub"}
+_RUTAS_SYNC = {"/api/sync/known-ids", "/api/sync/ingest-fic", "/api/sync/ingest-epub", "/api/sync/incompletos"}
 
 
 @app.middleware("http")
@@ -93,6 +104,7 @@ app.include_router(ao3_import.router, prefix="/api")
 app.include_router(etiquetas.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(perfil.router, prefix="/api")
+app.include_router(novedades.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

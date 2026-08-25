@@ -22,6 +22,7 @@ la excepción: la llama el frontend, así que pasa por el token normal.
 from __future__ import annotations
 
 import base64
+import datetime
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException
@@ -44,7 +45,7 @@ router = APIRouter(prefix="/sync", tags=["sync"])
 
 
 class TriggerRequest(BaseModel):
-    modo: str  # "bookmarks" | "fic" | "epub" | "marcados"
+    modo: str  # "bookmarks" | "fic" | "epub" | "marcados" | "wips"
     url: str | None = None
     ao3_id: str | None = None
 
@@ -56,7 +57,7 @@ def disparar_sync(payload: TriggerRequest):
             status_code=503,
             detail="GITHUB_PAT/GITHUB_REPO no configurados en el .env de este servidor.",
         )
-    if payload.modo not in {"bookmarks", "fic", "epub", "marcados"}:
+    if payload.modo not in {"bookmarks", "fic", "epub", "marcados", "wips"}:
         raise HTTPException(status_code=400, detail=f"Modo desconocido: {payload.modo}")
     if payload.modo == "fic" and not payload.url:
         raise HTTPException(status_code=400, detail="Falta 'url' para modo=fic.")
@@ -100,6 +101,23 @@ def known_ids(db: Session = Depends(get_session)):
     """IDs de fics que ya tenemos, para que el sync de bookmarks se salte los conocidos."""
     ids = [row[0] for row in db.query(Fic.ao3_id).all()]
     return {"ao3_ids": ids}
+
+
+@router.get("/incompletos")
+def fics_incompletos(stale_days: int = 3, db: Session = Depends(get_session)):
+    """IDs de fics marcados 'complete=False' que conviene volver a pedirle a
+    AO3 (para detectar capítulos nuevos o que se haya completado — ver
+    Novedad). `stale_days` evita re-chequear el mismo WIP en cada corrida:
+    solo entran los que no se revisaron en esa cantidad de días (o nunca)."""
+    limite = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+        days=stale_days
+    )
+    query = db.query(Fic.ao3_id).filter(
+        Fic.complete.is_(False),
+        Fic.deleted_detected_at.is_(None),
+        (Fic.ultima_revision.is_(None)) | (Fic.ultima_revision < limite),
+    )
+    return {"ao3_ids": [row[0] for row in query.all()]}
 
 
 class IngestFicRequest(BaseModel):

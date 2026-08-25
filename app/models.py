@@ -313,6 +313,32 @@ class Archivo(Base):
     __table_args__ = (UniqueConstraint("fic_id", "formato", name="uq_archivo_fic_formato"),)
 
 
+class Novedad(Base):
+    """Cambio detectado en un fic ya conocido al volver a revisarlo contra
+    AO3: capítulo nuevo o pasó a completo. Se genera comparando contra lo
+    que había antes de pisar los datos en upsert_fic (ver importer.py) — no
+    aplica a un fic recién importado por primera vez, ahí no hay "antes"."""
+
+    __tablename__ = "novedades"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fic_id: Mapped[int] = mapped_column(
+        ForeignKey("fics.id", ondelete="CASCADE"), index=True
+    )
+    # 'capitulo_nuevo' | 'completado'
+    tipo: Mapped[str] = mapped_column(String(30), index=True)
+    # Capítulos publicados al momento de detectar el cambio, para el mensaje
+    # ("ahora tiene 5 capítulos") sin tener que ir a buscar el estado actual
+    # del fic (que para entonces puede haber cambiado de nuevo).
+    capitulos_publicados: Mapped[int] = mapped_column(Integer)
+    detectado_en: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=_utcnow, index=True
+    )
+    leida: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+
+    fic: Mapped[Fic] = relationship()
+
+
 class ImportLog(Base):
     __tablename__ = "import_log"
 

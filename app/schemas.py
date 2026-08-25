@@ -200,6 +200,17 @@ class ColeccionUpdate(BaseModel):
     orden: int | None = None
 
 
+class NovedadOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    fic_id: int
+    tipo: str
+    capitulos_publicados: int
+    detectado_en: datetime.datetime
+    leida: bool
+    fic_titulo: str
+
+
 class ArchivoOut(BaseModel):
     id: int
     fic_id: int
