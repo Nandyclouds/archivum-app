@@ -82,6 +82,7 @@
   },
   "buscar": {
     "buscarPlaceholder": "Buscar en tu biblioteca…",
+    "relationshipPlaceholder": "Relationship…",
     "personajePlaceholder": "Personaje…",
     "tagPlaceholder": "Tag adicional…",
     "rating": "Rating",
@@ -200,7 +201,6 @@
     "sinResultados": "Sin resultados.",
     "quitarDeFavoritos": "Quitar de favoritos",
     "elegirDestacados": "Elegir destacados",
-    "elegirDestacadosInfo": "Elegí hasta 4 para mostrar acá arriba. El resto sigue en tus Favoritos, solo no aparece en esta vista.",
     "graficos": "Gráficos",
     "palabrasEnAnio": "palabras en {{anio}}",
     "sinDatosTodavia": "Sin datos todavía.",

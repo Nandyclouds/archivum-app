@@ -207,19 +207,23 @@ function Favoritos() {
 
       {eligiendo ? (
         <div>
-          <p className="arv-muted" style={{ marginTop: 0 }}>{t("perfil.elegirDestacadosInfo")}</p>
           <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 10 }}>
-            {(favoritos.data?.todos ?? []).map((f) => (
-              <label key={f.fic_id} className="arv-list-item" style={{ cursor: "pointer" }}>
-                <span>{f.titulo}</span>
-                <input
-                  type="checkbox"
-                  checked={elegidos.includes(f.fic_id)}
-                  disabled={!elegidos.includes(f.fic_id) && elegidos.length >= 4}
-                  onChange={() => alternarElegido(f.fic_id)}
-                />
-              </label>
-            ))}
+            {(favoritos.data?.todos ?? []).map((f) => {
+              const elegido = elegidos.includes(f.fic_id);
+              return (
+                <div
+                  key={f.fic_id}
+                  className="arv-list-item arv-destacado-opcion"
+                  onClick={() => alternarElegido(f.fic_id)}
+                  style={elegido ? { background: "var(--color-accent-soft)" } : undefined}
+                >
+                  <span style={elegido ? { color: "var(--color-accent)", fontWeight: 700 } : undefined}>
+                    {f.titulo}
+                  </span>
+                  {elegido && <span style={{ color: "var(--color-accent)" }}>✓</span>}
+                </div>
+              );
+            })}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button className="arv-btn" disabled={guardandoDestacados} onClick={guardarDestacados}>

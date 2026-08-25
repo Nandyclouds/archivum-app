@@ -53,7 +53,7 @@ def listar_fics(
     db: Session = Depends(get_session),
     q: str | None = Query(None, description="Busca en título y autor"),
     fandom: str | None = Query(None, description="Nombre exacto de fandom"),
-    ship: str | None = Query(None, description="Nombre exacto de ship/relación"),
+    ship: list[str] = Query([], description="Nombre(s) exacto(s) de relationship (AND si hay varios)"),
     personaje: list[str] = Query([], description="Nombre(s) exacto(s) de personaje (AND si hay varios)"),
     tag: list[str] = Query([], description="Nombre(s) exacto(s) de tag adicional (AND si hay varios)"),
     rating: str | None = Query(None, description="Rating exacto de AO3 (ej. 'Explicit')"),
@@ -83,8 +83,8 @@ def listar_fics(
         query = query.filter(or_(Fic.titulo.ilike(like), Fic.autor.ilike(like)))
     if fandom:
         query = query.join(Fic.fandoms).filter(Fandom.nombre == fandom)
-    if ship:
-        query = query.join(Fic.ships).filter(Ship.nombre == ship)
+    for nombre in ship:
+        query = query.filter(Fic.ships.any(Ship.nombre == nombre))
     for nombre in personaje:
         # .any() por cada valor en vez de un solo join: un join normal por
         # cada personaje seleccionado exigiría alias distintos para no
@@ -178,6 +178,7 @@ def opciones_filtro(db: Session = Depends(get_session)):
     warnings/categorías (vocabulario cerrado de AO3), sacados de la
     biblioteca para personajes/tags/idiomas (vocabulario abierto, no tiene
     sentido hardcodearlo)."""
+    ships = [n for (n,) in db.query(Ship.nombre).order_by(Ship.nombre).all()]
     personajes = [
         n for (n,) in db.query(Personaje.nombre).order_by(Personaje.nombre).all()
     ]
@@ -190,6 +191,7 @@ def opciones_filtro(db: Session = Depends(get_session)):
         "ratings": RATINGS_AO3,
         "warnings": WARNINGS_AO3,
         "categorias": CATEGORIAS_AO3,
+        "ships": ships,
         "personajes": personajes,
         "tags": tags,
         "idiomas": idiomas,

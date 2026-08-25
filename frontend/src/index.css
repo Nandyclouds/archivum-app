@@ -687,6 +687,16 @@ select.arv-input {
   font-family: monospace;
   text-transform: lowercase;
 }
+.arv-destacado-opcion {
+  cursor: pointer;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 10px;
+}
+.arv-destacado-opcion:hover {
+  background: var(--color-surface-2);
+}
+
 .arv-multiselect {
   position: relative;
   flex: 1;

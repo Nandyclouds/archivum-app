@@ -163,6 +163,18 @@ def test_filtrar_fics_por_ship(client, db_session):
     assert data[0]["titulo"] == "A"
 
 
+def test_filtrar_fics_por_varios_ships_a_la_vez(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    ab = Ship(nombre="A/B", tipo="romantico")
+    a.ships.extend([ab, Ship(nombre="A & C", tipo="platonico")])
+    b.ships.append(ab)
+    db_session.commit()
+
+    r = client.get("/api/fics", params=[("ship", "A/B"), ("ship", "A & C")])
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
 def test_filtrar_fics_por_personaje(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     _crear_fic(db_session, ao3_id="2", titulo="B")
@@ -268,6 +280,7 @@ def test_opciones_filtro(client, db_session):
     assert "Explicit" in body["ratings"]
     assert "Major Character Death" in body["warnings"]
     assert "F/F" in body["categorias"]
+    assert body["ships"] == []
     assert body["personajes"] == ["Frodo Baggins"]
     assert body["tags"] == ["Slow Burn"]
     assert body["idiomas"] == ["Español"]

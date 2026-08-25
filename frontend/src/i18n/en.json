@@ -82,6 +82,7 @@
   },
   "buscar": {
     "buscarPlaceholder": "Search your library…",
+    "relationshipPlaceholder": "Relationship…",
     "personajePlaceholder": "Character…",
     "tagPlaceholder": "Additional tag…",
     "rating": "Rating",
@@ -200,7 +201,6 @@
     "sinResultados": "No results.",
     "quitarDeFavoritos": "Remove from favorites",
     "elegirDestacados": "Choose featured",
-    "elegirDestacadosInfo": "Pick up to 4 to show up here. The rest stay in your Favorites, just not in this view.",
     "graficos": "Charts",
     "palabrasEnAnio": "words in {{anio}}",
     "sinDatosTodavia": "No data yet.",

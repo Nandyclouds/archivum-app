@@ -11,7 +11,7 @@ export function Buscar() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") || "";
   const fandom = searchParams.get("fandom") || "";
-  const ship = searchParams.get("ship") || "";
+  const ship = searchParams.getAll("ship");
   const etiqueta = searchParams.get("etiqueta") || "";
   const personaje = searchParams.getAll("personaje");
   const tag = searchParams.getAll("tag");
@@ -56,11 +56,24 @@ export function Buscar() {
         ...(completo !== null ? { completo } : {}),
         limit: 100,
       }),
-    [q, fandom, ship, etiqueta, personaje.join(","), tag.join(","), rating, warning, categoria, idioma, estado, completo]
+    [
+      q,
+      fandom,
+      ship.join(","),
+      etiqueta,
+      personaje.join(","),
+      tag.join(","),
+      rating,
+      warning,
+      categoria,
+      idioma,
+      estado,
+      completo,
+    ]
   );
 
   const hayFiltrosExtra =
-    ship ||
+    ship.length > 0 ||
     etiqueta ||
     personaje.length > 0 ||
     tag.length > 0 ||
@@ -81,6 +94,15 @@ export function Buscar() {
         onChange={(e) => setFiltro("q", e.target.value)}
         style={{ marginBottom: 10 }}
       />
+
+      <div style={{ marginBottom: 10 }}>
+        <MultiSelect
+          opciones={opciones.data?.ships}
+          seleccionados={ship}
+          onChange={(v) => setFiltroMulti("ship", v)}
+          placeholder={t("buscar.relationshipPlaceholder")}
+        />
+      </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         <MultiSelect
@@ -169,7 +191,6 @@ export function Buscar() {
 
       {hayFiltrosExtra && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
-          {ship && <span className="arv-tag arv-tag-accent-2">{ship}</span>}
           {etiqueta && <span className="arv-tag arv-tag-accent-2">{etiqueta}</span>}
           {rating && <span className="arv-tag arv-tag-accent-2">{rating}</span>}
           {warning && <span className="arv-tag arv-tag-accent-2">{warning}</span>}
