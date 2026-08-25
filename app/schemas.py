@@ -211,6 +211,7 @@ class ArchivoOut(BaseModel):
     fic_titulo: str
     fic_url: str
     fic_deleted_detected_at: datetime.datetime | None = None
+    existe_en_disco: bool = True
 
 
 class ImportLogOut(BaseModel):

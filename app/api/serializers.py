@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from app.models import Archivo, Fic
 from app.schemas import ArchivoOut, FicDetail, FicListItem
 
@@ -36,4 +38,5 @@ def to_archivo_out(archivo: Archivo) -> ArchivoOut:
         fic_titulo=archivo.fic.titulo,
         fic_url=archivo.fic.url,
         fic_deleted_detected_at=archivo.fic.deleted_detected_at,
+        existe_en_disco=Path(archivo.ruta_local).is_file(),
     )

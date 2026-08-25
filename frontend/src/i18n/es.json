@@ -169,6 +169,7 @@
     "descargarEpub": "Descargar EPUB",
     "descargar": "Descargar",
     "borrarCopia": "Borrar esta copia",
+    "faltaEnDisco": "No encontrado",
     "confirmarBorrar": "¿Borrar la copia archivada de \"{{titulo}}\"? No se puede deshacer."
   },
   "ao3": {

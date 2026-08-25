@@ -169,6 +169,7 @@
     "descargarEpub": "Download EPUB",
     "descargar": "Download",
     "borrarCopia": "Delete this copy",
+    "faltaEnDisco": "Not found",
     "confirmarBorrar": "Delete the archived copy of \"{{titulo}}\"? This can't be undone."
   },
   "ao3": {

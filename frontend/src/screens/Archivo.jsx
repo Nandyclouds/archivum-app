@@ -87,22 +87,30 @@ export function Archivo() {
                   <span className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.04em" }}>
                     HTML
                   </span>
-                  <button
-                    className="arv-icon-btn"
-                    onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.html.id))}
-                    aria-label={t("archivo.verCopia")}
-                    title={t("archivo.verCopia")}
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    className="arv-icon-btn"
-                    onClick={() => descargarHtml(g.html)}
-                    aria-label={t("archivo.descargar")}
-                    title={t("archivo.descargar")}
-                  >
-                    <Download size={16} />
-                  </button>
+                  {g.html.existe_en_disco ? (
+                    <>
+                      <button
+                        className="arv-icon-btn"
+                        onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.html.id))}
+                        aria-label={t("archivo.verCopia")}
+                        title={t("archivo.verCopia")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className="arv-icon-btn"
+                        onClick={() => descargarHtml(g.html)}
+                        aria-label={t("archivo.descargar")}
+                        title={t("archivo.descargar")}
+                      >
+                        <Download size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="arv-tag arv-tag-accent" style={{ fontSize: 11 }}>
+                      {t("archivo.faltaEnDisco")}
+                    </span>
+                  )}
                   <button
                     className="arv-icon-btn"
                     onClick={() => borrar(g.html)}
@@ -118,14 +126,20 @@ export function Archivo() {
                   <span className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.04em" }}>
                     EPUB
                   </span>
-                  <button
-                    className="arv-icon-btn"
-                    onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.epub.id))}
-                    aria-label={t("archivo.descargarEpub")}
-                    title={t("archivo.descargarEpub")}
-                  >
-                    <Download size={16} />
-                  </button>
+                  {g.epub.existe_en_disco ? (
+                    <button
+                      className="arv-icon-btn"
+                      onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.epub.id))}
+                      aria-label={t("archivo.descargarEpub")}
+                      title={t("archivo.descargarEpub")}
+                    >
+                      <Download size={16} />
+                    </button>
+                  ) : (
+                    <span className="arv-tag arv-tag-accent" style={{ fontSize: 11 }}>
+                      {t("archivo.faltaEnDisco")}
+                    </span>
+                  )}
                   <button
                     className="arv-icon-btn"
                     onClick={() => borrar(g.epub)}

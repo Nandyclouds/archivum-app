@@ -582,6 +582,22 @@ def test_archivos_vacio(client):
     assert r.json() == []
 
 
+def test_listar_archivos_marca_si_falta_en_disco(client, db_session, tmp_path):
+    fic = _crear_fic(db_session)
+    presente = Archivo(
+        fic_id=fic.id, formato="epub", ruta_local=str(tmp_path / "presente.epub"), hash_sha256="x", tamano=1,
+    )
+    (tmp_path / "presente.epub").write_bytes(b"x")
+    faltante = Archivo(
+        fic_id=fic.id, formato="html", ruta_local=str(tmp_path / "no-existe.html"), hash_sha256="x", tamano=1,
+    )
+    db_session.add_all([presente, faltante])
+    db_session.commit()
+
+    body = {a["formato"]: a["existe_en_disco"] for a in client.get("/api/archivos").json()}
+    assert body == {"epub": True, "html": False}
+
+
 def test_contenido_archivo_html_se_sirve_inline(client, db_session, tmp_path):
     fic = _crear_fic(db_session)
     ruta = tmp_path / "1.html"
