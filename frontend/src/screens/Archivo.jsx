@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Eye, Download, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
@@ -80,47 +81,52 @@ export function Archivo() {
                 {g.fic_deleted_detected_at ? t("archivo.originalEliminado") : t("archivo.disponible")}
               </span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, width: 150 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
               {g.html && (
-                <div style={{ display: "flex", gap: 4 }}>
+                <div style={{ display: "flex", gap: 6 }}>
                   <button
-                    className="arv-btn arv-btn-secondary"
-                    style={{ flex: 1 }}
+                    className="arv-icon-btn"
                     onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.html.id))}
+                    aria-label={t("archivo.verCopia")}
+                    title={t("archivo.verCopia")}
                   >
-                    {t("archivo.verCopia")}
+                    <Eye size={16} />
                   </button>
                   <button
-                    className="arv-btn arv-btn-secondary"
+                    className="arv-icon-btn"
                     onClick={() => descargarHtml(g.html)}
                     aria-label={t("archivo.descargar")}
+                    title={t("archivo.descargar")}
                   >
-                    ⭳
+                    <Download size={16} />
                   </button>
                   <button
-                    className="arv-btn arv-btn-secondary"
+                    className="arv-icon-btn"
                     onClick={() => borrar(g.html)}
                     aria-label={t("archivo.borrarCopia")}
+                    title={t("archivo.borrarCopia")}
                   >
-                    🗑
+                    <Trash2 size={16} />
                   </button>
                 </div>
               )}
               {g.epub && (
-                <div style={{ display: "flex", gap: 4 }}>
+                <div style={{ display: "flex", gap: 6 }}>
                   <button
-                    className="arv-btn arv-btn-secondary"
-                    style={{ flex: 1 }}
+                    className="arv-icon-btn"
                     onClick={() => abrirEnNavegadorExterno(api.archivos.contenidoUrl(g.epub.id))}
+                    aria-label={t("archivo.descargarEpub")}
+                    title={t("archivo.descargarEpub")}
                   >
-                    {t("archivo.descargarEpub")}
+                    <Download size={16} />
                   </button>
                   <button
-                    className="arv-btn arv-btn-secondary"
+                    className="arv-icon-btn"
                     onClick={() => borrar(g.epub)}
                     aria-label={t("archivo.borrarCopia")}
+                    title={t("archivo.borrarCopia")}
                   >
-                    🗑
+                    <Trash2 size={16} />
                   </button>
                 </div>
               )}

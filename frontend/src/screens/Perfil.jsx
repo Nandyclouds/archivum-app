@@ -332,7 +332,18 @@ function Favoritos() {
         </div>
       </div>
 
-      {eligiendo ? (
+      {favoritos.error && (
+        <div style={{ marginBottom: 12 }}>
+          <p className="arv-muted" style={{ marginBottom: 8 }}>
+            {t("common.errorApi", { msg: favoritos.error.message })}
+          </p>
+          <button className="arv-btn arv-btn-secondary" onClick={favoritos.reload}>
+            {t("common.reintentar")}
+          </button>
+        </div>
+      )}
+
+      {!favoritos.error && eligiendo ? (
         <div>
           <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 10 }}>
             {(favoritos.data?.todos ?? []).map((f) => {

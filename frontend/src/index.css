@@ -634,6 +634,23 @@ a {
   cursor: not-allowed;
 }
 
+.arv-icon-btn {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: none;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.arv-icon-btn:hover {
+  background: var(--color-border);
+}
+
 .arv-input {
   width: 100%;
   padding: 10px 14px;
