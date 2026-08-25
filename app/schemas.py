@@ -181,6 +181,60 @@ class FicDetail(FicListItem):
         return _split_pipe(v)
 
 
+class ListaFicOut(BaseModel):
+    """Subset PÚBLICO de un fic para una lista de recomendaciones — a
+    propósito no incluye nada de tu biblioteca personal (estado de lectura,
+    notas de bookmark, etiquetas propias, colecciones): quien recibe el link
+    no tiene tu token de acceso."""
+
+    model_config = ConfigDict(from_attributes=True)
+    titulo: str
+    autor: str
+    url: str
+    summary: str | None = None
+    rating: str | None = None
+    idioma: str | None = None
+    categorias: list[str] = []
+    warnings: list[str] = []
+    word_count: int
+    chapters_published: int
+    chapters_total: int | None = None
+    complete: bool
+    fandoms: list[FandomOut] = []
+    ships: list[ShipOut] = []
+    personajes: list[PersonajeOut] = []
+    tags_adicionales: list[TagAdicionalOut] = []
+
+    @field_validator("categorias", "warnings", mode="before")
+    @classmethod
+    def _split_pipe_fields(cls, v):
+        return _split_pipe(v)
+
+
+class ListaRecomendadaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    token: str
+    titulo: str | None = None
+    nota: str | None = None
+    creado_en: datetime.datetime
+    cantidad_fics: int
+
+
+class ListaRecomendadaDetalle(BaseModel):
+    token: str
+    titulo: str | None = None
+    nota: str | None = None
+    creado_en: datetime.datetime
+    fics: list[ListaFicOut]
+
+
+class ListaRecomendadaCreate(BaseModel):
+    titulo: str | None = None
+    nota: str | None = None
+    fic_ids: list[int] = Field(min_length=1)
+
+
 class ColeccionOut(BaseModel):
     id: int
     nombre: str

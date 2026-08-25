@@ -13,6 +13,8 @@ import { Archivo } from "./screens/Archivo";
 import { Ao3 } from "./screens/Ao3";
 import { Novedades } from "./screens/Novedades";
 import { Compartir } from "./screens/Compartir";
+import { Recomendar } from "./screens/Recomendar";
+import { Recomendacion } from "./screens/Recomendacion";
 
 function AppShell() {
   const location = useLocation();
@@ -42,6 +44,7 @@ function AppShell() {
           <Route path="/ao3" element={<Ao3 />} />
           <Route path="/novedades" element={<Novedades />} />
           <Route path="/compartir" element={<Compartir />} />
+          <Route path="/recomendar" element={<Recomendar />} />
         </Routes>
       </main>
       {esPerfil && <NavBar className="arv-navbar-abajo" minimal />}
@@ -49,14 +52,25 @@ function AppShell() {
   );
 }
 
-export default function App() {
+function AppAutenticada() {
   return (
     <AuthGate>
       <NovedadesProvider>
-        <BrowserRouter>
-          <AppShell />
-        </BrowserRouter>
+        <AppShell />
       </NovedadesProvider>
     </AuthGate>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Pública a propósito: es el link que se comparte con gente que no
+            tiene el código de acceso a la app (ver app/main.py). */}
+        <Route path="/recomendar/:token" element={<Recomendacion />} />
+        <Route path="/*" element={<AppAutenticada />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

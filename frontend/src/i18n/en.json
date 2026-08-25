@@ -18,6 +18,7 @@
     "perfil": "Profile",
     "buscar": "Search",
     "colecciones": "Collections",
+    "recomendar": "Recommend",
     "novedades": "Updates",
     "ao3": "AO3",
     "archivo": "Archive"
@@ -202,6 +203,31 @@
     "completado": "It's complete!",
     "capituloNuevo_one": "Now has {{count}} chapter",
     "capituloNuevo_other": "Now has {{count}} chapters"
+  },
+  "recomendar": {
+    "titulo": "Build a recommendation",
+    "info": "Pick fics from a whole collection, or search them one by one, and generate a link to send — whoever opens it sees title, summary, tags and the AO3 link for each one, no access code needed.",
+    "tituloListaPlaceholder": "List title (optional)",
+    "notaPlaceholder": "A note for whoever gets it (optional)",
+    "desdeColeccion": "Add from a collection",
+    "unoPorUno": "Add fic by fic",
+    "buscarFicPlaceholder": "Search a fic to add…",
+    "enLaLista": "In the list ({{count}})",
+    "listaVacia": "You haven't added any fic yet.",
+    "quitarDeLaLista": "Remove from the list",
+    "publicar": "Publish and generate link",
+    "publicando": "Publishing…",
+    "listoInfo": "Done! Copy this link to share it:",
+    "tusListas": "Your published lists",
+    "sinListas": "You haven't published any list yet.",
+    "sinTitulo": "No title",
+    "fics": "{{count}} fics",
+    "copiarLink": "Copy link",
+    "borrarLista": "Delete list"
+  },
+  "recomendacion": {
+    "noExiste": "This list doesn't exist or was deleted.",
+    "hechoCon": "Made with Archivum"
   },
   "compartir": {
     "importando": "Importing…",

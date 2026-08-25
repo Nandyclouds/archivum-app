@@ -172,6 +172,14 @@ export const api = {
         }),
     },
   },
+  recomendaciones: {
+    list: () => request("/recomendaciones"),
+    create: (payload) => request("/recomendaciones", { method: "POST", body: JSON.stringify(payload) }),
+    remove: (id) => request(`/recomendaciones/${id}`, { method: "DELETE" }),
+    // Pública (ver app/main.py) — no manda el token, o lo manda y no importa:
+    // este endpoint no lo exige.
+    get: (token) => request(`/recomendaciones/${token}`),
+  },
   stats: {
     resumen: (anio) => request(`/stats/resumen${anio ? `?anio=${anio}` : ""}`),
     topFandoms: (limite = 10, anio) =>

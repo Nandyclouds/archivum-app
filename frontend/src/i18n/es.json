@@ -18,6 +18,7 @@
     "perfil": "Perfil",
     "buscar": "Buscar",
     "colecciones": "Colecciones",
+    "recomendar": "Recomendar",
     "novedades": "Novedades",
     "ao3": "AO3",
     "archivo": "Archivo"
@@ -202,6 +203,31 @@
     "completado": "¡Se completó!",
     "capituloNuevo_one": "Ahora tiene {{count}} capítulo",
     "capituloNuevo_other": "Ahora tiene {{count}} capítulos"
+  },
+  "recomendar": {
+    "titulo": "Armar recomendación",
+    "info": "Elegí fics de una colección entera, o buscalos uno por uno, y generá un link para mandar — quien lo abra ve título, resumen, tags y el link a AO3 de cada uno, sin necesitar tu código de acceso.",
+    "tituloListaPlaceholder": "Título de la lista (opcional)",
+    "notaPlaceholder": "Una nota para quien la reciba (opcional)",
+    "desdeColeccion": "Agregar desde una colección",
+    "unoPorUno": "Agregar fic por fic",
+    "buscarFicPlaceholder": "Buscar un fic para agregar…",
+    "enLaLista": "En la lista ({{count}})",
+    "listaVacia": "Todavía no agregaste ningún fic.",
+    "quitarDeLaLista": "Quitar de la lista",
+    "publicar": "Publicar y generar link",
+    "publicando": "Publicando…",
+    "listoInfo": "¡Listo! Copiá este link para compartirlo:",
+    "tusListas": "Tus listas publicadas",
+    "sinListas": "Todavía no publicaste ninguna lista.",
+    "sinTitulo": "Sin título",
+    "fics": "{{count}} fics",
+    "copiarLink": "Copiar link",
+    "borrarLista": "Borrar lista"
+  },
+  "recomendacion": {
+    "noExiste": "Esta lista no existe o fue borrada.",
+    "hechoCon": "Hecho con Archivum"
   },
   "compartir": {
     "importando": "Importando…",

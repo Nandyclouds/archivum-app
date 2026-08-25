@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LayoutDashboard, User, Search, Library, Archive, Cloud, Bell } from "lucide-react";
+import { LayoutDashboard, User, Search, Library, Archive, Cloud, Bell, Share2 } from "lucide-react";
 import { useNovedades } from "../lib/NovedadesContext";
 
 const TABS = [
@@ -8,6 +8,7 @@ const TABS = [
   { to: "/panel", key: "panel", icon: LayoutDashboard },
   { to: "/buscar", key: "buscar", icon: Search },
   { to: "/colecciones", key: "colecciones", icon: Library },
+  { to: "/recomendar", key: "recomendar", icon: Share2 },
   { to: "/novedades", key: "novedades", icon: Bell },
   { to: "/ao3", key: "ao3", icon: Cloud },
   { to: "/archivo", key: "archivo", icon: Archive },

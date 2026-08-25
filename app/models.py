@@ -297,6 +297,42 @@ class ColeccionFic(Base):
     )
 
 
+class ListaRecomendada(Base):
+    """Una lista de fics armada para compartir por link público (ver
+    app/api/routers/recomendaciones.py) — a diferencia de Coleccion, no es
+    para organizar tu propia biblioteca sino para mandarle a alguien de
+    afuera una selección con resumen/tags/link a AO3 de cada uno."""
+
+    __tablename__ = "listas_recomendadas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    titulo: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    nota: Mapped[str | None] = mapped_column(Text, nullable=True)
+    creado_en: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+
+    # viewonly: el orden se escribe a mano en ListaRecomendadaFic.orden al
+    # crear la lista (ver el router), un `secondary` simple no sabe de esa
+    # columna extra.
+    fics: Mapped[list["Fic"]] = relationship(
+        secondary="lista_recomendada_fics",
+        order_by="ListaRecomendadaFic.orden",
+        viewonly=True,
+    )
+
+
+class ListaRecomendadaFic(Base):
+    __tablename__ = "lista_recomendada_fics"
+
+    lista_id: Mapped[int] = mapped_column(
+        ForeignKey("listas_recomendadas.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    fic_id: Mapped[int] = mapped_column(
+        ForeignKey("fics.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    orden: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class Archivo(Base):
     __tablename__ = "archivos"
 

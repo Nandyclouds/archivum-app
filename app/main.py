@@ -34,6 +34,7 @@ from app.api.routers import (
     import_log,
     novedades,
     perfil,
+    recomendaciones,
     stats,
     sync,
 )
@@ -83,6 +84,18 @@ async def exigir_token(request: Request, call_next):
     if request.method == "OPTIONS" or not path.startswith("/api") or path in _RUTAS_PUBLICAS:
         return await call_next(request)
 
+    # Una lista de recomendaciones puntual (/api/recomendaciones/<token>) es
+    # pública a propósito: es un link para mandarle a alguien que no tiene
+    # (ni debería necesitar) el token de acceso a la app. Sin el trailing
+    # slash no matchea /api/recomendaciones (el listado completo, ese sí
+    # pide el token normal, más abajo).
+    if (
+        request.method == "GET"
+        and path.startswith("/api/recomendaciones/")
+        and path != "/api/recomendaciones/"
+    ):
+        return await call_next(request)
+
     if path in _RUTAS_SYNC:
         secret = request.headers.get("x-sync-secret")
         if not settings.archivum_sync_secret or secret != settings.archivum_sync_secret:
@@ -118,6 +131,7 @@ app.include_router(etiquetas.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(perfil.router, prefix="/api")
 app.include_router(novedades.router, prefix="/api")
+app.include_router(recomendaciones.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])
