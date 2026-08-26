@@ -99,31 +99,38 @@ def needs_refresh(fic: Fic | None, *, force: bool, stale_days: int) -> bool:
     return edad.days >= stale_days
 
 
-def _detectar_novedades(db: Session, fic: Fic, parsed: ParsedFic) -> None:
+def _detectar_novedades(db: Session, fic: Fic, parsed: ParsedFic) -> list[str]:
     """Compara el estado viejo del fic contra lo recién parseado, ANTES de
     pisarlo, y deja una Novedad si sumó capítulo(s) o pasó a completo. Se
     llama solo para fics ya conocidos (uno nuevo no tiene "antes" con qué
-    comparar) — ver upsert_fic."""
+    comparar) — ver upsert_fic. Devuelve los tipos detectados (para que el
+    caller pueda, por ejemplo, mandar un mail con lo que encontró)."""
+    tipos = []
     if parsed.chapters_published > fic.chapters_published:
         db.add(
             Novedad(fic_id=fic.id, tipo="capitulo_nuevo", capitulos_publicados=parsed.chapters_published)
         )
+        tipos.append("capitulo_nuevo")
     if parsed.complete and not fic.complete:
         db.add(
             Novedad(fic_id=fic.id, tipo="completado", capitulos_publicados=parsed.chapters_published)
         )
+        tipos.append("completado")
+    return tipos
 
 
-def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool]:
-    """Crea o actualiza el Fic y sus relaciones many-to-many. Devuelve (fic, es_nuevo)."""
+def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool, list[str]]:
+    """Crea o actualiza el Fic y sus relaciones many-to-many. Devuelve
+    (fic, es_nuevo, novedades_detectadas)."""
 
     fic = db.query(Fic).filter_by(ao3_id=parsed.ao3_id).one_or_none()
     es_nuevo = fic is None
+    novedades_detectadas: list[str] = []
     if fic is None:
         fic = Fic(ao3_id=parsed.ao3_id, url=WORK_URL.format(ao3_id=parsed.ao3_id))
         db.add(fic)
     else:
-        _detectar_novedades(db, fic, parsed)
+        novedades_detectadas = _detectar_novedades(db, fic, parsed)
 
     fic.titulo = parsed.titulo
     fic.autor = parsed.autor
@@ -155,7 +162,7 @@ def upsert_fic(db: Session, parsed: ParsedFic) -> tuple[Fic, bool]:
     ]
 
     db.flush()
-    return fic, es_nuevo
+    return fic, es_nuevo, novedades_detectadas
 
 
 class FicNotFoundError(Exception):
@@ -190,7 +197,7 @@ def import_single_fic(
     response.raise_for_status()
 
     parsed = parse_work_page(response.text, ao3_id)
-    fic, es_nuevo = upsert_fic(db, parsed)
+    fic, es_nuevo, _ = upsert_fic(db, parsed)
     guardar_snapshot_html(db, fic, response.text, archivo_dir)
     return fic, ("nuevo" if es_nuevo else "actualizado")
 

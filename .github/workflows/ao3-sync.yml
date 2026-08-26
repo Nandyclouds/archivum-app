@@ -1,8 +1,11 @@
 name: Sync con AO3
 
-# Solo a demanda (disparado desde la app o manualmente acá) — a propósito
-# sin `schedule`, ver scripts/gh_action_sync.py. Este workflow corre en un
-# runner con salida a internet, a diferencia del host donde vive la app.
+# A demanda (disparado desde la app o manualmente acá) + un cron diario que
+# corre `--modo wips` solo, para detectar fics actualizados sin que haga
+# falta apretar nada (ver Novedad/_detectar_novedades) y avisar por mail
+# (ver _enviar_email_novedades en scripts/gh_action_sync.py). Este workflow
+# corre en un runner con salida a internet, a diferencia del host donde vive
+# la app.
 on:
   workflow_dispatch:
     inputs:
@@ -25,6 +28,11 @@ on:
         description: "ID de AO3 del fic (solo modo=epub)"
         required: false
         type: string
+  schedule:
+    # 13:00 UTC todos los días. La corrida programada siempre es --modo wips
+    # (ver el paso "Correr sync" más abajo) — es la única que detecta
+    # capítulos nuevos/completados, y la más liviana de las que recorren AO3.
+    - cron: "0 13 * * *"
 
 jobs:
   sync:
@@ -47,8 +55,15 @@ jobs:
           AO3_CONTACT_EMAIL: ${{ secrets.AO3_CONTACT_EMAIL }}
           ARCHIVUM_BASE_URL: ${{ secrets.ARCHIVUM_BASE_URL }}
           ARCHIVUM_SYNC_SECRET: ${{ secrets.ARCHIVUM_SYNC_SECRET }}
+          # Para el mail de novedades (ver _enviar_email_novedades) — si no
+          # están seteadas, el script simplemente no manda mail.
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
         run: |
-          ARGS="--modo ${{ inputs.modo }}"
+          # El disparo programado (schedule) no tiene "inputs" — siempre es wips.
+          MODO="${{ inputs.modo || 'wips' }}"
+          ARGS="--modo $MODO"
           if [ -n "${{ inputs.url }}" ]; then ARGS="$ARGS --url ${{ inputs.url }}"; fi
           if [ -n "${{ inputs.ao3_id }}" ]; then ARGS="$ARGS --ao3-id ${{ inputs.ao3_id }}"; fi
           python scripts/gh_action_sync.py $ARGS

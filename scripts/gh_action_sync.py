@@ -24,8 +24,10 @@ from __future__ import annotations
 import argparse
 import base64
 import os
+import smtplib
 import sys
 import time
+from email.mime.text import MIMEText
 
 import requests
 
@@ -88,7 +90,7 @@ _SIN_NOTA = object()  # sentinel: no mandar la clave "nota" en absoluto (ver Ing
 
 def _ingest_fic(
     base_url: str, headers: dict, ao3_id: str, html: str | None = None, *, tags=None, bookmarked_at=None, nota=_SIN_NOTA
-) -> None:
+) -> dict:
     payload = {"ao3_id": ao3_id}
     if html:
         payload["html"] = html
@@ -100,7 +102,46 @@ def _ingest_fic(
         payload["nota"] = nota
     response = requests.post(f"{base_url}/api/sync/ingest-fic", json=payload, headers=headers, timeout=30)
     response.raise_for_status()
-    print(f"  ingest-fic {ao3_id}: {response.json()}")
+    data = response.json()
+    print(f"  ingest-fic {ao3_id}: {data}")
+    return data
+
+
+TIPO_NOVEDAD_TEXTO = {
+    "capitulo_nuevo": "capítulo nuevo",
+    "completado": "se completó",
+}
+
+
+def _enviar_email_novedades(novedades: list[dict]) -> None:
+    """Manda un mail resumen con los fics que sumaron capítulo o se
+    completaron en esta corrida de `--modo wips`. Se manda desde acá (el
+    runner de GitHub Actions) y no desde el backend porque PythonAnywhere
+    free tier no tiene salida SMTP — solo este runner tiene internet sin
+    restricciones. Silencioso si no están seteadas las secrets de mail (no
+    todo el mundo quiere esta notificación configurada)."""
+    remitente = os.environ.get("GMAIL_ADDRESS", "")
+    clave_app = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not remitente or not clave_app:
+        print("GMAIL_ADDRESS/GMAIL_APP_PASSWORD no configurados: no mando mail de novedades.")
+        return
+    destinatario = os.environ.get("NOTIFY_EMAIL_TO", "") or remitente
+
+    lineas = []
+    for n in novedades:
+        tipos = ", ".join(TIPO_NOVEDAD_TEXTO.get(t, t) for t in n["tipos"])
+        lineas.append(f"- {n['titulo']} ({tipos})\n  https://archiveofourown.org/works/{n['ao3_id']}")
+    cuerpo = "Novedades en tus WIPs:\n\n" + "\n\n".join(lineas)
+
+    mensaje = MIMEText(cuerpo)
+    mensaje["Subject"] = f"Archivum: {len(novedades)} fic(s) actualizado(s)"
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(remitente, clave_app)
+        smtp.sendmail(remitente, [destinatario], mensaje.as_string())
+    print(f"Mail de novedades enviado a {destinatario} ({len(novedades)} fic(s)).")
 
 
 def modo_fic(client: RateLimitedClient, base_url: str, headers: dict, url: str) -> None:
@@ -292,6 +333,7 @@ def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
 
     inicio = time.monotonic()
     revisados = 0
+    novedades = []
     for ao3_id in ids:
         if time.monotonic() - inicio > PRESUPUESTO_TOTAL_SEGUNDOS:
             print("Se acabó el presupuesto de tiempo para esta corrida, corto acá.")
@@ -299,12 +341,18 @@ def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
         try:
             fic_response = client.get(WORK_URL.format(ao3_id=ao3_id))
             fic_response.raise_for_status()
-            _ingest_fic(base_url, headers, ao3_id, fic_response.text)
+            resultado = _ingest_fic(base_url, headers, ao3_id, fic_response.text)
             revisados += 1
+            if resultado.get("novedades"):
+                novedades.append(
+                    {"ao3_id": ao3_id, "titulo": resultado.get("titulo") or ao3_id, "tipos": resultado["novedades"]}
+                )
         except (RequestFailedError, requests.exceptions.RequestException) as exc:
             print(f"  ! {ao3_id}: {exc}", file=sys.stderr)
 
     print(f"WIPs revisados: {revisados}")
+    if novedades:
+        _enviar_email_novedades(novedades)
 
 
 def main() -> None:

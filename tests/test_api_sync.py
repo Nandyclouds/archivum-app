@@ -126,7 +126,12 @@ def test_ingest_fic_guarda_el_fic(client, con_sync_secret, db_session, tmp_path)
         json={"ao3_id": "1", "html": _read("work_page.html")},
     )
     assert response.status_code == 200
-    assert response.json() == {"ao3_id": "1", "es_nuevo": True}
+    assert response.json() == {
+        "ao3_id": "1",
+        "es_nuevo": True,
+        "titulo": "El Peso de las Estrellas",
+        "novedades": [],
+    }
 
     fic = db_session.query(Fic).filter_by(ao3_id="1").one()
     assert fic.titulo == "El Peso de las Estrellas"
@@ -168,7 +173,12 @@ def test_ingest_fic_sin_html_actualiza_tags_de_fic_existente(client, con_sync_se
         json={"ao3_id": "1", "bookmark_tags": ["por leer"]},
     )
     assert response.status_code == 200
-    assert response.json() == {"ao3_id": "1", "es_nuevo": False}
+    assert response.json() == {
+        "ao3_id": "1",
+        "es_nuevo": False,
+        "titulo": "El Peso de las Estrellas",
+        "novedades": [],
+    }
 
     fic = db_session.query(Fic).filter_by(ao3_id="1").one()
     assert len(fic.lecturas) == 1

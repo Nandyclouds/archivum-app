@@ -141,9 +141,10 @@ class IngestFicRequest(BaseModel):
 
 @router.post("/ingest-fic")
 def ingest_fic(payload: IngestFicRequest, db: Session = Depends(get_session)):
+    novedades_detectadas: list[str] = []
     if payload.html:
         parsed = parse_work_page(payload.html, payload.ao3_id)
-        fic, es_nuevo = upsert_fic(db, parsed)
+        fic, es_nuevo, novedades_detectadas = upsert_fic(db, parsed)
         guardar_snapshot_html(db, fic, payload.html)
     else:
         fic = db.query(Fic).filter_by(ao3_id=payload.ao3_id).one_or_none()
@@ -159,7 +160,15 @@ def ingest_fic(payload: IngestFicRequest, db: Session = Depends(get_session)):
         kwargs = {"nota": payload.nota} if nota_provista else {}
         apply_bookmark_tags(db, fic, payload.bookmark_tags or [], payload.bookmarked_at, **kwargs)
     db.commit()
-    return {"ao3_id": fic.ao3_id, "es_nuevo": es_nuevo}
+    return {
+        "ao3_id": fic.ao3_id,
+        "es_nuevo": es_nuevo,
+        "titulo": fic.titulo,
+        # Para que el runner de GitHub Actions (modo=wips) sepa qué novedades
+        # encontró sin tener que volver a consultar la API, y pueda armar el
+        # mail de aviso — ver scripts/gh_action_sync.py.
+        "novedades": novedades_detectadas,
+    }
 
 
 class IngestEpubRequest(BaseModel):
