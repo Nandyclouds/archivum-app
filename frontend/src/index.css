@@ -232,11 +232,14 @@ a {
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
-.arv-fic-row-seleccionada {
+/* Doble clase a propósito: .arv-fic-row ya trae "padding: 12px 0" como
+   shorthand, y al venir después en el archivo pisaba el padding-left/right
+   de acá (misma especificidad, gana el que aparece último) — con .arv-fic-row
+   encadenado, esta regla pesa más y el padding-left/right ya no se pierde. */
+.arv-fic-row.arv-fic-row-seleccionada {
   background: var(--color-accent-soft);
-  margin: 0 -12px;
-  padding-left: 18px;
-  padding-right: 18px;
+  margin: 0 -6px;
+  padding: 12px 26px;
   border-radius: 10px;
 }
 

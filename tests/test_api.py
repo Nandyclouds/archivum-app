@@ -166,13 +166,16 @@ def test_filtrar_fics_por_ship(client, db_session):
 def test_filtrar_fics_por_varios_ships_a_la_vez(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    c = _crear_fic(db_session, ao3_id="3", titulo="C")
     ab = Ship(nombre="A/B", tipo="romantico")
     a.ships.extend([ab, Ship(nombre="A & C", tipo="platonico")])
     b.ships.append(ab)
+    c.ships.append(Ship(nombre="Sin relación", tipo="romantico"))
     db_session.commit()
 
+    # OR, no AND: alcanza con tener alguno de los seleccionados.
     r = client.get("/api/fics", params=[("ship", "A/B"), ("ship", "A & C")])
-    assert [f["titulo"] for f in r.json()] == ["A"]
+    assert {f["titulo"] for f in r.json()} == {"A", "B"}
 
 
 def test_filtrar_fics_por_personaje(client, db_session):
@@ -198,27 +201,32 @@ def test_filtrar_fics_por_tag_adicional(client, db_session):
 def test_filtrar_fics_por_varios_personajes_a_la_vez(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    c = _crear_fic(db_session, ao3_id="3", titulo="C")
     frodo = Personaje(nombre="Frodo Baggins")
     sam = Personaje(nombre="Samwise Gamgee")
     a.personajes.extend([frodo, sam])
     b.personajes.append(frodo)
+    c.personajes.append(Personaje(nombre="Sin relación"))
     db_session.commit()
 
-    # AND, no OR: solo el fic que tiene AMBOS personajes debe aparecer.
+    # OR, no AND: alcanza con tener alguno de los seleccionados.
     r = client.get("/api/fics", params=[("personaje", "Frodo Baggins"), ("personaje", "Samwise Gamgee")])
-    assert [f["titulo"] for f in r.json()] == ["A"]
+    assert {f["titulo"] for f in r.json()} == {"A", "B"}
 
 
 def test_filtrar_fics_por_varios_tags_a_la_vez(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    c = _crear_fic(db_session, ao3_id="3", titulo="C")
     slow_burn = TagAdicional(nombre="Slow Burn")
     a.tags_adicionales.extend([slow_burn, TagAdicional(nombre="Fluff")])
     b.tags_adicionales.append(slow_burn)
+    c.tags_adicionales.append(TagAdicional(nombre="Sin relación"))
     db_session.commit()
 
+    # OR, no AND: alcanza con tener alguno de los seleccionados.
     r = client.get("/api/fics", params=[("tag", "Slow Burn"), ("tag", "Fluff")])
-    assert [f["titulo"] for f in r.json()] == ["A"]
+    assert {f["titulo"] for f in r.json()} == {"A", "B"}
 
 
 def test_filtrar_fics_por_categoria(client, db_session):

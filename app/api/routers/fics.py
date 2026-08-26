@@ -53,9 +53,9 @@ def listar_fics(
     db: Session = Depends(get_session),
     q: str | None = Query(None, description="Busca en título y autor"),
     fandom: str | None = Query(None, description="Nombre exacto de fandom"),
-    ship: list[str] = Query([], description="Nombre(s) exacto(s) de relationship (AND si hay varios)"),
-    personaje: list[str] = Query([], description="Nombre(s) exacto(s) de personaje (AND si hay varios)"),
-    tag: list[str] = Query([], description="Nombre(s) exacto(s) de tag adicional (AND si hay varios)"),
+    ship: list[str] = Query([], description="Nombre(s) exacto(s) de relationship (OR si hay varios)"),
+    personaje: list[str] = Query([], description="Nombre(s) exacto(s) de personaje (OR si hay varios)"),
+    tag: list[str] = Query([], description="Nombre(s) exacto(s) de tag adicional (OR si hay varios)"),
     rating: str | None = Query(None, description="Rating exacto de AO3 (ej. 'Explicit')"),
     warning: str | None = Query(None, description="Un warning exacto de AO3 (ej. 'Major Character Death')"),
     categoria: str | None = Query(None, description="Categoría exacta de AO3 (ej. 'F/F')"),
@@ -90,16 +90,15 @@ def listar_fics(
         query = query.filter(or_(Fic.titulo.ilike(like), Fic.autor.ilike(like)))
     if fandom:
         query = query.join(Fic.fandoms).filter(Fandom.nombre == fandom)
-    for nombre in ship:
-        query = query.filter(Fic.ships.any(Ship.nombre == nombre))
-    for nombre in personaje:
-        # .any() por cada valor en vez de un solo join: un join normal por
-        # cada personaje seleccionado exigiría alias distintos para no
-        # pisarse; .any() genera un EXISTS correlacionado por selección, así
-        # que "Leia AND Han" (AND, no OR) sale gratis sin aliasing manual.
-        query = query.filter(Fic.personajes.any(Personaje.nombre == nombre))
-    for nombre in tag:
-        query = query.filter(Fic.tags_adicionales.any(TagAdicional.nombre == nombre))
+    # .any(Modelo.nombre.in_(lista)): "el fic tiene AL MENOS UNO de estos"
+    # (OR entre los valores elegidos) — no uno .any() por valor, que sería AND
+    # (exigiría tenerlos todos a la vez).
+    if ship:
+        query = query.filter(Fic.ships.any(Ship.nombre.in_(ship)))
+    if personaje:
+        query = query.filter(Fic.personajes.any(Personaje.nombre.in_(personaje)))
+    if tag:
+        query = query.filter(Fic.tags_adicionales.any(TagAdicional.nombre.in_(tag)))
     if rating:
         query = query.filter(Fic.rating == rating)
     if warning:
