@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StickyNote } from "lucide-react";
+import { StickyNote, Droplet, Repeat, Star } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
@@ -25,6 +25,10 @@ export function Buscar() {
   const completo = searchParams.get("completo"); // "true" | "false" | null
   const conNota = searchParams.get("con_nota") === "1";
   const anio = searchParams.get("anio") || "";
+  const ratingMin = searchParams.get("rating_min") || "";
+  const hizoLlorar = searchParams.get("hizo_llorar") === "1";
+  const esRelectura = searchParams.get("es_relectura") === "1";
+  const conResena = searchParams.get("con_resena"); // "true" | "false" | null
 
   function setFiltro(clave, valor) {
     const next = new URLSearchParams(searchParams);
@@ -58,8 +62,12 @@ export function Buscar() {
         idioma,
         estado,
         anio,
+        rating_min: ratingMin,
         ...(completo !== null ? { completo } : {}),
         ...(conNota ? { con_nota: true } : {}),
+        ...(hizoLlorar ? { hizo_llorar: true } : {}),
+        ...(esRelectura ? { es_relectura: true } : {}),
+        ...(conResena !== null ? { con_resena: conResena } : {}),
         limit: 1000,
       }),
     [
@@ -77,6 +85,10 @@ export function Buscar() {
       completo,
       conNota,
       anio,
+      ratingMin,
+      hizoLlorar,
+      esRelectura,
+      conResena,
     ]
   );
 
@@ -92,7 +104,11 @@ export function Buscar() {
     estado ||
     completo !== null ||
     conNota ||
-    anio;
+    anio ||
+    ratingMin ||
+    hizoLlorar ||
+    esRelectura ||
+    conResena !== null;
 
   return (
     <div>
@@ -208,6 +224,62 @@ export function Buscar() {
         >
           <StickyNote size={16} />
         </button>
+        <button
+          className={`arv-icon-btn${hizoLlorar ? " active" : ""}`}
+          onClick={() => setFiltro("hizo_llorar", hizoLlorar ? "" : "1")}
+          aria-label={t("buscar.hizoLlorar")}
+          title={t("buscar.hizoLlorar")}
+          style={hizoLlorar ? { background: "var(--color-accent)", color: "var(--color-surface)" } : undefined}
+        >
+          <Droplet size={16} />
+        </button>
+        <button
+          className={`arv-icon-btn${esRelectura ? " active" : ""}`}
+          onClick={() => setFiltro("es_relectura", esRelectura ? "" : "1")}
+          aria-label={t("buscar.esRelectura")}
+          title={t("buscar.esRelectura")}
+          style={esRelectura ? { background: "var(--color-accent)", color: "var(--color-surface)" } : undefined}
+        >
+          <Repeat size={16} />
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 14, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="arv-segmentado" style={{ width: "fit-content" }}>
+          <button className={conResena === null ? "active" : ""} onClick={() => setFiltro("con_resena", "")}>
+            {t("buscar.todos")}
+          </button>
+          <button className={conResena === "true" ? "active" : ""} onClick={() => setFiltro("con_resena", "true")}>
+            {t("buscar.conResena")}
+          </button>
+          <button className={conResena === "false" ? "active" : ""} onClick={() => setFiltro("con_resena", "false")}>
+            {t("buscar.sinResena")}
+          </button>
+        </div>
+        <div style={{ display: "inline-flex", gap: 1 }}>
+          {[1, 2, 3, 4, 5].map((n) => {
+            const activo = n <= Number(ratingMin || 0);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setFiltro("rating_min", Number(ratingMin) === n ? "" : String(n))}
+                aria-label={t("buscar.ratingMinimo", { count: n })}
+                title={t("buscar.ratingMinimo", { count: n })}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  padding: 2,
+                  color: activo ? "var(--color-accent)" : "var(--color-border)",
+                  display: "inline-flex",
+                }}
+              >
+                <Star size={17} fill={activo ? "currentColor" : "none"} />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {hayFiltrosExtra && (
@@ -223,6 +295,16 @@ export function Buscar() {
           )}
           {conNota && <span className="arv-tag arv-tag-accent-2">{t("buscar.conNota")}</span>}
           {anio && <span className="arv-tag arv-tag-accent-2">{anio}</span>}
+          {ratingMin && (
+            <span className="arv-tag arv-tag-accent-2">{t("buscar.ratingMinimo", { count: Number(ratingMin) })}</span>
+          )}
+          {hizoLlorar && <span className="arv-tag arv-tag-accent-2">{t("buscar.hizoLlorar")}</span>}
+          {esRelectura && <span className="arv-tag arv-tag-accent-2">{t("buscar.esRelectura")}</span>}
+          {conResena !== null && (
+            <span className="arv-tag arv-tag-accent-2">
+              {conResena === "true" ? t("buscar.conResena") : t("buscar.sinResena")}
+            </span>
+          )}
           <button
             className="arv-tab"
             onClick={() => {

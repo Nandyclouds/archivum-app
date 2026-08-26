@@ -202,6 +202,7 @@ function MisColecciones({ fic, onChange }) {
 
 function MisEtiquetas({ fic, onChange }) {
   const { t } = useTranslation();
+  const todas = useFetch(() => api.etiquetas.list());
   const [nombreNueva, setNombreNueva] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -212,6 +213,7 @@ function MisEtiquetas({ fic, onChange }) {
       await api.etiquetas.addToFic(fic.id, nombreNueva.trim());
       setNombreNueva("");
       onChange();
+      todas.reload();
     } finally {
       setGuardando(false);
     }
@@ -256,11 +258,17 @@ function MisEtiquetas({ fic, onChange }) {
       <div style={{ display: "flex", gap: 8 }}>
         <input
           className="arv-input"
+          list="arv-etiquetas-sugeridas"
           placeholder={t("ficDetalle.nuevaEtiquetaPlaceholder")}
           value={nombreNueva}
           onChange={(e) => setNombreNueva(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && agregar()}
         />
+        <datalist id="arv-etiquetas-sugeridas">
+          {todas.data?.map((et) => (
+            <option key={et.id} value={et.nombre} />
+          ))}
+        </datalist>
         <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={agregar}>
           {t("ficDetalle.agregar")}
         </button>

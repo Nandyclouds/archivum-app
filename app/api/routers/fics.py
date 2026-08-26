@@ -65,6 +65,12 @@ def listar_fics(
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
     completo: bool | None = Query(None, description="Filtra por fic.complete (True=completos, False=WIP)"),
     con_nota: bool = Query(False, description="Si es True, solo fics con nota_bookmark"),
+    rating_min: float | None = Query(None, ge=1, le=5, description="Solo fics con alguna reseña de este puntaje o más"),
+    hizo_llorar: bool = Query(False, description="Si es True, solo fics con alguna reseña marcada 'me hizo llorar'"),
+    es_relectura: bool = Query(False, description="Si es True, solo fics con al menos una relectura registrada"),
+    con_resena: bool | None = Query(
+        None, description="True = solo fics con alguna reseña propia, False = solo sin reseña"
+    ),
     anio: int | None = Query(None, description="Restringe a fics con una lectura 'leido' completada este año"),
     incluir_borrados: bool = False,
     orden: str = Query(
@@ -107,6 +113,16 @@ def listar_fics(
         query = query.filter(Fic.idioma == idioma)
     if con_nota:
         query = query.filter(Fic.nota_bookmark.isnot(None))
+    if rating_min is not None:
+        query = query.filter(Fic.resenas.any(Resena.rating >= rating_min))
+    if hizo_llorar:
+        query = query.filter(Fic.resenas.any(Resena.hizo_llorar.is_(True)))
+    if es_relectura:
+        query = query.filter(Fic.lecturas.any(Lectura.es_relectura.is_(True)))
+    if con_resena is True:
+        query = query.filter(Fic.resenas.any())
+    elif con_resena is False:
+        query = query.filter(~Fic.resenas.any())
     if etiqueta:
         query = query.join(Fic.etiquetas_personales).filter(EtiquetaPersonal.nombre == etiqueta)
     if coleccion is not None:
@@ -310,7 +326,13 @@ def agregar_etiqueta(fic_id: int, payload: EtiquetaPersonalCreate, db: Session =
     if not nombre:
         raise HTTPException(status_code=422, detail="El nombre de la etiqueta no puede estar vacío")
 
-    etiqueta = db.query(EtiquetaPersonal).filter_by(nombre=nombre).one_or_none()
+    # Case-insensitive: "Fluff" y "fluff" tienen que ser la misma etiqueta,
+    # no dos separadas por un error de tipeo.
+    etiqueta = (
+        db.query(EtiquetaPersonal)
+        .filter(func.lower(EtiquetaPersonal.nombre) == nombre.lower())
+        .one_or_none()
+    )
     if etiqueta is None:
         etiqueta = EtiquetaPersonal(nombre=nombre)
         db.add(etiqueta)

@@ -257,6 +257,64 @@ def test_filtrar_fics_por_con_nota(client, db_session):
     assert len(r_todos.json()) == 2
 
 
+def test_filtrar_fics_por_rating_min(client, db_session):
+    alto = _crear_fic(db_session, ao3_id="1", titulo="Alto")
+    bajo = _crear_fic(db_session, ao3_id="2", titulo="Bajo")
+    db_session.add_all(
+        [
+            Resena(fic_id=alto.id, rating=5),
+            Resena(fic_id=bajo.id, rating=2),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"rating_min": 4})
+    assert [f["titulo"] for f in r.json()] == ["Alto"]
+
+
+def test_filtrar_fics_por_hizo_llorar(client, db_session):
+    llore = _crear_fic(db_session, ao3_id="1", titulo="Lloré")
+    no_llore = _crear_fic(db_session, ao3_id="2", titulo="No lloré")
+    db_session.add_all(
+        [
+            Resena(fic_id=llore.id, rating=5, hizo_llorar=True),
+            Resena(fic_id=no_llore.id, rating=5, hizo_llorar=False),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"hizo_llorar": True})
+    assert [f["titulo"] for f in r.json()] == ["Lloré"]
+
+
+def test_filtrar_fics_por_es_relectura(client, db_session):
+    releido = _crear_fic(db_session, ao3_id="1", titulo="Releído")
+    no_releido = _crear_fic(db_session, ao3_id="2", titulo="No releído")
+    db_session.add_all(
+        [
+            Lectura(fic_id=releido.id, estado="leido", es_relectura=True),
+            Lectura(fic_id=no_releido.id, estado="leido", es_relectura=False),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"es_relectura": True})
+    assert [f["titulo"] for f in r.json()] == ["Releído"]
+
+
+def test_filtrar_fics_por_con_resena(client, db_session):
+    con = _crear_fic(db_session, ao3_id="1", titulo="Con reseña")
+    sin = _crear_fic(db_session, ao3_id="2", titulo="Sin reseña")
+    db_session.add(Resena(fic_id=con.id, rating=4))
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"con_resena": True})
+    assert [f["titulo"] for f in r.json()] == ["Con reseña"]
+
+    r = client.get("/api/fics", params={"con_resena": False})
+    assert [f["titulo"] for f in r.json()] == ["Sin reseña"]
+
+
 def test_filtrar_fics_por_rating(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     a.rating = "Explicit"
@@ -542,6 +600,17 @@ def test_etiquetas_personales_crear_listar_filtrar_borrar(client, db_session):
     assert r.status_code == 204
     assert client.get("/api/etiquetas").json() == []
     assert client.get(f"/api/fics/{fic2.id}").json()["etiquetas_personales"] == []
+
+
+def test_etiqueta_reutiliza_sin_importar_mayusculas(client, db_session):
+    fic1 = _crear_fic(db_session, ao3_id="1", titulo="A")
+    fic2 = _crear_fic(db_session, ao3_id="2", titulo="B")
+
+    creada = client.post(f"/api/fics/{fic1.id}/etiquetas", json={"nombre": "fluff"}).json()
+    reusada = client.post(f"/api/fics/{fic2.id}/etiquetas", json={"nombre": "Fluff"}).json()
+
+    assert reusada["id"] == creada["id"]
+    assert client.get("/api/etiquetas").json() == [{"id": creada["id"], "nombre": "fluff"}]
 
 
 def test_etiqueta_nombre_vacio_rechazado(client, db_session):
