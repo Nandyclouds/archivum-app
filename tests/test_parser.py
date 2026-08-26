@@ -71,6 +71,15 @@ def test_parse_history_page():
     assert page.total_pages == 1
 
 
+def test_parse_subscriptions_page_ignora_series_y_autores():
+    """La página de suscripciones mezcla fics, series y autores — solo los
+    fics tienen link a /works/ en el heading, así que son los únicos que
+    tienen que aparecer acá."""
+    page = parser.parse_subscriptions_page(_read("subscriptions_page.html"))
+    assert page.work_ids == ["5", "7"]
+    assert page.total_pages == 1
+
+
 def test_extract_authenticity_token():
     token = parser.extract_authenticity_token(_read("login_page.html"))
     assert token == "fake-csrf-token-123"

@@ -305,6 +305,16 @@ def parse_history_page(html: str) -> ListingPage:
     return ListingPage(work_ids=_work_ids_from_items(items), total_pages=_total_pages(soup))
 
 
+def parse_subscriptions_page(html: str) -> ListingPage:
+    """La página de suscripciones mezcla fics, series y autores en el mismo
+    listado — pero solo los fics tienen un link a /works/ en el heading, así
+    que _work_ids_from_items ya descarta series/autores solo."""
+    soup = BeautifulSoup(html, "html.parser")
+    container = soup.find("ol", class_="subscription")
+    items = container.find_all("li", {"role": "article"}) if container else []
+    return ListingPage(work_ids=_work_ids_from_items(items), total_pages=_total_pages(soup))
+
+
 def extract_authenticity_token(html: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
     token_input = soup.find("input", {"name": "authenticity_token"})

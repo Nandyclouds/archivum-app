@@ -209,6 +209,8 @@
     "actualizarBookmarksRapidoInfo": "Como \"Actualizar bookmarks\", pero corta apenas encuentra una racha larga de bookmarks ya conocidos seguidos, en vez de recorrer todas las páginas siempre. Mucho más rápido cuando solo agregaste unos pocos bookmarks nuevos. La contra: si le editaste el tag o la nota a un bookmark viejo, este modo puede no enterarse — para eso usá el completo de vez en cuando.",
     "actualizarMarcados": "Actualizar Marked for Later",
     "actualizarMarcadosInfo": "Trae los fics que marcaste como \"Marked for Later\" en tu History de AO3 (no es un bookmark). A los que ya conocés solo les agrega la etiqueta \"Marked for Later\" para encontrarlos en Colecciones, sin pisar el estado de lectura que ya tengan.",
+    "actualizarSuscripciones": "Sincronizar suscripciones",
+    "actualizarSuscripcionesInfo": "Trae los fics a los que estás suscripta en AO3 (distinto de bookmarks: podés suscribirte a uno sin bookmarkearlo). A los que ya conocés les agrega la etiqueta \"Suscripciones AO3\", y a los nuevos los importa enteros — así \"Revisar WIPs\" también los empieza a chequear.",
     "actualizarWips": "Revisar WIPs",
     "actualizarWipsInfo": "Vuelve a pedirle a AO3 los fics que tenés marcados como incompletos, para detectar si sumaron capítulo o se completaron — eso aparece en Novedades. Solo revisa los que no se chequearon en los últimos días, así que corridas seguidas no gastan de más.",
     "actualizarAhora": "Actualizar ahora",

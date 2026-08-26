@@ -16,6 +16,7 @@ Uso (variables de entorno, seteadas como GitHub Secrets en el workflow):
     python scripts/gh_action_sync.py --modo epub --ao3-id 123
     python scripts/gh_action_sync.py --modo bookmarks
     python scripts/gh_action_sync.py --modo marcados
+    python scripts/gh_action_sync.py --modo suscripciones
     python scripts/gh_action_sync.py --modo wips
 """
 
@@ -33,8 +34,14 @@ import requests
 
 from app.ao3 import auth
 from app.ao3.client import RateLimitedClient, RequestFailedError, SessionRequestLimitReached
-from app.ao3.importer import HISTORY_MARKED_URL, WORK_URL, _walk_bookmark_items, _walk_listing_work_ids
-from app.ao3.parser import parse_history_page, parse_work_page, work_id_from_url
+from app.ao3.importer import (
+    HISTORY_MARKED_URL,
+    SUBSCRIPTIONS_URL,
+    WORK_URL,
+    _walk_bookmark_items,
+    _walk_listing_work_ids,
+)
+from app.ao3.parser import parse_history_page, parse_subscriptions_page, parse_work_page, work_id_from_url
 
 # Tope de tiempo total para los modos que recorren varias páginas de listado
 # (bookmarks, marcados): AO3 a veces devuelve 429/503 sostenido durante un
@@ -49,6 +56,11 @@ ESPERA_ENTRE_REINTENTOS_SEGUNDOS = 5 * 60
 # solo una etiqueta, para no pisar el estado real si la usuaria ya lo leyó
 # por otro lado.
 TAG_MARCADOS = "Marked for Later"
+
+# Mismo mecanismo que TAG_MARCADOS, para los fics a los que estás suscripta
+# en AO3 (que pueden no estar bookmarkeados) — así quedan agrupados en una
+# colección y, al quedar en la biblioteca, "Revisar WIPs" también los chequea.
+TAG_SUSCRIPCIONES = "Suscripciones AO3"
 
 
 def _base_url() -> str:
@@ -265,11 +277,22 @@ def modo_bookmarks(client: RateLimitedClient, base_url: str, headers: dict, *, r
     print(f"Bookmarks nuevos importados: {nuevos}")
 
 
-def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> None:
-    """Trae los work_ids marcados 'Marked for Later' (?show=to-read de la
-    History) y los etiqueta en Archivum. A los ya conocidos solo se les
-    agrega el tag (sin re-pedir la página); a los nuevos se los importa
-    entero, igual que un bookmark nuevo."""
+def _sync_listado_con_tag(
+    client: RateLimitedClient,
+    base_url: str,
+    headers: dict,
+    *,
+    url_template: str,
+    parse_page,
+    tag: str,
+    etiqueta_log: str,
+) -> None:
+    """Recorre un listado de AO3 (Marked for Later, Suscripciones...) y le
+    pone `tag` a cada fic encontrado en Archivum. A los ya conocidos solo se
+    les agrega el tag (sin re-pedir la página); a los nuevos se los importa
+    entero, igual que un bookmark nuevo. Compartido por modo_marcados y
+    modo_suscripciones — misma forma de recorrer páginas, solo cambia de
+    dónde vienen los work_ids y qué tag les pone."""
     username = os.environ.get("AO3_USERNAME", "")
 
     response = requests.get(f"{base_url}/api/sync/known-ids", headers=headers, timeout=30)
@@ -285,17 +308,17 @@ def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> No
     while True:
         try:
             for work_id in _walk_listing_work_ids(
-                client, HISTORY_MARKED_URL, username, parse_history_page,
+                client, url_template, username, parse_page,
                 start_page=start_page, progreso=progreso,
             ):
                 try:
                     if work_id in conocidos:
-                        _ingest_fic(base_url, headers, work_id, tags=[TAG_MARCADOS])
+                        _ingest_fic(base_url, headers, work_id, tags=[tag])
                         etiquetados += 1
                     else:
                         fic_response = client.get(WORK_URL.format(ao3_id=work_id))
                         fic_response.raise_for_status()
-                        _ingest_fic(base_url, headers, work_id, fic_response.text, tags=[TAG_MARCADOS])
+                        _ingest_fic(base_url, headers, work_id, fic_response.text, tags=[tag])
                         conocidos.add(work_id)
                         nuevos += 1
                 except (RequestFailedError, requests.exceptions.RequestException) as exc:
@@ -317,7 +340,28 @@ def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> No
             start_page = progreso["pagina"]
             continue
 
-    print(f"Marked for Later — nuevos importados: {nuevos}, ya conocidos etiquetados: {etiquetados}")
+    print(f"{etiqueta_log} — nuevos importados: {nuevos}, ya conocidos etiquetados: {etiquetados}")
+
+
+def modo_marcados(client: RateLimitedClient, base_url: str, headers: dict) -> None:
+    """Trae los work_ids marcados 'Marked for Later' (?show=to-read de la
+    History) y los etiqueta en Archivum."""
+    _sync_listado_con_tag(
+        client, base_url, headers,
+        url_template=HISTORY_MARKED_URL, parse_page=parse_history_page,
+        tag=TAG_MARCADOS, etiqueta_log="Marked for Later",
+    )
+
+
+def modo_suscripciones(client: RateLimitedClient, base_url: str, headers: dict) -> None:
+    """Trae los fics a los que estás suscripta en AO3 (aparte de bookmarks:
+    podés suscribirte sin bookmarkear) y los etiqueta en Archivum. Al
+    quedar en la biblioteca, "Revisar WIPs" también los va a chequear."""
+    _sync_listado_con_tag(
+        client, base_url, headers,
+        url_template=SUBSCRIPTIONS_URL, parse_page=parse_subscriptions_page,
+        tag=TAG_SUSCRIPCIONES, etiqueta_log="Suscripciones",
+    )
 
 
 def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
@@ -358,7 +402,9 @@ def modo_wips(client: RateLimitedClient, base_url: str, headers: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--modo", required=True, choices=["fic", "epub", "bookmarks", "bookmarks-rapido", "marcados", "wips"]
+        "--modo",
+        required=True,
+        choices=["fic", "epub", "bookmarks", "bookmarks-rapido", "marcados", "suscripciones", "wips"],
     )
     parser.add_argument("--url", default=None)
     parser.add_argument("--ao3-id", default=None)
@@ -381,6 +427,8 @@ def main() -> None:
         modo_epub(client, base_url, headers, args.ao3_id)
     elif args.modo == "marcados":
         modo_marcados(client, base_url, headers)
+    elif args.modo == "suscripciones":
+        modo_suscripciones(client, base_url, headers)
     elif args.modo == "wips":
         modo_wips(client, base_url, headers)
     elif args.modo == "bookmarks-rapido":

@@ -209,6 +209,8 @@
     "actualizarBookmarksRapidoInfo": "Like \"Update bookmarks\", but stops as soon as it finds a long streak of already-known bookmarks in a row, instead of always walking every page. Much faster when you only added a few new bookmarks. The tradeoff: if you edited the tag or note on an old bookmark, this mode might miss it — run the full one every so often for that.",
     "actualizarMarcados": "Update Marked for Later",
     "actualizarMarcadosInfo": "Fetches the fics you marked as \"Marked for Later\" on your AO3 History (not a bookmark). For ones you already have, it just adds the \"Marked for Later\" tag so you can find them in Collections, without touching whatever reading status they already have.",
+    "actualizarSuscripciones": "Sync subscriptions",
+    "actualizarSuscripcionesInfo": "Fetches the fics you're subscribed to on AO3 (different from bookmarks: you can subscribe to one without bookmarking it). For ones you already have, it adds the \"Suscripciones AO3\" tag; new ones get fully imported — so \"Check WIPs\" starts checking them too.",
     "actualizarWips": "Check WIPs",
     "actualizarWipsInfo": "Asks AO3 again about the fics you have marked as incomplete, to detect if they got a new chapter or finished — that shows up in Updates. Only checks ones that weren't checked in the last few days, so running it back to back won't waste requests.",
     "actualizarAhora": "Update now",

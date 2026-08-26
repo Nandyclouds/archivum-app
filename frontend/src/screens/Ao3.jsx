@@ -25,6 +25,11 @@ export function Ao3() {
         infoKey="ao3.actualizarBookmarksRapidoInfo"
       />
       <BotonSync modo="marcados" tituloKey="ao3.actualizarMarcados" infoKey="ao3.actualizarMarcadosInfo" />
+      <BotonSync
+        modo="suscripciones"
+        tituloKey="ao3.actualizarSuscripciones"
+        infoKey="ao3.actualizarSuscripcionesInfo"
+      />
       <BotonSync modo="wips" tituloKey="ao3.actualizarWips" infoKey="ao3.actualizarWipsInfo" />
 
       {logs.loading && <Cargando />}

@@ -60,6 +60,11 @@ HISTORY_URL = "https://archiveofourown.org/users/{username}/readings?page={page}
 # (?show=to-read), no una entrada nueva del menú. Mismo listado/parser que
 # HISTORY_URL (misma estructura de <li>), solo cambia el filtro server-side.
 HISTORY_MARKED_URL = "https://archiveofourown.org/users/{username}/readings?show=to-read&page={page}"
+# Las suscripciones son otra cosa aparte de los bookmarks: podés suscribirte
+# a un fic sin bookmarkearlo (o al revés). AO3 las lista en su propia
+# página, mezcladas con suscripciones a series/autores — parse_subscriptions_page
+# ya filtra esas últimas porque no tienen link a /works/.
+SUBSCRIPTIONS_URL = "https://archiveofourown.org/users/{username}/subscriptions?page={page}"
 
 DEFAULT_STALE_DAYS = 30
 

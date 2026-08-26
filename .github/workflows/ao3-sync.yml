@@ -1,11 +1,11 @@
 name: Sync con AO3
 
 # A demanda (disparado desde la app o manualmente acá) + un cron diario que
-# corre `--modo wips` solo, para detectar fics actualizados sin que haga
-# falta apretar nada (ver Novedad/_detectar_novedades) y avisar por mail
-# (ver _enviar_email_novedades en scripts/gh_action_sync.py). Este workflow
-# corre en un runner con salida a internet, a diferencia del host donde vive
-# la app.
+# corre suscripciones y wips solos, para detectar fics nuevos/actualizados
+# sin que haga falta apretar nada (ver Novedad/_detectar_novedades) y avisar
+# por mail (ver _enviar_email_novedades en scripts/gh_action_sync.py). Este
+# workflow corre en un runner con salida a internet, a diferencia del host
+# donde vive la app.
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +19,7 @@ on:
           - fic
           - epub
           - marcados
+          - suscripciones
           - wips
       url:
         description: "URL del fic (solo modo=fic)"
@@ -29,9 +30,10 @@ on:
         required: false
         type: string
   schedule:
-    # 13:00 UTC todos los días. La corrida programada siempre es --modo wips
-    # (ver el paso "Correr sync" más abajo) — es la única que detecta
-    # capítulos nuevos/completados, y la más liviana de las que recorren AO3.
+    # 13:00 UTC todos los días. La corrida programada siempre es
+    # suscripciones + wips (ver el paso "Correr sync" más abajo): primero
+    # trae fics nuevos a los que te suscribiste, para que wips ya los pueda
+    # chequear en la misma corrida si quedaron incompletos.
     - cron: "0 13 * * *"
 
 jobs:
@@ -61,9 +63,12 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
         run: |
-          # El disparo programado (schedule) no tiene "inputs" — siempre es wips.
-          MODO="${{ inputs.modo || 'wips' }}"
-          ARGS="--modo $MODO"
-          if [ -n "${{ inputs.url }}" ]; then ARGS="$ARGS --url ${{ inputs.url }}"; fi
-          if [ -n "${{ inputs.ao3_id }}" ]; then ARGS="$ARGS --ao3-id ${{ inputs.ao3_id }}"; fi
-          python scripts/gh_action_sync.py $ARGS
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python scripts/gh_action_sync.py --modo suscripciones
+            python scripts/gh_action_sync.py --modo wips
+          else
+            ARGS="--modo ${{ inputs.modo }}"
+            if [ -n "${{ inputs.url }}" ]; then ARGS="$ARGS --url ${{ inputs.url }}"; fi
+            if [ -n "${{ inputs.ao3_id }}" ]; then ARGS="$ARGS --ao3-id ${{ inputs.ao3_id }}"; fi
+            python scripts/gh_action_sync.py $ARGS
+          fi
