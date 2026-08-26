@@ -12,7 +12,7 @@ function clamp(n, min, max) {
 
 export function Colecciones() {
   const { t } = useTranslation();
-  const colecciones = useFetch(() => api.colecciones.list());
+  const colecciones = useFetch(() => api.colecciones.list(), [], "colecciones-lista");
   const [nombreNueva, setNombreNueva] = useState("");
   const [creando, setCreando] = useState(false);
   const [reordenando, setReordenando] = useState(false);

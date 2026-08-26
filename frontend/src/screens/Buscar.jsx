@@ -51,9 +51,9 @@ export function Buscar() {
     setSearchParams(next, { replace: true });
   }
 
-  const fandoms = useFetch(() => api.stats.topFandoms(30));
-  const etiquetas = useFetch(() => api.etiquetas.list());
-  const opciones = useFetch(() => api.fics.opcionesFiltro());
+  const fandoms = useFetch(() => api.stats.topFandoms(30), [], "buscar-top-fandoms");
+  const etiquetas = useFetch(() => api.etiquetas.list(), [], "buscar-etiquetas");
+  const opciones = useFetch(() => api.fics.opcionesFiltro(), [], "buscar-opciones-filtro");
   const fics = useFetch(
     () =>
       api.fics.list({

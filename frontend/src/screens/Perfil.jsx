@@ -23,15 +23,25 @@ const PALETA_FAVORITOS = [
 
 export function Perfil() {
   const { t } = useTranslation();
-  const fics = useFetch(() => api.fics.list({ limit: 200, orden: "ultima_lectura" }));
+  const fics = useFetch(
+    () => api.fics.list({ limit: 200, orden: "ultima_lectura" }),
+    [],
+    "perfil-historial"
+  );
+  // Se pide una sola vez acá y se pasa a las tres secciones que lo
+  // necesitan (antes cada una lo pedía por su cuenta: 3 pedidos idénticos
+  // en paralelo en cada visita, y encima si editabas la identidad desde
+  // Identidad, la insignia de CabeceraPerfil quedaba desactualizada hasta
+  // recargar la página porque cada una tenía su propia copia).
+  const perfil = useFetch(() => api.perfil.get(), [], "perfil-datos");
   const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
 
   return (
     <div>
-      <CabeceraPerfil />
-      <Identidad />
+      <CabeceraPerfil perfil={perfil} />
+      <Identidad perfil={perfil} />
       <Favoritos />
-      <CitaFavorita />
+      <CitaFavorita perfil={perfil} />
       <Graficos />
 
       <div className="arv-card" style={seleccionActiva ? { marginBottom: 90 } : undefined}>
@@ -77,9 +87,8 @@ export function Perfil() {
   );
 }
 
-function CabeceraPerfil() {
+function CabeceraPerfil({ perfil }) {
   const { t } = useTranslation();
-  const perfil = useFetch(() => api.perfil.get());
   const [version, setVersion] = useState(0);
 
   const conCache = (url) => `${url}${url.includes("?") ? "&" : "?"}v=${version}`;
@@ -291,9 +300,8 @@ function EditorFoto({ tipo, tieneFoto, url, posicion, contenedorClassName, place
   );
 }
 
-function Identidad() {
+function Identidad({ perfil }) {
   const { t } = useTranslation();
-  const perfil = useFetch(() => api.perfil.get());
   const [editando, setEditando] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [handle, setHandle] = useState("");
@@ -420,7 +428,7 @@ function Identidad() {
 
 function Favoritos() {
   const { t } = useTranslation();
-  const favoritos = useFetch(() => api.perfil.favoritos.list());
+  const favoritos = useFetch(() => api.perfil.favoritos.list(), [], "perfil-favoritos");
   const [buscando, setBuscando] = useState(false);
   const [q, setQ] = useState("");
   const resultados = useFetch(() => (q ? api.fics.list({ q, limit: 8 }) : Promise.resolve([])), [q]);
@@ -652,10 +660,10 @@ function BubbleLongitud({ datos }) {
 
 function Graficos() {
   const { t } = useTranslation();
-  const porAnio = useFetch(() => api.stats.palabrasPorAnio());
-  const longitud = useFetch(() => api.stats.distribucionLongitud());
-  const wipCompletos = useFetch(() => api.stats.ratioWipCompletos());
-  const resumen = useFetch(() => api.stats.resumen());
+  const porAnio = useFetch(() => api.stats.palabrasPorAnio(), [], "stats-por-anio");
+  const longitud = useFetch(() => api.stats.distribucionLongitud(), [], "stats-longitud");
+  const wipCompletos = useFetch(() => api.stats.ratioWipCompletos(), [], "stats-wip-completos");
+  const resumen = useFetch(() => api.stats.resumen(), [], "stats-resumen-general");
 
   const ultimoAnio = porAnio.data?.[porAnio.data.length - 1];
   const completos = wipCompletos.data?.completos ?? 0;
@@ -747,9 +755,8 @@ function Graficos() {
   );
 }
 
-function CitaFavorita() {
+function CitaFavorita({ perfil }) {
   const { t } = useTranslation();
-  const perfil = useFetch(() => api.perfil.get());
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState("");
   const [fuente, setFuente] = useState("");

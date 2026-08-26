@@ -188,7 +188,7 @@ function EmojisPersonalizados() {
 
 function GifsPersonalizados() {
   const { t } = useTranslation();
-  const perfil = useFetch(() => api.perfil.get());
+  const perfil = useFetch(() => api.perfil.get(), [], "perfil-datos");
   const [subiendoIndice, setSubiendoIndice] = useState(null);
   const [error, setError] = useState("");
 

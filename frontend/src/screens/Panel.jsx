@@ -17,13 +17,25 @@ export function Panel() {
     setSearchParams(valor ? { anio: valor } : {}, { replace: true });
   }
 
-  const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio]);
-  const anios = useFetch(() => api.stats.palabrasPorAnio());
-  const topFandoms = useFetch(() => api.stats.topFandoms(6, anio || undefined), [anio]);
-  const topShips = useFetch(() => api.stats.topShips(6, "romantico", anio || undefined), [anio]);
-  const topRelaciones = useFetch(() => api.stats.topShips(6, "platonico", anio || undefined), [anio]);
-  const estadoLectura = useFetch(() => api.stats.estadoLectura());
-  const recientes = useFetch(() => api.fics.list({ limit: 8, orden: "recientes" }));
+  const resumen = useFetch(() => api.stats.resumen(anio || undefined), [anio], `panel-resumen:${anio || "todos"}`);
+  const anios = useFetch(() => api.stats.palabrasPorAnio(), [], "panel-anios");
+  const topFandoms = useFetch(
+    () => api.stats.topFandoms(6, anio || undefined),
+    [anio],
+    `panel-top-fandoms:${anio || "todos"}`
+  );
+  const topShips = useFetch(
+    () => api.stats.topShips(6, "romantico", anio || undefined),
+    [anio],
+    `panel-top-ships-romantico:${anio || "todos"}`
+  );
+  const topRelaciones = useFetch(
+    () => api.stats.topShips(6, "platonico", anio || undefined),
+    [anio],
+    `panel-top-ships-platonico:${anio || "todos"}`
+  );
+  const estadoLectura = useFetch(() => api.stats.estadoLectura(), [], "panel-estado-lectura");
+  const recientes = useFetch(() => api.fics.list({ limit: 8, orden: "recientes" }), [], "panel-recientes");
 
   if (resumen.loading) return <Cargando />;
   if (resumen.error) return <ErrorCarga error={resumen.error} onReintentar={resumen.reload} />;
