@@ -235,8 +235,8 @@ a {
 .arv-fic-row-seleccionada {
   background: var(--color-accent-soft);
   margin: 0 -12px;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 18px;
+  padding-right: 18px;
   border-radius: 10px;
 }
 

@@ -184,7 +184,7 @@ function MisColecciones({ fic, onChange }) {
           className="arv-coleccion-picker-toggle"
           onClick={() => setAbierto((v) => !v)}
         >
-          {abierto ? t("ficDetalle.ocultarColecciones") : t("ficDetalle.editarColecciones")}
+          {abierto ? t("common.ocultar") : t("common.editar")}
           <ChevronDown size={14} style={{ transform: abierto ? "rotate(180deg)" : undefined }} />
         </button>
       </div>
@@ -238,15 +238,25 @@ function MisColecciones({ fic, onChange }) {
 
 function MisEtiquetas({ fic, onChange }) {
   const { t } = useTranslation();
-  const todas = useFetch(() => api.etiquetas.list());
+  const todas = useFetch(() => api.etiquetas.list(), [], "etiquetas-todas");
   const [nombreNueva, setNombreNueva] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [abierto, setAbierto] = useState(false);
 
-  async function agregar() {
-    if (!nombreNueva.trim()) return;
+  const nombresDelFic = new Set(fic.etiquetas_personales.map((et) => et.nombre.toLowerCase()));
+  // Las que ya tiene el fic van primero (mismo criterio que MisColecciones).
+  const ordenadas = [...(todas.data ?? [])].sort((a, b) => {
+    const yaEstaA = nombresDelFic.has(a.nombre.toLowerCase());
+    const yaEstaB = nombresDelFic.has(b.nombre.toLowerCase());
+    if (yaEstaA !== yaEstaB) return yaEstaA ? -1 : 1;
+    return a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" });
+  });
+
+  async function agregar(nombre) {
+    if (!nombre.trim()) return;
     setGuardando(true);
     try {
-      await api.etiquetas.addToFic(fic.id, nombreNueva.trim());
+      await api.etiquetas.addToFic(fic.id, nombre.trim());
       setNombreNueva("");
       onChange();
       todas.reload();
@@ -271,7 +281,7 @@ function MisEtiquetas({ fic, onChange }) {
         {t("ficDetalle.misEtiquetas")}
         <InfoPopover>{t("ficDetalle.misEtiquetasInfo")}</InfoPopover>
       </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 12 }}>
         {fic.etiquetas_personales.map((et) => (
           <span key={et.id} className="arv-tag arv-tag-accent-2" style={{ display: "inline-flex", gap: 6 }}>
             {et.nombre}
@@ -286,29 +296,60 @@ function MisEtiquetas({ fic, onChange }) {
           </span>
         ))}
         {fic.etiquetas_personales.length === 0 && (
-          <p className="arv-muted" style={{ margin: 0 }}>
+          <span className="arv-muted" style={{ fontSize: 13 }}>
             {t("ficDetalle.sinEtiquetas")}
-          </p>
+          </span>
         )}
-      </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          className="arv-input"
-          list="arv-etiquetas-sugeridas"
-          placeholder={t("ficDetalle.nuevaEtiquetaPlaceholder")}
-          value={nombreNueva}
-          onChange={(e) => setNombreNueva(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && agregar()}
-        />
-        <datalist id="arv-etiquetas-sugeridas">
-          {todas.data?.map((et) => (
-            <option key={et.id} value={et.nombre} />
-          ))}
-        </datalist>
-        <button className="arv-btn arv-btn-secondary" disabled={guardando} onClick={agregar}>
-          {t("ficDetalle.agregar")}
+        <button
+          type="button"
+          className="arv-coleccion-picker-toggle"
+          onClick={() => setAbierto((v) => !v)}
+        >
+          {abierto ? t("common.ocultar") : t("common.editar")}
+          <ChevronDown size={14} style={{ transform: abierto ? "rotate(180deg)" : undefined }} />
         </button>
       </div>
+      {abierto && (
+        <>
+          {ordenadas.length > 0 && (
+            <div className="arv-coleccion-picker">
+              {ordenadas.map((et) => {
+                const yaEsta = nombresDelFic.has(et.nombre.toLowerCase());
+                return (
+                  <button
+                    key={et.id}
+                    type="button"
+                    className={`arv-coleccion-picker-item ${yaEsta ? "arv-coleccion-picker-item-activa" : ""}`}
+                    disabled={guardando}
+                    onClick={() => (yaEsta ? quitar(et.id) : agregar(et.nombre))}
+                  >
+                    <span className="arv-coleccion-picker-nombre">{et.nombre}</span>
+                    <span className="arv-coleccion-picker-check">
+                      {yaEsta && <Check size={13} strokeWidth={3} />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              className="arv-input"
+              placeholder={t("ficDetalle.nuevaEtiquetaPlaceholder")}
+              value={nombreNueva}
+              onChange={(e) => setNombreNueva(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && agregar(nombreNueva)}
+            />
+            <button
+              className="arv-btn arv-btn-secondary arv-btn-compacto"
+              disabled={guardando}
+              onClick={() => agregar(nombreNueva)}
+            >
+              {t("ficDetalle.agregar")}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
