@@ -3,11 +3,15 @@ import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
+import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
+import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
 export function Panel() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const anio = searchParams.get("anio") ?? "";
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
 
   function setAnio(valor) {
     setSearchParams(valor ? { anio: valor } : {}, { replace: true });
@@ -161,19 +165,38 @@ export function Panel() {
         )}
       </div>
 
-      <div className="arv-card">
+      <div className="arv-card" style={seleccionActiva ? { marginBottom: 90 } : undefined}>
         <h3>{t("panel.agregadosRecientemente")}</h3>
         {recientes.loading && <Cargando />}
         {recientes.data?.length === 0 && <p className="arv-muted">{t("panel.todaviaNoHayFics")}</p>}
         {recientes.data?.map((f) => (
-          <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
+          <FilaFicSeleccionable
+            key={f.id}
+            ficId={f.id}
+            to={`/fics/${f.id}`}
+            seleccionActiva={seleccionActiva}
+            seleccionado={seleccion.has(f.id)}
+            onLongPress={activar}
+            onToggle={alternar}
+          >
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
             </div>
-          </Link>
+          </FilaFicSeleccionable>
         ))}
       </div>
+
+      {seleccionActiva && (
+        <BarraAccionesMasivas
+          seleccionIds={seleccion}
+          onLimpiar={limpiar}
+          onAplicado={() => {
+            limpiar();
+            recientes.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

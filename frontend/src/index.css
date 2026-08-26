@@ -343,7 +343,9 @@ a {
 
 .arv-perfil-gifs-fila {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100px; /* 2 gifs por fila; si hay un tercero, baja en vez de toparse con la insignia */
   margin-top: 52px; /* misma altura que la insignia, que la portada termine antes */
   margin-left: auto; /* usa el espacio libre a la derecha en vez de apilarse bajo la insignia */
 }
@@ -351,10 +353,7 @@ a {
 .arv-perfil-gif {
   width: 46px;
   height: 46px;
-  border-radius: 10px;
   object-fit: cover;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-2);
 }
 
 .arv-gif-slot {

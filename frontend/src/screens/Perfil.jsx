@@ -7,6 +7,9 @@ import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { ConEmoji } from "../components/ConEmoji";
 import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
+import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
+import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
 // Degradé derivado del color de acento actual (el que elijas en Ajustes),
 // no colores fijos — color-mix() lee la custom property en vivo, así que
@@ -21,6 +24,7 @@ const PALETA_FAVORITOS = [
 export function Perfil() {
   const { t } = useTranslation();
   const fics = useFetch(() => api.fics.list({ limit: 200, orden: "ultima_lectura" }));
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
 
   return (
     <div>
@@ -30,13 +34,21 @@ export function Perfil() {
       <CitaFavorita />
       <Graficos />
 
-      <div className="arv-card">
+      <div className="arv-card" style={seleccionActiva ? { marginBottom: 90 } : undefined}>
         <h3>{t("perfil.historialDeLectura")}</h3>
         {fics.loading && <Cargando />}
         {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
         {fics.data?.length === 0 && <Vacio>{t("perfil.sinFicsImportados")}</Vacio>}
         {fics.data?.map((f) => (
-          <Link key={f.id} to={`/fics/${f.id}`} className="arv-fic-row">
+          <FilaFicSeleccionable
+            key={f.id}
+            ficId={f.id}
+            to={`/fics/${f.id}`}
+            seleccionActiva={seleccionActiva}
+            seleccionado={seleccion.has(f.id)}
+            onLongPress={activar}
+            onToggle={alternar}
+          >
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
@@ -47,9 +59,20 @@ export function Perfil() {
                 {f.word_count.toLocaleString()} {t("common.palabras")}
               </div>
             </div>
-          </Link>
+          </FilaFicSeleccionable>
         ))}
       </div>
+
+      {seleccionActiva && (
+        <BarraAccionesMasivas
+          seleccionIds={seleccion}
+          onLimpiar={limpiar}
+          onAplicado={() => {
+            limpiar();
+            fics.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
