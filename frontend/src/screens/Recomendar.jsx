@@ -5,6 +5,7 @@ import { Trash2, Copy, Check, X } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { InfoPopover } from "../components/InfoPopover";
 
 export function Recomendar() {
   const { t } = useTranslation();
@@ -99,10 +100,10 @@ export function Recomendar() {
   return (
     <div>
       <div className="arv-card">
-        <h3>{t("recomendar.titulo")}</h3>
-        <p className="arv-muted" style={{ marginBottom: 14 }}>
-          {t("recomendar.info")}
-        </p>
+        <h3 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+          {t("recomendar.titulo")}
+          <InfoPopover>{t("recomendar.info")}</InfoPopover>
+        </h3>
 
         <input
           className="arv-input"
