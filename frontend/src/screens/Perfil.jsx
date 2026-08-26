@@ -93,18 +93,16 @@ function CabeceraPerfil() {
             onCambio={onCambio}
           />
         </div>
-        {(perfil.data?.insignia || gifs.length > 0) && (
+        {perfil.data?.insignia && (
           <div className="arv-perfil-insignia-col">
-            {perfil.data?.insignia && (
-              <ConEmoji className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</ConEmoji>
-            )}
-            {gifs.length > 0 && (
-              <div className="arv-perfil-gifs-fila">
-                {gifs.map((i) => (
-                  <img key={i} className="arv-perfil-gif" src={conCache(api.perfil.imagenUrl(`gif${i}`))} alt="" />
-                ))}
-              </div>
-            )}
+            <ConEmoji className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</ConEmoji>
+          </div>
+        )}
+        {gifs.length > 0 && (
+          <div className="arv-perfil-gifs-fila">
+            {gifs.map((i) => (
+              <img key={i} className="arv-perfil-gif" src={conCache(api.perfil.imagenUrl(`gif${i}`))} alt="" />
+            ))}
           </div>
         )}
       </div>
