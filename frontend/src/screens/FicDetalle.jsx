@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Droplet, Check } from "lucide-react";
+import { Droplet, Check, ChevronDown } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
@@ -79,7 +79,10 @@ export function FicDetalle() {
             <div className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.05em", marginBottom: 4 }}>
               {t("ficDetalle.notaBookmark")}
             </div>
-            <ConEmoji as="p" style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap" }}>
+            <ConEmoji
+              as="p"
+              style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+            >
               {f.nota_bookmark}
             </ConEmoji>
           </div>
@@ -114,6 +117,7 @@ function MisColecciones({ fic, onChange }) {
   const colecciones = useFetch(() => api.colecciones.list());
   const [nombreNueva, setNombreNueva] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [abierto, setAbierto] = useState(false);
 
   const idsDelFic = new Set(fic.colecciones.map((c) => c.id));
   // Las colecciones donde ya está este fic van primero (para verlas de un
@@ -156,46 +160,78 @@ function MisColecciones({ fic, onChange }) {
   return (
     <div className="arv-card">
       <h3>{t("ficDetalle.colecciones")}</h3>
-      {ordenadas.length > 0 ? (
-        <div className="arv-coleccion-picker">
-          {ordenadas.map((c) => {
-            const yaEsta = idsDelFic.has(c.id);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                className={`arv-coleccion-picker-item ${yaEsta ? "arv-coleccion-picker-item-activa" : ""}`}
-                disabled={guardando}
-                onClick={() => alternar(c.id, yaEsta)}
-              >
-                <span className="arv-coleccion-picker-nombre">{c.nombre}</span>
-                <span className="arv-coleccion-picker-check">
-                  {yaEsta && <Check size={13} strokeWidth={3} />}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="arv-muted" style={{ margin: "0 0 12px" }}>
-          {t("ficDetalle.sinColecciones")}
-        </p>
-      )}
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          className="arv-input"
-          placeholder={t("ficDetalle.nuevaColeccionPlaceholder")}
-          value={nombreNueva}
-          onChange={(e) => setNombreNueva(e.target.value)}
-        />
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 12 }}>
+        {fic.colecciones.map((c) => (
+          <span key={c.id} className="arv-tag arv-tag-accent-2" style={{ display: "inline-flex", gap: 6 }}>
+            {c.nombre}
+            <button
+              onClick={() => alternar(c.id, true)}
+              disabled={guardando}
+              aria-label={t("ficDetalle.quitarDeColeccion", { nombre: c.nombre })}
+              style={{ border: "none", background: "transparent", cursor: "pointer", color: "inherit" }}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+        {fic.colecciones.length === 0 && (
+          <span className="arv-muted" style={{ fontSize: 13 }}>
+            {t("ficDetalle.sinColeccionesFic")}
+          </span>
+        )}
         <button
-          className="arv-btn arv-btn-secondary arv-btn-compacto"
-          disabled={guardando}
-          onClick={crearYAgregar}
+          type="button"
+          className="arv-coleccion-picker-toggle"
+          onClick={() => setAbierto((v) => !v)}
         >
-          {t("ficDetalle.crearYAgregar")}
+          {abierto ? t("ficDetalle.ocultarColecciones") : t("ficDetalle.editarColecciones")}
+          <ChevronDown size={14} style={{ transform: abierto ? "rotate(180deg)" : undefined }} />
         </button>
       </div>
+      {abierto && (
+        <>
+          {ordenadas.length > 0 ? (
+            <div className="arv-coleccion-picker">
+              {ordenadas.map((c) => {
+                const yaEsta = idsDelFic.has(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`arv-coleccion-picker-item ${yaEsta ? "arv-coleccion-picker-item-activa" : ""}`}
+                    disabled={guardando}
+                    onClick={() => alternar(c.id, yaEsta)}
+                  >
+                    <span className="arv-coleccion-picker-nombre">{c.nombre}</span>
+                    <span className="arv-coleccion-picker-check">
+                      {yaEsta && <Check size={13} strokeWidth={3} />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="arv-muted" style={{ margin: "0 0 12px" }}>
+              {t("ficDetalle.sinColecciones")}
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              className="arv-input"
+              placeholder={t("ficDetalle.nuevaColeccionPlaceholder")}
+              value={nombreNueva}
+              onChange={(e) => setNombreNueva(e.target.value)}
+            />
+            <button
+              className="arv-btn arv-btn-secondary arv-btn-compacto"
+              disabled={guardando}
+              onClick={crearYAgregar}
+            >
+              {t("ficDetalle.crearYAgregar")}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

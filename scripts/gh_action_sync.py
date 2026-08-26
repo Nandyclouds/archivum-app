@@ -157,6 +157,12 @@ def _enviar_email_novedades(novedades: list[dict]) -> None:
 
 
 def modo_fic(client: RateLimitedClient, base_url: str, headers: dict, url: str) -> None:
+    """Importa un fic puntual por URL. Si está bookmarkeado, también le
+    trae la nota y los tags de ESE bookmark exacto — AO3 no los expone en
+    la página del fic, solo en el listado de bookmarks, así que hay que
+    recorrerlo buscando el que coincida (se corta apenas lo encuentra; en
+    el peor caso, si el bookmark es viejo, tarda lo mismo que "Actualizar
+    bookmarks" completo)."""
     ao3_id = work_id_from_url(url)
     if ao3_id is None:
         print(f"No reconozco un id de fic en '{url}'.", file=sys.stderr)
@@ -164,7 +170,22 @@ def modo_fic(client: RateLimitedClient, base_url: str, headers: dict, url: str) 
 
     response = client.get(WORK_URL.format(ao3_id=ao3_id))
     response.raise_for_status()
-    _ingest_fic(base_url, headers, ao3_id, response.text)
+
+    username = os.environ.get("AO3_USERNAME", "")
+    tags, bookmarked_at, nota = None, None, _SIN_NOTA
+    print(f"Buscando el bookmark de {ao3_id} en tu listado de bookmarks...")
+    try:
+        for item in _walk_bookmark_items(client, username):
+            if item.work_id == ao3_id:
+                tags, bookmarked_at, nota = item.tags, item.bookmarked_at, item.nota
+                print(f"  encontrado — tags: {tags}, nota: {'sí' if nota else 'no'}")
+                break
+        else:
+            print("  no está bookmarkeado (o no lo encontré), lo importo sin nota/tags.")
+    except (RequestFailedError, SessionRequestLimitReached, requests.exceptions.RequestException) as exc:
+        print(f"  no pude terminar de buscarlo en bookmarks ({exc}), lo importo sin nota/tags.", file=sys.stderr)
+
+    _ingest_fic(base_url, headers, ao3_id, response.text, tags=tags, bookmarked_at=bookmarked_at, nota=nota)
 
 
 def modo_epub(client: RateLimitedClient, base_url: str, headers: dict, ao3_id: str) -> None:

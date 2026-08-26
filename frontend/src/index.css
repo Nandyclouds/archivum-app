@@ -1272,6 +1272,19 @@ select.arv-input {
   background: var(--color-accent);
 }
 
+.arv-coleccion-picker-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
 .arv-btn-compacto {
   flex: none;
   padding: 8px 14px;
