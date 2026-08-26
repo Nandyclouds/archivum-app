@@ -27,8 +27,8 @@ export function Perfil() {
       <CabeceraPerfil />
       <Identidad />
       <Favoritos />
-      <Graficos />
       <CitaFavorita />
+      <Graficos />
 
       <div className="arv-card">
         <h3>{t("perfil.historialDeLectura")}</h3>
@@ -93,17 +93,21 @@ function CabeceraPerfil() {
             onCambio={onCambio}
           />
         </div>
-        {perfil.data?.insignia && (
-          <ConEmoji className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</ConEmoji>
+        {(perfil.data?.insignia || gifs.length > 0) && (
+          <div className="arv-perfil-insignia-col">
+            {perfil.data?.insignia && (
+              <ConEmoji className="arv-insignia arv-insignia-brillo">{perfil.data.insignia}</ConEmoji>
+            )}
+            {gifs.length > 0 && (
+              <div className="arv-perfil-gifs-fila">
+                {gifs.map((i) => (
+                  <img key={i} className="arv-perfil-gif" src={conCache(api.perfil.imagenUrl(`gif${i}`))} alt="" />
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
-      {gifs.length > 0 && (
-        <div className="arv-perfil-gifs">
-          {gifs.map((i) => (
-            <img key={i} className="arv-perfil-gif" src={conCache(api.perfil.imagenUrl(`gif${i}`))} alt="" />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
