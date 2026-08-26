@@ -344,6 +344,7 @@ a {
 .arv-perfil-gifs-fila {
   display: flex;
   gap: 6px;
+  margin-left: 8px;
 }
 
 .arv-perfil-gif {
