@@ -10,6 +10,7 @@ import { FicDetalle } from "./screens/FicDetalle";
 import { Colecciones } from "./screens/Colecciones";
 import { ColeccionDetalle } from "./screens/ColeccionDetalle";
 import { Perfil } from "./screens/Perfil";
+import { Ajustes } from "./screens/Ajustes";
 import { Archivo } from "./screens/Archivo";
 import { Ao3 } from "./screens/Ao3";
 import { Novedades } from "./screens/Novedades";
@@ -35,6 +36,7 @@ function AppShell() {
       <main className={`arv-main${esPerfil ? " arv-main-full-bleed" : ""}`}>
         <Routes>
           <Route path="/" element={<Perfil />} />
+          <Route path="/ajustes" element={<Ajustes />} />
           <Route path="/panel" element={<Panel />} />
           <Route path="/panel/top/:tipo" element={<TopCompleto />} />
           <Route path="/buscar" element={<Buscar />} />

@@ -33,6 +33,7 @@ from app.api.routers import (
     etiquetas,
     fics,
     import_log,
+    masivo,
     novedades,
     perfil,
     recomendaciones,
@@ -134,6 +135,7 @@ app.include_router(perfil.router, prefix="/api")
 app.include_router(novedades.router, prefix="/api")
 app.include_router(recomendaciones.router, prefix="/api")
 app.include_router(emojis.router, prefix="/api")
+app.include_router(masivo.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

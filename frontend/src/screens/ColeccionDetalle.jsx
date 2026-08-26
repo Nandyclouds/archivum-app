@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
+import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
+import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
 export function ColeccionDetalle() {
   const { t } = useTranslation();
@@ -11,6 +14,7 @@ export function ColeccionDetalle() {
   const navigate = useNavigate();
   const coleccion = useFetch(() => api.colecciones.get(id), [id]);
   const fics = useFetch(() => api.fics.list({ coleccion: id, limit: 200 }), [id]);
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
 
   const [editando, setEditando] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -85,30 +89,56 @@ export function ColeccionDetalle() {
       {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
       {fics.data?.length === 0 && <Vacio>{t("coleccionDetalle.sinFics")}</Vacio>}
 
-      <div className="arv-card">
+      <div className="arv-card" style={seleccionActiva ? { marginBottom: 90 } : undefined}>
         {fics.data?.map((fic) => (
-          <div className="arv-list-item" key={fic.id}>
-            <Link to={`/fics/${fic.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+          <FilaFicSeleccionable
+            key={fic.id}
+            ficId={fic.id}
+            to={`/fics/${fic.id}`}
+            className="arv-list-item"
+            seleccionActiva={seleccionActiva}
+            seleccionado={seleccion.has(fic.id)}
+            onLongPress={activar}
+            onToggle={alternar}
+          >
+            <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
-            </Link>
-            <button
-              onClick={() => quitarFic(fic.id)}
-              aria-label={t("coleccionDetalle.quitarDeColeccion")}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "var(--color-text-muted)",
-                cursor: "pointer",
-                fontSize: 14,
-                padding: 2,
-              }}
-            >
-              ✕
-            </button>
-          </div>
+            </div>
+            {!seleccionActiva && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  quitarFic(fic.id);
+                }}
+                aria-label={t("coleccionDetalle.quitarDeColeccion")}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--color-text-muted)",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  padding: 2,
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </FilaFicSeleccionable>
         ))}
       </div>
+
+      {seleccionActiva && (
+        <BarraAccionesMasivas
+          seleccionIds={seleccion}
+          onLimpiar={limpiar}
+          onAplicado={() => {
+            limpiar();
+            fics.reload();
+            coleccion.reload();
+          }}
+        />
+      )}
 
       <div className="arv-card">
         <button className="arv-btn arv-btn-secondary" onClick={borrarColeccion}>

@@ -65,7 +65,7 @@ def listar_fics(
     estado: str | None = Query(None, description="Estado de la lectura más reciente"),
     completo: bool | None = Query(None, description="Filtra por fic.complete (True=completos, False=WIP)"),
     con_nota: bool = Query(False, description="Si es True, solo fics con nota_bookmark"),
-    rating_min: float | None = Query(None, ge=1, le=5, description="Solo fics con alguna reseña de este puntaje o más"),
+    rating_exacto: float | None = Query(None, ge=1, le=5, description="Solo fics con alguna reseña de exactamente este puntaje"),
     hizo_llorar: bool = Query(False, description="Si es True, solo fics con alguna reseña marcada 'me hizo llorar'"),
     es_relectura: bool = Query(False, description="Si es True, solo fics con al menos una relectura registrada"),
     con_resena: bool | None = Query(
@@ -113,8 +113,8 @@ def listar_fics(
         query = query.filter(Fic.idioma == idioma)
     if con_nota:
         query = query.filter(Fic.nota_bookmark.isnot(None))
-    if rating_min is not None:
-        query = query.filter(Fic.resenas.any(Resena.rating >= rating_min))
+    if rating_exacto is not None:
+        query = query.filter(Fic.resenas.any(Resena.rating == rating_exacto))
     if hizo_llorar:
         query = query.filter(Fic.resenas.any(Resena.hizo_llorar.is_(True)))
     if es_relectura:

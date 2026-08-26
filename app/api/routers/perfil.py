@@ -20,6 +20,8 @@ from app.models import Coleccion, Fic, PerfilConfig
 router = APIRouter(prefix="/perfil", tags=["perfil"])
 
 TIPOS_PERMITIDOS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+TIPOS_PERMITIDOS_GIF = {"image/gif": ".gif", "image/webp": ".webp"}
+TAMANO_MAXIMO_GIF = 4 * 1024 * 1024  # 4MB
 TAMANO_MAXIMO = 8 * 1024 * 1024  # 8MB, de sobra para una foto de perfil/portada
 
 # La grilla "Favoritos" del perfil NO es un concepto aparte: apunta a la
@@ -56,6 +58,9 @@ def obtener_perfil(db: Session = Depends(get_session)):
         "pronombres": config.pronombres if config else None,
         "insignia": config.insignia if config else None,
         "bio": config.bio if config else None,
+        "tiene_gif1": bool(config and config.gif1_ruta),
+        "tiene_gif2": bool(config and config.gif2_ruta),
+        "tiene_gif3": bool(config and config.gif3_ruta),
     }
 
 
@@ -125,6 +130,45 @@ async def subir_avatar(archivo: UploadFile = File(...), db: Session = Depends(ge
 async def subir_portada(archivo: UploadFile = File(...), db: Session = Depends(get_session)):
     await _guardar_imagen(db, "portada", archivo)
     return {"ok": True}
+
+
+async def _guardar_gif(db: Session, indice: int, archivo: UploadFile) -> None:
+    if archivo.content_type not in TIPOS_PERMITIDOS_GIF:
+        raise HTTPException(status_code=415, detail="Formato no soportado (usá GIF o WEBP).")
+    contenido = await archivo.read()
+    if len(contenido) > TAMANO_MAXIMO_GIF:
+        raise HTTPException(status_code=413, detail="El gif pesa más de 4MB.")
+
+    settings.perfil_dir.mkdir(parents=True, exist_ok=True)
+    extension = TIPOS_PERMITIDOS_GIF[archivo.content_type]
+    ruta = settings.perfil_dir / f"gif{indice}{extension}"
+    ruta.write_bytes(contenido)
+
+    config = _get_or_create_config(db)
+    setattr(config, f"gif{indice}_ruta", str(ruta))
+    db.commit()
+
+
+@router.post("/gif/{indice}")
+async def subir_gif(indice: int, archivo: UploadFile = File(...), db: Session = Depends(get_session)):
+    if indice not in (1, 2, 3):
+        raise HTTPException(status_code=404, detail="Índice de gif inválido.")
+    await _guardar_gif(db, indice, archivo)
+    return {"ok": True}
+
+
+@router.delete("/gif/{indice}", status_code=204)
+def borrar_gif(indice: int, db: Session = Depends(get_session)):
+    if indice not in (1, 2, 3):
+        raise HTTPException(status_code=404, detail="Índice de gif inválido.")
+    config = _get_or_create_config(db)
+    ruta_str = getattr(config, f"gif{indice}_ruta", None)
+    if ruta_str:
+        ruta = Path(ruta_str)
+        if ruta.is_file():
+            ruta.unlink()
+        setattr(config, f"gif{indice}_ruta", None)
+        db.commit()
 
 
 def _get_coleccion_favoritos(db: Session) -> Coleccion | None:
@@ -221,7 +265,7 @@ def quitar_favorito(fic_id: int, db: Session = Depends(get_session)):
 
 @router.get("/imagen/{tipo}")
 def obtener_imagen(tipo: str, db: Session = Depends(get_session)):
-    if tipo not in ("avatar", "portada"):
+    if tipo not in ("avatar", "portada", "gif1", "gif2", "gif3"):
         raise HTTPException(status_code=404, detail="Tipo de imagen inválido.")
     config = db.get(PerfilConfig, 1)
     ruta_str = getattr(config, f"{tipo}_ruta", None) if config else None

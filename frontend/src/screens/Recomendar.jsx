@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Trash2, Copy, Check, X } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
@@ -7,10 +8,28 @@ import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 
 export function Recomendar() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const colecciones = useFetch(() => api.colecciones.list());
   const listas = useFetch(() => api.recomendaciones.list());
 
   const [seleccion, setSeleccion] = useState([]);
+
+  // Viene de "seleccionar varios y mandar a recomendar" en Buscar/Colecciones
+  // (?ids=1,2,3) — precarga esos fics en la lista una sola vez al entrar.
+  useEffect(() => {
+    const idsParam = searchParams.get("ids");
+    if (!idsParam) return;
+    const ids = idsParam.split(",").map(Number).filter(Boolean);
+    Promise.all(ids.map((id) => api.fics.get(id).catch(() => null))).then((fics) => {
+      setSeleccion((prev) => {
+        const yaHay = new Set(prev.map((f) => f.id));
+        const nuevos = fics.filter((f) => f && !yaHay.has(f.id));
+        return [...prev, ...nuevos];
+      });
+    });
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [titulo, setTitulo] = useState("");
   const [nota, setNota] = useState("");
   const [q, setQ] = useState("");

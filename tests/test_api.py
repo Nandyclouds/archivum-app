@@ -257,19 +257,19 @@ def test_filtrar_fics_por_con_nota(client, db_session):
     assert len(r_todos.json()) == 2
 
 
-def test_filtrar_fics_por_rating_min(client, db_session):
-    alto = _crear_fic(db_session, ao3_id="1", titulo="Alto")
-    bajo = _crear_fic(db_session, ao3_id="2", titulo="Bajo")
+def test_filtrar_fics_por_rating_exacto(client, db_session):
+    cinco = _crear_fic(db_session, ao3_id="1", titulo="Cinco")
+    cuatro = _crear_fic(db_session, ao3_id="2", titulo="Cuatro")
     db_session.add_all(
         [
-            Resena(fic_id=alto.id, rating=5),
-            Resena(fic_id=bajo.id, rating=2),
+            Resena(fic_id=cinco.id, rating=5),
+            Resena(fic_id=cuatro.id, rating=4),
         ]
     )
     db_session.commit()
 
-    r = client.get("/api/fics", params={"rating_min": 4})
-    assert [f["titulo"] for f in r.json()] == ["Alto"]
+    r = client.get("/api/fics", params={"rating_exacto": 5})
+    assert [f["titulo"] for f in r.json()] == ["Cinco"]
 
 
 def test_filtrar_fics_por_hizo_llorar(client, db_session):

@@ -430,6 +430,12 @@ class PerfilConfig(Base):
     # ahí). CSV en orden, ej. "12,45,3,89". None = todavía no eligió ninguno,
     # se sigue mostrando el fallback alfabético de siempre.
     favoritos_destacados: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Gifs chiquitos y opcionales para decorar el perfil — se suben desde
+    # Ajustes, nunca desde la pantalla de Perfil (que solo los muestra si ya
+    # están puestos, sin invitar a completar los que faltan).
+    gif1_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    gif2_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    gif3_ruta: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
 
 class EmojiPersonalizado(Base):

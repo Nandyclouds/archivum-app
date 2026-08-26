@@ -154,6 +154,22 @@ export const api = {
       }
       return response.json();
     },
+    subirGif: async (indice, archivo) => {
+      const formData = new FormData();
+      formData.append("archivo", archivo);
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/perfil/gif/${indice}`, {
+        method: "POST",
+        headers: token ? { "X-Archivum-Token": token } : {},
+        body: formData,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(`${response.status}: ${body.detail ?? response.statusText}`);
+      }
+      return response.json();
+    },
+    borrarGif: (indice) => request(`/perfil/gif/${indice}`, { method: "DELETE" }),
     actualizarCita: (cita_texto, cita_fuente) =>
       request("/perfil", { method: "PATCH", body: JSON.stringify({ cita_texto, cita_fuente }) }),
     actualizarIdentidad: (nombre_usuario, handle, pronombres, insignia, bio) =>
@@ -203,6 +219,17 @@ export const api = {
     estadoLectura: () => request("/stats/estado-lectura"),
     relecturas: (limite = 10) => request(`/stats/relecturas?limite=${limite}`),
     ratingPorFandom: () => request("/stats/rating-por-fandom"),
+  },
+  masivo: {
+    colecciones: (ficIds, coleccionId) =>
+      request("/masivo/colecciones", {
+        method: "POST",
+        body: JSON.stringify({ fic_ids: ficIds, coleccion_id: coleccionId }),
+      }),
+    etiquetas: (ficIds, nombre) =>
+      request("/masivo/etiquetas", { method: "POST", body: JSON.stringify({ fic_ids: ficIds, nombre }) }),
+    lecturas: (ficIds, estado) =>
+      request("/masivo/lecturas", { method: "POST", body: JSON.stringify({ fic_ids: ficIds, estado }) }),
   },
   emojis: {
     list: () => request("/emojis"),

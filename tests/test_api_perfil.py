@@ -73,6 +73,9 @@ def test_obtener_perfil_vacio(client):
         "pronombres": None,
         "insignia": None,
         "bio": None,
+        "tiene_gif1": False,
+        "tiene_gif2": False,
+        "tiene_gif3": False,
     }
 
 
@@ -344,3 +347,29 @@ def test_reemplazar_avatar_actualiza_la_ruta(client, tmp_path):
     )
     r = client.get("/api/perfil/imagen/avatar")
     assert r.content == b"otra imagen"
+
+
+def test_subir_y_borrar_gif(client, tmp_path):
+    r = client.post("/api/perfil/gif/2", files={"archivo": ("a.gif", io.BytesIO(b"gif falso"), "image/gif")})
+    assert r.status_code == 200
+
+    body = client.get("/api/perfil").json()
+    assert body["tiene_gif1"] is False
+    assert body["tiene_gif2"] is True
+    assert body["tiene_gif3"] is False
+    assert client.get("/api/perfil/imagen/gif2").content == b"gif falso"
+
+    r = client.delete("/api/perfil/gif/2")
+    assert r.status_code == 204
+    assert client.get("/api/perfil").json()["tiene_gif2"] is False
+    assert client.get("/api/perfil/imagen/gif2").status_code == 404
+
+
+def test_subir_gif_indice_invalido(client):
+    r = client.post("/api/perfil/gif/4", files={"archivo": ("a.gif", io.BytesIO(b"x"), "image/gif")})
+    assert r.status_code == 404
+
+
+def test_subir_gif_formato_no_soportado(client):
+    r = client.post("/api/perfil/gif/1", files={"archivo": ("a.jpg", _imagen_falsa(), "image/jpeg")})
+    assert r.status_code == 415
