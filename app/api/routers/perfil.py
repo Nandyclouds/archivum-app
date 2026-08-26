@@ -21,7 +21,7 @@ router = APIRouter(prefix="/perfil", tags=["perfil"])
 
 TIPOS_PERMITIDOS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 TIPOS_PERMITIDOS_GIF = {"image/gif": ".gif", "image/webp": ".webp"}
-TAMANO_MAXIMO_GIF = 8 * 1024 * 1024  # 8MB, igual que avatar/portada
+TAMANO_MAXIMO_GIF = 25 * 1024 * 1024  # 25MB
 TAMANO_MAXIMO = 8 * 1024 * 1024  # 8MB, de sobra para una foto de perfil/portada
 
 # La grilla "Favoritos" del perfil NO es un concepto aparte: apunta a la
@@ -137,7 +137,7 @@ async def _guardar_gif(db: Session, indice: int, archivo: UploadFile) -> None:
         raise HTTPException(status_code=415, detail="Formato no soportado (usá GIF o WEBP).")
     contenido = await archivo.read()
     if len(contenido) > TAMANO_MAXIMO_GIF:
-        raise HTTPException(status_code=413, detail="El gif pesa más de 8MB.")
+        raise HTTPException(status_code=413, detail="El gif pesa más de 25MB.")
 
     settings.perfil_dir.mkdir(parents=True, exist_ok=True)
     extension = TIPOS_PERMITIDOS_GIF[archivo.content_type]
