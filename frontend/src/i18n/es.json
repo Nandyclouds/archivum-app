@@ -104,6 +104,7 @@
     "puntajeExacto": "Puntaje exacto",
     "fandom": "Fandom",
     "etiqueta": "Etiqueta",
+    "coleccion": "Colección",
     "seleccionados_one": "{{count}} seleccionado",
     "seleccionados_other": "{{count}} seleccionados",
     "aColeccion": "Agregar a colección",

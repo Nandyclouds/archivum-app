@@ -33,6 +33,7 @@ export function Buscar() {
   const conNota = searchParams.get("con_nota") === "1";
   const anio = searchParams.get("anio") || "";
   const ratingExacto = searchParams.get("rating_exacto") || "";
+  const coleccionId = searchParams.get("coleccion") || "";
   const hizoLlorar = searchParams.get("hizo_llorar") === "1";
   const esRelectura = searchParams.get("es_relectura") === "1";
   const conResena = searchParams.get("con_resena"); // "true" | "false" | null
@@ -54,6 +55,7 @@ export function Buscar() {
   const fandoms = useFetch(() => api.stats.topFandoms(30), [], "buscar-top-fandoms");
   const etiquetas = useFetch(() => api.etiquetas.list(), [], "buscar-etiquetas");
   const opciones = useFetch(() => api.fics.opcionesFiltro(), [], "buscar-opciones-filtro");
+  const colecciones = useFetch(() => api.colecciones.list(), [], "buscar-colecciones");
   const fics = useFetch(
     () =>
       api.fics.list({
@@ -70,6 +72,7 @@ export function Buscar() {
         estado,
         anio,
         rating_exacto: ratingExacto,
+        coleccion: coleccionId,
         ...(completo !== null ? { completo } : {}),
         ...(conNota ? { con_nota: true } : {}),
         ...(hizoLlorar ? { hizo_llorar: true } : {}),
@@ -93,6 +96,7 @@ export function Buscar() {
       conNota,
       anio,
       ratingExacto,
+      coleccionId,
       hizoLlorar,
       esRelectura,
       conResena,
@@ -113,6 +117,7 @@ export function Buscar() {
     conNota ||
     anio ||
     ratingExacto ||
+    coleccionId ||
     hizoLlorar ||
     esRelectura ||
     conResena !== null;
@@ -277,12 +282,13 @@ export function Buscar() {
               <span className="arv-muted">{t("buscar.puntajeExacto")}</span>
               <div style={{ display: "inline-flex", gap: 1 }}>
                 {[1, 2, 3, 4, 5].map((n) => {
-                  const activo = Number(ratingExacto) === n;
+                  const exacto = Number(ratingExacto) === n;
+                  const lleno = ratingExacto !== "" && n <= Number(ratingExacto);
                   return (
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setFiltro("rating_exacto", activo ? "" : String(n))}
+                      onClick={() => setFiltro("rating_exacto", exacto ? "" : String(n))}
                       aria-label={t("buscar.ratingExacto", { count: n })}
                       title={t("buscar.ratingExacto", { count: n })}
                       style={{
@@ -290,11 +296,11 @@ export function Buscar() {
                         background: "transparent",
                         cursor: "pointer",
                         padding: 2,
-                        color: activo ? "var(--color-accent)" : "var(--color-border)",
+                        color: lleno ? "var(--color-accent)" : "var(--color-border)",
                         display: "inline-flex",
                       }}
                     >
-                      <Star size={19} fill={activo ? "currentColor" : "none"} />
+                      <Star size={19} fill={lleno ? "currentColor" : "none"} />
                     </button>
                   );
                 })}
@@ -342,6 +348,11 @@ export function Buscar() {
       {hayFiltrosExtra && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
           {etiqueta && <span className="arv-tag arv-tag-accent-2">{etiqueta}</span>}
+          {coleccionId && (
+            <span className="arv-tag arv-tag-accent-2">
+              {colecciones.data?.find((c) => String(c.id) === coleccionId)?.nombre ?? coleccionId}
+            </span>
+          )}
           {rating && <span className="arv-tag arv-tag-accent-2">{rating}</span>}
           {warning && <span className="arv-tag arv-tag-accent-2">{warning}</span>}
           {categoria && <span className="arv-tag arv-tag-accent-2">{categoria}</span>}
@@ -401,6 +412,18 @@ export function Buscar() {
           />
         )}
       </div>
+
+      {colecciones.data?.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <SelectorDesplegable
+            placeholder={t("buscar.coleccion")}
+            valor={coleccionId}
+            etiquetaValor={colecciones.data.find((c) => String(c.id) === coleccionId)?.nombre}
+            opciones={colecciones.data.map((c) => ({ valor: String(c.id), etiqueta: c.nombre }))}
+            onChange={(v) => setFiltro("coleccion", v)}
+          />
+        </div>
+      )}
 
       {fics.loading && <Cargando />}
       {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
