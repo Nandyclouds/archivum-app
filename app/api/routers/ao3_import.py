@@ -38,7 +38,7 @@ def importar_fic_por_url(
     if ao3_id is None:
         raise HTTPException(status_code=400, detail=f"No reconozco un id de fic en '{payload.url}'.")
 
-    client = build_authenticated_client()
+    client = build_authenticated_client(cuenta)
     try:
         fic, _ = importer.import_single_fic(
             db, client, ao3_id, force=payload.force, archivo_dir=settings.archivo_dir(cuenta.id)

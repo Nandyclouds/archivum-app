@@ -15,6 +15,7 @@ export function Ajustes() {
       <Preferencias />
       <EmojisPersonalizados />
       <GifsPersonalizados />
+      <CredencialesAo3 />
       <InvitacionesAdmin />
       <CuentaActual />
     </div>
@@ -330,6 +331,86 @@ function InvitacionesAdmin() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function CredencialesAo3() {
+  const { t } = useTranslation();
+  const yo = useFetch(() => api.auth.yo(), [], "auth-yo");
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+
+  async function guardar() {
+    if (!usuario.trim() || !password) return;
+    setGuardando(true);
+    setError("");
+    try {
+      await api.auth.ao3Credenciales.actualizar(usuario.trim(), password);
+      setUsuario("");
+      setPassword("");
+      yo.reload();
+    } catch (err) {
+      setError(err.message.replace(/^\d+:\s*/, ""));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function desconectar() {
+    await api.auth.ao3Credenciales.borrar();
+    yo.reload();
+  }
+
+  if (!yo.data) return null;
+
+  return (
+    <div className="arv-card">
+      <h3 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        {t("perfil.credencialesAo3")}
+        <InfoPopover>{t("perfil.credencialesAo3Info")}</InfoPopover>
+      </h3>
+
+      <p className="arv-muted" style={{ marginBottom: 14 }}>
+        {yo.data.ao3_username
+          ? t("perfil.ao3ConectadoComo", { usuario: yo.data.ao3_username })
+          : t("perfil.ao3SinConectar")}
+      </p>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+        <input
+          className="arv-input"
+          style={{ flex: "1 1 160px", minWidth: 0 }}
+          placeholder={t("perfil.ao3UsuarioPlaceholder")}
+          value={usuario}
+          onChange={(e) => setUsuario(e.target.value)}
+        />
+        <input
+          className="arv-input"
+          type="password"
+          style={{ flex: "1 1 160px", minWidth: 0 }}
+          placeholder={t("perfil.ao3PasswordPlaceholder")}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="arv-btn arv-btn-secondary"
+          disabled={guardando || !usuario.trim() || !password}
+          onClick={guardar}
+        >
+          {guardando ? t("common.guardando") : t("common.guardar")}
+        </button>
+        {yo.data.ao3_username && (
+          <button className="arv-btn arv-btn-secondary" onClick={desconectar}>
+            {t("perfil.desconectarAo3")}
+          </button>
+        )}
+      </div>
+      {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

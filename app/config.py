@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     github_repo: str = ""
     github_workflow_file: str = "ao3-sync.yml"
 
+    # Clave simétrica (Fernet) para cifrar la contraseña de AO3 de cada
+    # cuenta antes de guardarla (ver app/crypto.py, Cuenta.ao3_password_encriptada).
+    # Generarla una sola vez con Fernet.generate_key() y ponerla en .env.
+    archivum_encryption_key: str = ""
+
     @property
     def db_path(self) -> Path:
         """Base de datos de un solo tenant: la usa app/cli.py (herramienta

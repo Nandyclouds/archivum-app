@@ -4,6 +4,7 @@
     "reintentar": "Retry",
     "errorApi": "Couldn't connect to the API: {{msg}}",
     "guardar": "Save",
+    "guardando": "Saving…",
     "cancelar": "Cancel",
     "editar": "Edit",
     "ocultar": "Hide",
@@ -356,6 +357,13 @@
     "codigoCopiado": "Copied",
     "sinInvitaciones": "You haven't generated any invitations yet.",
     "cuenta": "Account",
-    "cerrarSesion": "Log out"
+    "cerrarSesion": "Log out",
+    "credencialesAo3": "AO3 credentials",
+    "credencialesAo3Info": "Your AO3 username and password, used to import fics and download EPUBs straight from the app. Stored encrypted, separate from your Archivum password.",
+    "ao3ConectadoComo": "Connected as {{usuario}}.",
+    "ao3SinConectar": "You haven't connected your AO3 account yet.",
+    "ao3UsuarioPlaceholder": "AO3 username",
+    "ao3PasswordPlaceholder": "AO3 password",
+    "desconectarAo3": "Disconnect"
   }
 }

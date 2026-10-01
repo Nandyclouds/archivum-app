@@ -12,6 +12,7 @@ from app.auth import crear_sesion, get_cuenta_admin, get_cuenta_actual, hashear_
 from app.config import settings
 from app.control_db import get_control_session
 from app.control_models import Cuenta, Invitacion, Sesion
+from app.crypto import encriptar
 from app.database import Base
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -92,7 +93,45 @@ def logout(request: Request, db: Session = Depends(get_control_session)):
 
 @router.get("/yo")
 def yo(cuenta: Cuenta = Depends(get_cuenta_actual)):
-    return {"email": cuenta.email, "es_admin": cuenta.es_admin}
+    return {
+        "email": cuenta.email,
+        "es_admin": cuenta.es_admin,
+        "ao3_username": getattr(cuenta, "ao3_username", None),
+    }
+
+
+class Ao3CredencialesUpdate(BaseModel):
+    ao3_username: str
+    ao3_password: str
+
+
+@router.put("/ao3-credenciales")
+def actualizar_ao3_credenciales(
+    payload: Ao3CredencialesUpdate,
+    db: Session = Depends(get_control_session),
+    cuenta_actual: Cuenta = Depends(get_cuenta_actual),
+):
+    if not payload.ao3_username.strip() or not payload.ao3_password:
+        raise HTTPException(status_code=422, detail="Faltan el usuario o la contraseña de AO3.")
+    cuenta = db.get(Cuenta, cuenta_actual.id)
+    if cuenta is None:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada.")
+    cuenta.ao3_username = payload.ao3_username.strip()
+    cuenta.ao3_password_encriptada = encriptar(payload.ao3_password)
+    db.commit()
+    return {"ao3_username": cuenta.ao3_username}
+
+
+@router.delete("/ao3-credenciales", status_code=204)
+def borrar_ao3_credenciales(
+    db: Session = Depends(get_control_session), cuenta_actual: Cuenta = Depends(get_cuenta_actual)
+):
+    cuenta = db.get(Cuenta, cuenta_actual.id)
+    if cuenta is None:
+        return
+    cuenta.ao3_username = None
+    cuenta.ao3_password_encriptada = None
+    db.commit()
 
 
 @router.post("/invitaciones")

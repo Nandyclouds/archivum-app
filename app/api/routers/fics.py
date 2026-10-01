@@ -395,7 +395,7 @@ def descargar_epub(fic_id: int, db: Session = Depends(get_session), cuenta: Cuen
     login a AO3 (~4s) + la descarga en sí, respetando el mismo rate limit
     que el resto del importador."""
     fic = _get_fic_or_404(db, fic_id)
-    client = build_authenticated_client()
+    client = build_authenticated_client(cuenta)
     try:
         archivo = downloader.download_fic_epub(db, client, fic, settings.archivo_dir(cuenta.id))
         db.commit()

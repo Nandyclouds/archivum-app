@@ -66,7 +66,9 @@ app.add_middleware(
 # Cuenta fija que se usa cuando no hay login real (ver más abajo) — mismo
 # comportamiento que tenía el ARCHIVUM_AUTH_TOKEN vacío antes de que
 # existieran las cuentas: todo pega contra una única biblioteca.
-_CUENTA_UNICA = SimpleNamespace(id=1, es_admin=True, email="cuenta-unica@archivum.local")
+_CUENTA_UNICA = SimpleNamespace(
+    id=1, es_admin=True, email="cuenta-unica@archivum.local", ao3_username=None, ao3_password_encriptada=None
+)
 
 # Rutas /api que no piden ningún token: health check, y login/registro (que
 # por definición corren antes de tener una sesión).

@@ -33,8 +33,8 @@ def _sin_delay_real(monkeypatch):
     cada router importó `build_authenticated_client` por nombre, así que hay
     que parchear la referencia en cada uno, no solo en ao3_session."""
 
-    def sin_delay():
-        return ao3_session.build_authenticated_client(sleep_fn=lambda s: None)
+    def sin_delay(cuenta):
+        return ao3_session.build_authenticated_client(cuenta, sleep_fn=lambda s: None)
 
     monkeypatch.setattr(ao3_import, "build_authenticated_client", sin_delay)
     monkeypatch.setattr(fics, "build_authenticated_client", sin_delay)

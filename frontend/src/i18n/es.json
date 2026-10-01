@@ -4,6 +4,7 @@
     "reintentar": "Reintentar",
     "errorApi": "No se pudo conectar con la API: {{msg}}",
     "guardar": "Guardar",
+    "guardando": "Guardando…",
     "cancelar": "Cancelar",
     "editar": "Editar",
     "ocultar": "Ocultar",
@@ -356,6 +357,13 @@
     "codigoCopiado": "Copiado",
     "sinInvitaciones": "Todavía no generaste ninguna invitación.",
     "cuenta": "Cuenta",
-    "cerrarSesion": "Cerrar sesión"
+    "cerrarSesion": "Cerrar sesión",
+    "credencialesAo3": "Credenciales de AO3",
+    "credencialesAo3Info": "Tu usuario y contraseña de AO3, para importar fics y bajar EPUB directo desde la app. Se guardan cifrados y son independientes de tu contraseña de Archivum.",
+    "ao3ConectadoComo": "Conectado como {{usuario}}.",
+    "ao3SinConectar": "Todavía no conectaste tu cuenta de AO3.",
+    "ao3UsuarioPlaceholder": "Usuario de AO3",
+    "ao3PasswordPlaceholder": "Contraseña de AO3",
+    "desconectarAo3": "Desconectar"
   }
 }

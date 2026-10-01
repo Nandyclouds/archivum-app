@@ -71,6 +71,14 @@ export const api = {
       list: () => request("/auth/invitaciones"),
       create: () => request("/auth/invitaciones", { method: "POST" }),
     },
+    ao3Credenciales: {
+      actualizar: (ao3Username, ao3Password) =>
+        request("/auth/ao3-credenciales", {
+          method: "PUT",
+          body: JSON.stringify({ ao3_username: ao3Username, ao3_password: ao3Password }),
+        }),
+      borrar: () => request("/auth/ao3-credenciales", { method: "DELETE" }),
+    },
   },
   fics: {
     list: (params = {}) => request(`/fics?${buildQuery(params)}`),
