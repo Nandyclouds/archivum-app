@@ -540,7 +540,7 @@ function EstadoLectura({ fic, lecturas, onChange }) {
   );
 }
 
-function GaleriaImagenesResena({ fic, resena, editable, onChange }) {
+function GaleriaImagenesResena({ fic, resena, editable, onChange, onNecesitaResena }) {
   const { t } = useTranslation();
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState(null);
@@ -550,7 +550,8 @@ function GaleriaImagenesResena({ fic, resena, editable, onChange }) {
     setSubiendo(true);
     setError(null);
     try {
-      await api.resenas.subirImagen(fic.id, resena.id, archivo);
+      const resenaActual = resena ?? (await onNecesitaResena());
+      await api.resenas.subirImagen(fic.id, resenaActual.id, archivo);
       onChange();
     } catch (err) {
       setError(err.message);
@@ -564,11 +565,11 @@ function GaleriaImagenesResena({ fic, resena, editable, onChange }) {
     onChange();
   }
 
-  if (!resena.imagenes?.length && !editable) return null;
+  if (!resena?.imagenes?.length && !editable) return null;
 
   return (
     <div style={{ margin: "10px 0" }}>
-      {resena.imagenes?.length > 0 && (
+      {resena?.imagenes?.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: editable ? 8 : 0 }}>
           {resena.imagenes.map((img) => (
             <div key={img.id} style={{ position: "relative" }}>
@@ -605,7 +606,7 @@ function GaleriaImagenesResena({ fic, resena, editable, onChange }) {
           ))}
         </div>
       )}
-      {editable && (resena.imagenes?.length ?? 0) < 6 && (
+      {editable && (resena?.imagenes?.length ?? 0) < 6 && (
         <label className="arv-btn arv-btn-secondary arv-btn-compacto" style={{ cursor: "pointer", display: "inline-flex", gap: 6 }}>
           <ImagePlus size={14} />
           {subiendo ? t("ficDetalle.subiendoImagen") : t("ficDetalle.agregarImagen")}
@@ -643,6 +644,16 @@ function MiResena({ fic, resena, onChange }) {
     } finally {
       setGuardando(false);
     }
+  }
+
+  // Las imágenes necesitan una reseña ya guardada (van ligadas a su id) —
+  // si todavía no existe, se crea sola con lo que ya se cargó hasta ahora,
+  // sin que la usuaria tenga que guardar a mano antes de poder adjuntar algo.
+  async function crearResenaSiHaceFalta() {
+    if (resena) return resena;
+    const nueva = await api.resenas.create(fic.id, { rating: Number(rating), texto, hizo_llorar: hizoLlorar });
+    onChange();
+    return nueva;
   }
 
   if (!editando) {
@@ -697,13 +708,13 @@ function MiResena({ fic, resena, onChange }) {
         placeholder={t("ficDetalle.resenaPlaceholder")}
         style={{ margin: "14px 0 10px", borderRadius: 12 }}
       />
-      {resena ? (
-        <GaleriaImagenesResena fic={fic} resena={resena} editable onChange={onChange} />
-      ) : (
-        <p className="arv-muted" style={{ fontSize: 13 }}>
-          {t("ficDetalle.guardaParaAgregarImagenes")}
-        </p>
-      )}
+      <GaleriaImagenesResena
+        fic={fic}
+        resena={resena}
+        editable
+        onChange={onChange}
+        onNecesitaResena={crearResenaSiHaceFalta}
+      />
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button className="arv-btn" disabled={guardando} onClick={guardar}>
           {t("common.guardar")}

@@ -146,8 +146,12 @@ export function Panel() {
             className="arv-list-item arv-row-link"
             key={s.nombre}
           >
-            <span>{s.nombre}</span>
-            <span className="arv-muted">×{s.total}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+              {s.nombre}
+            </span>
+            <span className="arv-muted" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+              ×{s.total}
+            </span>
           </Link>
         ))}
         {topShips.data?.length === 0 && (
@@ -168,8 +172,12 @@ export function Panel() {
             className="arv-list-item arv-row-link"
             key={s.nombre}
           >
-            <span>{s.nombre}</span>
-            <span className="arv-muted">×{s.total}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+              {s.nombre}
+            </span>
+            <span className="arv-muted" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+              ×{s.total}
+            </span>
           </Link>
         ))}
         {topRelaciones.data?.length === 0 && (

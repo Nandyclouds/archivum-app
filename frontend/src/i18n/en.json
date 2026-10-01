@@ -173,8 +173,7 @@
     "resenaPlaceholder": "What did you think?",
     "agregarImagen": "Add image",
     "subiendoImagen": "Uploading…",
-    "borrarImagenResena": "Delete image",
-    "guardaParaAgregarImagenes": "Save the review first to add images."
+    "borrarImagenResena": "Delete image"
   },
   "colecciones": {
     "sinColecciones": "You don't have any collections yet.",

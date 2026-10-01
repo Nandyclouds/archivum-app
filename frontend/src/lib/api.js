@@ -123,8 +123,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
-    imagenUrl: (ficId, resenaId, imagenId) =>
-      `${API_BASE}/fics/${ficId}/resenas/${resenaId}/imagenes/${imagenId}`,
+    imagenUrl: (ficId, resenaId, imagenId) => {
+      const token = getToken();
+      const query = token ? `?token=${encodeURIComponent(token)}` : "";
+      return `${API_BASE}/fics/${ficId}/resenas/${resenaId}/imagenes/${imagenId}${query}`;
+    },
     subirImagen: async (ficId, resenaId, archivo) => {
       const formData = new FormData();
       formData.append("archivo", archivo);

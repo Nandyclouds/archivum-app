@@ -92,8 +92,12 @@ export function TopCompleto() {
             ))
           : datos.data?.map((d) => (
               <Link to={linkPara(d.nombre)} className="arv-list-item arv-row-link" key={d.nombre}>
-                <span>{d.nombre}</span>
-                <span className="arv-muted">×{d.total}</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                  {d.nombre}
+                </span>
+                <span className="arv-muted" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                  ×{d.total}
+                </span>
               </Link>
             ))}
       </div>
