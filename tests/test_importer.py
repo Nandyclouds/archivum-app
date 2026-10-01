@@ -405,6 +405,155 @@ def test_run_history_import_no_toca_lecturas(db, client):
     assert db.query(Lectura).count() == 0  # el historial nunca crea lecturas
 
 
+@responses.activate
+def test_run_bulk_import_marcados_etiqueta_lo_nuevo_y_lo_conocido(db, client):
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/users/luna/readings?show=to-read&page=1",
+        body=_read("history_page.html"),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page.html"),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/3?view_adult=true&view_full_work=true",
+        body=_read("work_page_wip_restricted.html").replace('id="2"', 'id="3"'),
+        status=200,
+    )
+
+    result = importer.run_bulk_import(db, client, tipo="marcados", username="luna")
+
+    assert result.fics_nuevos == 2
+    assert result.errores == 0
+    coleccion = db.query(Coleccion).filter_by(nombre=importer.TAG_MARCADOS).one()
+    assert sorted(f.ao3_id for f in coleccion.fics) == ["1", "3"]
+
+
+@responses.activate
+def test_run_bulk_import_suscripciones_no_repite_fic_ya_conocido(db, client):
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/users/luna/subscriptions?page=1",
+        body=_read("subscriptions_page.html"),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/5?view_adult=true&view_full_work=true",
+        body=_read("work_page.html").replace('id="1"', 'id="5"'),
+        status=200,
+    )
+    # El fic 7 ya está en la biblioteca: no debería pedirse de nuevo (si
+    # `responses` ve una petición no registrada, falla el test).
+    db.add(Fic(ao3_id="7", titulo="Ya conocido", autor="a", url="https://archiveofourown.org/works/7"))
+    db.commit()
+
+    result = importer.run_bulk_import(db, client, tipo="suscripciones", username="luna")
+
+    assert result.fics_nuevos == 1
+    assert result.fics_sin_cambios == 1
+    coleccion = db.query(Coleccion).filter_by(nombre=importer.TAG_SUSCRIPCIONES).one()
+    assert sorted(f.ao3_id for f in coleccion.fics) == ["5", "7"]
+
+
+@responses.activate
+def test_run_bulk_import_bookmarks_rapido_no_repide_los_ya_conocidos(db, client):
+    """En modo rápido, un bookmark ya conocido solo se re-etiqueta — no
+    debería pedirle de nuevo la página del fic a AO3."""
+    body = _bookmarks_page_single()
+    responses.add(responses.GET, "https://archiveofourown.org/users/luna/bookmarks?page=1", body=body, status=200)
+    db.add_all(
+        [
+            Fic(ao3_id="1", titulo="Uno", autor="a", url="https://archiveofourown.org/works/1"),
+            Fic(ao3_id="2", titulo="Dos", autor="a", url="https://archiveofourown.org/works/2"),
+        ]
+    )
+    db.commit()
+
+    result = importer.run_bulk_import(db, client, tipo="bookmarks", username="luna", rapido=True)
+
+    assert result.fics_nuevos == 0
+    assert result.fics_sin_cambios == 2
+    fic1 = db.query(Fic).filter_by(ao3_id="1").one()
+    assert db.query(Lectura).filter_by(fic_id=fic1.id).one().estado == "leido"
+
+
+@responses.activate
+def test_run_bulk_import_bookmarks_rapido_corta_tras_una_racha_de_conocidos(db, client, monkeypatch):
+    monkeypatch.setattr(importer, "RAPIDO_CORTE_CONSECUTIVOS", 1)
+    body = _bookmarks_page_single()
+    responses.add(responses.GET, "https://archiveofourown.org/users/luna/bookmarks?page=1", body=body, status=200)
+    # Los dos fics del bookmarks_page.html ya están conocidos: con el corte
+    # en 1, debería pararse después del primero y nunca pedir el segundo
+    # (si lo pidiera, `responses` fallaría por petición no registrada).
+    db.add_all(
+        [
+            Fic(ao3_id="1", titulo="Uno", autor="a", url="https://archiveofourown.org/works/1"),
+            Fic(ao3_id="2", titulo="Dos", autor="a", url="https://archiveofourown.org/works/2"),
+        ]
+    )
+    db.commit()
+
+    result = importer.run_bulk_import(db, client, tipo="bookmarks", username="luna", rapido=True)
+    assert result.fics_sin_cambios == 1
+
+
+@responses.activate
+def test_run_wips_import_detecta_capitulo_nuevo_y_lo_devuelve_para_el_mail(db, client):
+    fic = Fic(
+        ao3_id="1",
+        titulo="WIP",
+        autor="a",
+        url="https://archiveofourown.org/works/1",
+        complete=False,
+        chapters_published=1,
+    )
+    db.add(fic)
+    db.commit()
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page.html"),  # tiene chapters_published > 1
+        status=200,
+    )
+
+    result, novedades = importer.run_wips_import(db, client, stale_days=None)
+
+    assert result.fics_actualizados == 1
+    assert len(novedades) == 1
+    assert novedades[0]["ao3_id"] == "1"
+    assert "capitulo_nuevo" in novedades[0]["tipos"]
+
+
+def test_run_wips_import_ignora_fics_completos_y_recien_revisados(db, client):
+    reciente = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    db.add_all(
+        [
+            Fic(ao3_id="1", titulo="Completo", autor="a", url="https://archiveofourown.org/works/1", complete=True),
+            Fic(
+                ao3_id="2",
+                titulo="WIP revisado hoy",
+                autor="a",
+                url="https://archiveofourown.org/works/2",
+                complete=False,
+                ultima_revision=reciente,
+            ),
+        ]
+    )
+    db.commit()
+
+    result, novedades = importer.run_wips_import(db, client, stale_days=3)
+
+    assert result.fics_nuevos == 0
+    assert result.fics_actualizados == 0
+    assert novedades == []
+
+
 def _parsed_fic(**overrides) -> ParsedFic:
     base = dict(
         ao3_id="1",

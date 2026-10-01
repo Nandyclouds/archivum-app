@@ -1,4 +1,4 @@
-import base64
+import re
 from pathlib import Path
 
 import pytest
@@ -8,16 +8,28 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.ao3 import auth
+from app.api.routers import sync as sync_router
 from app.config import settings
 from app.database import Base, get_session
 from app.main import app
-from app.models import Archivo, Fic
+from app.models import Fic, ImportLog
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+_PAGINATION_BLOCK_RE = re.compile(r'<ol class="pagination[^"]*".*?</ol>', re.DOTALL)
 
 
 def _read(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
+
+
+def _bookmarks_page_single() -> str:
+    """Misma fixture, pero con la paginación recortada a una sola página —
+    si no, _walk_bookmark_items sigue de largo a la página 2, que no está
+    mockeada."""
+    single_page = '<ol class="pagination actions pagy"><li><a class="current">1</a></li></ol>'
+    return _PAGINATION_BLOCK_RE.sub(single_page, _read("bookmarks_page.html"))
 
 
 @pytest.fixture()
@@ -41,14 +53,13 @@ def db_session():
 
 
 @pytest.fixture()
-def client(db_session):
+def client(db_session, monkeypatch):
+    # El TestClient corre las BackgroundTasks antes de devolver la
+    # respuesta, pero _ejecutar_sync abre su PROPIA sesión (no puede reusar
+    # la de la request) — para que vea los mismos datos que el test, se la
+    # redirige a la sesión en memoria de este fixture.
+    monkeypatch.setattr(sync_router, "nueva_sesion_para_cuenta", lambda cuenta_id: db_session)
     return TestClient(app)
-
-
-@pytest.fixture()
-def con_sync_secret(monkeypatch):
-    monkeypatch.setattr(settings, "archivum_sync_secret", "el-secreto-de-maquina")
-    yield "el-secreto-de-maquina"
 
 
 @pytest.fixture(autouse=True)
@@ -58,290 +69,118 @@ def _archivo_dir_temporal(tmp_path, monkeypatch):
     monkeypatch.setattr(Settings, "archivo_dir", lambda self, cuenta_id: tmp_path)
 
 
-def _headers(secret):
-    return {"X-Sync-Secret": secret}
+@pytest.fixture(autouse=True)
+def _sin_credenciales_de_ao3_por_defecto(monkeypatch):
+    """El .env local de desarrollo tiene credenciales de AO3 reales (para
+    poder probar la app contra AO3 de verdad) — sin este fixture, un test
+    que no las necesita terminaría pegándole a AO3 por la red en vez de
+    fallar rápido con 'no configurado'."""
+    monkeypatch.setattr(settings, "ao3_contact_email", "")
+    monkeypatch.setattr(settings, "ao3_username", "")
+    monkeypatch.setattr(settings, "ao3_password", "")
 
 
-def test_rutas_sync_sin_secreto_configurado_rechazan_todo(client):
-    # Fail-closed: sin ARCHIVUM_SYNC_SECRET seteado, ni con header quedan accesibles.
-    assert client.get("/api/sync/known-ids", headers=_headers("cualquiera")).status_code == 401
+@pytest.fixture()
+def con_credenciales_ao3(monkeypatch):
+    monkeypatch.setattr(settings, "ao3_contact_email", "test@example.com")
+    monkeypatch.setattr(settings, "ao3_username", "luna")
+    monkeypatch.setattr(settings, "ao3_password", "secreta")
+    # Sin esto, cada petición espera el rate limit real (varios segundos):
+    # _ejecutar_sync no tiene forma de inyectar sleep_fn=None como hacen los
+    # tests de ao3_import, así que se lo saca a la configuración en sí.
+    monkeypatch.setattr(settings, "ao3_min_delay_seconds", 0)
 
 
-def test_known_ids_rechaza_sin_secreto(client, con_sync_secret):
-    assert client.get("/api/sync/known-ids").status_code == 401
+def _mock_login():
+    responses.add(responses.GET, auth.LOGIN_URL, body=_read("login_page.html"), status=200)
+    responses.add(responses.POST, auth.LOGIN_URL, status=302)
 
 
-def test_known_ids_rechaza_secreto_incorrecto(client, con_sync_secret):
-    response = client.get("/api/sync/known-ids", headers=_headers("otro"))
-    assert response.status_code == 401
-
-
-def test_known_ids_devuelve_los_fics_existentes(client, con_sync_secret, db_session):
-    db_session.add(
-        Fic(ao3_id="42", titulo="X", autor="a", url="https://archiveofourown.org/works/42")
-    )
-    db_session.commit()
-
-    response = client.get("/api/sync/known-ids", headers=_headers(con_sync_secret))
-    assert response.status_code == 200
-    assert response.json() == {"ao3_ids": ["42"]}
-
-
-def test_incompletos_rechaza_sin_secreto(client, con_sync_secret):
-    assert client.get("/api/sync/incompletos").status_code == 401
-
-
-def test_incompletos_devuelve_solo_wips_nunca_revisados(client, con_sync_secret, db_session):
-    import datetime
-
-    wip = Fic(ao3_id="1", titulo="WIP", autor="a", url="https://archiveofourown.org/works/1", complete=False)
-    completo = Fic(
-        ao3_id="2", titulo="Completo", autor="a", url="https://archiveofourown.org/works/2", complete=True
-    )
-    wip_reciente = Fic(
-        ao3_id="3",
-        titulo="WIP revisado hoy",
-        autor="a",
-        url="https://archiveofourown.org/works/3",
-        complete=False,
-        ultima_revision=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-    )
-    db_session.add_all([wip, completo, wip_reciente])
-    db_session.commit()
-
-    response = client.get("/api/sync/incompletos", headers=_headers(con_sync_secret))
-    assert response.status_code == 200
-    assert response.json() == {"ao3_ids": ["1"]}
-
-
-def test_ingest_fic_rechaza_sin_secreto(client):
-    response = client.post("/api/sync/ingest-fic", json={"ao3_id": "1", "html": "<html></html>"})
-    assert response.status_code == 401
-
-
-def test_ingest_fic_guarda_el_fic(client, con_sync_secret, db_session, tmp_path):
-    response = client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "html": _read("work_page.html")},
-    )
-    assert response.status_code == 200
-    assert response.json() == {
-        "ao3_id": "1",
-        "es_nuevo": True,
-        "titulo": "El Peso de las Estrellas",
-        "novedades": [],
-    }
-
-    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
-    assert fic.titulo == "El Peso de las Estrellas"
-
-    archivo = db_session.query(Archivo).filter_by(fic_id=fic.id, formato="html").one()
-    assert Path(archivo.ruta_local).exists()
-
-
-def test_ingest_fic_con_bookmark_tags_crea_lectura(client, con_sync_secret, db_session):
-    response = client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={
-            "ao3_id": "1",
-            "html": _read("work_page.html"),
-            "bookmark_tags": ["Leidos 2025"],
-            "bookmarked_at": "2025-06-01",
-        },
-    )
-    assert response.status_code == 200
-
-    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
-    assert len(fic.lecturas) == 1
-    assert fic.lecturas[0].estado == "leido"
-
-
-def test_ingest_fic_sin_html_actualiza_tags_de_fic_existente(client, con_sync_secret, db_session):
-    """El runner manda esto para un fic YA conocido — no vuelve a pedir/
-    mandar el HTML entero, solo re-aplica los tags actuales del bookmark."""
-    client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "html": _read("work_page.html")},
-    )
-
-    response = client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "bookmark_tags": ["por leer"]},
-    )
-    assert response.status_code == 200
-    assert response.json() == {
-        "ao3_id": "1",
-        "es_nuevo": False,
-        "titulo": "El Peso de las Estrellas",
-        "novedades": [],
-    }
-
-    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
-    assert len(fic.lecturas) == 1
-    assert fic.lecturas[0].estado == "pendiente"
-
-
-def test_ingest_fic_con_nota_la_guarda(client, con_sync_secret, db_session):
-    client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "html": _read("work_page.html"), "nota": "qué lindo esto"},
-    )
-    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
-    assert fic.nota_bookmark == "qué lindo esto"
-
-
-def test_ingest_fic_sin_clave_nota_no_borra_la_que_ya_habia(client, con_sync_secret, db_session):
-    """El sync de Marked for Later/WIPs manda ingest-fic sin la clave
-    "nota" en absoluto (nunca vio la página de bookmarks) — no debe
-    pisar con None una nota que ya estaba guardada."""
-    client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "html": _read("work_page.html"), "nota": "nota original"},
-    )
-
-    client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "bookmark_tags": ["Marked for Later"]},
-    )
-
-    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
-    assert fic.nota_bookmark == "nota original"
-
-
-def test_ingest_fic_sin_html_ni_fic_existente_da_404(client, con_sync_secret):
-    response = client.post(
-        "/api/sync/ingest-fic",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "no-existe", "bookmark_tags": ["por leer"]},
-    )
-    assert response.status_code == 404
-
-
-def test_ingest_epub_rechaza_sin_secreto(client):
-    response = client.post(
-        "/api/sync/ingest-epub", json={"ao3_id": "1", "content_base64": "AAAA"}
-    )
-    assert response.status_code == 401
-
-
-def test_ingest_epub_fic_inexistente(client, con_sync_secret):
-    response = client.post(
-        "/api/sync/ingest-epub",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "no-existe", "content_base64": base64.b64encode(b"epub bytes").decode()},
-    )
-    assert response.status_code == 404
-
-
-def test_ingest_epub_guarda_el_archivo(client, con_sync_secret, db_session, tmp_path):
-    fic = Fic(ao3_id="1", titulo="X", autor="a", url="https://archiveofourown.org/works/1")
-    db_session.add(fic)
-    db_session.commit()
-
-    contenido = b"contenido falso de un epub"
-    response = client.post(
-        "/api/sync/ingest-epub",
-        headers=_headers(con_sync_secret),
-        json={"ao3_id": "1", "content_base64": base64.b64encode(contenido).decode()},
-    )
-    assert response.status_code == 200
-    assert response.json() == {"ao3_id": "1", "bytes": len(contenido)}
-
-    archivo = db_session.query(Archivo).filter_by(fic_id=fic.id, formato="epub").one()
-    assert Path(archivo.ruta_local).read_bytes() == contenido
-
-
-def test_trigger_sin_github_configurado_devuelve_503(client):
-    response = client.post("/api/sync/trigger", json={"modo": "bookmarks"})
-    assert response.status_code == 503
-
-
-def test_trigger_modo_desconocido(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
+def test_trigger_modo_desconocido(client):
     response = client.post("/api/sync/trigger", json={"modo": "invalido"})
     assert response.status_code == 400
 
 
-def test_trigger_modo_fic_sin_url(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
+def test_trigger_modo_fic_sin_url(client):
     response = client.post("/api/sync/trigger", json={"modo": "fic"})
     assert response.status_code == 400
 
 
-@responses.activate
-def test_trigger_modo_marcados(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
-    monkeypatch.setattr(settings, "github_workflow_file", "ao3-sync.yml")
-
-    responses.add(
-        responses.POST,
-        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
-        status=204,
-    )
-
-    response = client.post("/api/sync/trigger", json={"modo": "marcados"})
-    assert response.status_code == 200
-    assert response.json() == {"disparado": True}
+def test_trigger_modo_epub_sin_ao3_id(client):
+    response = client.post("/api/sync/trigger", json={"modo": "epub"})
+    assert response.status_code == 400
 
 
-@responses.activate
-def test_trigger_modo_wips(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
-    monkeypatch.setattr(settings, "github_workflow_file", "ao3-sync.yml")
-
-    responses.add(
-        responses.POST,
-        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
-        status=204,
-    )
-
-    response = client.post("/api/sync/trigger", json={"modo": "wips"})
-    assert response.status_code == 200
-    assert response.json() == {"disparado": True}
-
-
-@responses.activate
-def test_trigger_dispara_el_workflow_de_github(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
-    monkeypatch.setattr(settings, "github_workflow_file", "ao3-sync.yml")
-
-    responses.add(
-        responses.POST,
-        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
-        status=204,
-    )
-
+def test_trigger_responde_al_toque(client):
+    # Sin AO3_CONTACT_EMAIL configurado, la tarea en segundo plano falla al
+    # armar el cliente — pero la respuesta de /trigger ya se mandó antes de
+    # que eso pase (se ve en el ImportLog con error, no en la respuesta).
     response = client.post("/api/sync/trigger", json={"modo": "bookmarks"})
     assert response.status_code == 200
     assert response.json() == {"disparado": True}
 
-    llamada = responses.calls[0].request
-    assert llamada.headers["Authorization"] == "Bearer token-falso"
+
+def test_trigger_sin_credenciales_de_ao3_deja_el_error_en_el_log(client, db_session):
+    client.post("/api/sync/trigger", json={"modo": "bookmarks"})
+    log = db_session.query(ImportLog).one()
+    assert log.errores == 1
+    assert "AO3_CONTACT_EMAIL" in log.errores_detalle
 
 
 @responses.activate
-def test_trigger_propaga_error_de_github(client, monkeypatch):
-    monkeypatch.setattr(settings, "github_pat", "token-falso")
-    monkeypatch.setattr(settings, "github_repo", "usuario/repo")
-
+def test_trigger_modo_fic_importa_el_fic(client, db_session, con_credenciales_ao3):
+    _mock_login()
     responses.add(
-        responses.POST,
-        "https://api.github.com/repos/usuario/repo/actions/workflows/ao3-sync.yml/dispatches",
-        status=404,
-        body="Not Found",
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page.html"),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/users/luna/bookmarks?page=1",
+        body=_bookmarks_page_single(),
+        status=200,
+    )
+
+    response = client.post(
+        "/api/sync/trigger", json={"modo": "fic", "url": "https://archiveofourown.org/works/1"}
+    )
+    assert response.status_code == 200
+
+    fic = db_session.query(Fic).filter_by(ao3_id="1").one()
+    assert fic.titulo == "El Peso de las Estrellas"
+    log = db_session.query(ImportLog).one()
+    assert log.tipo == "fic"
+    assert log.fics_nuevos == 1
+
+
+@responses.activate
+def test_trigger_modo_bookmarks_sincroniza_y_registra_el_log(client, db_session, con_credenciales_ao3):
+    _mock_login()
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/users/luna/bookmarks?page=1",
+        body=_bookmarks_page_single(),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page.html"),
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/2?view_adult=true&view_full_work=true",
+        body=_read("work_page_wip_restricted.html"),
+        status=200,
     )
 
     response = client.post("/api/sync/trigger", json={"modo": "bookmarks"})
-    assert response.status_code == 502
+    assert response.status_code == 200
+
+    assert db_session.query(Fic).count() == 2
+    log = db_session.query(ImportLog).one()
+    assert log.tipo == "bookmarks"
+    assert log.fics_nuevos == 2

@@ -46,6 +46,7 @@ from app.ao3.parser import (
     infer_ship_tipo,
     parse_bookmarks_page,
     parse_history_page,
+    parse_subscriptions_page,
     parse_work_page,
 )
 from app.ao3.reading_status import clasificar_tags
@@ -67,6 +68,17 @@ HISTORY_MARKED_URL = "https://archiveofourown.org/users/{username}/readings?show
 SUBSCRIPTIONS_URL = "https://archiveofourown.org/users/{username}/subscriptions?page={page}"
 
 DEFAULT_STALE_DAYS = 30
+
+# La grilla "Marked for Later"/Suscripciones no son bookmarks: se etiquetan
+# como cualquier otro tag de colección (ver clasificar_tags), para que
+# queden agrupadas y entren en "Revisar WIPs" al estar en la biblioteca.
+TAG_MARCADOS = "Marked for Later"
+TAG_SUSCRIPCIONES = "Suscripciones AO3"
+
+# Bookmarks ya conocidos seguidos para que el modo rápido asuma "de acá para
+# atrás ya está todo sincronizado" y corte en vez de recorrer todas las
+# páginas siempre — una página trae 20, así que esto es ~2 páginas de margen.
+RAPIDO_CORTE_CONSECUTIVOS = 40
 
 
 @dataclass
@@ -326,10 +338,9 @@ def _walk_listing_work_ids(
     progreso: dict | None = None,
 ):
     """`progreso`, si se pasa, se actualiza con la página que se está por
-    pedir ANTES de pedirla — así el que llama sabe desde dónde reanudar si
+    pedir ANTES de pedirla — así quien llama sabe desde dónde reanudar si
     la request de esa página falla, en vez de tener que reintentar desde la
-    página 1 (ver gh_action_sync.py: con AO3 fallando seguido, reintentar
-    siempre desde el principio nunca llega a las páginas de más adelante)."""
+    página 1."""
     page_num = start_page
     total_pages = None
     while total_pages is None or page_num <= total_pages:
@@ -382,25 +393,37 @@ def _run_bookmarks_import(
     start_page: int,
     max_pages: int | None,
     archivo_dir: Path | None = None,
+    rapido: bool = False,
 ) -> ImportRunResult:
     result = ImportRunResult(tipo="bookmarks")
+    consecutivos_conocidos = 0
     try:
         item: BookmarkItem
         for item in _walk_bookmark_items(
             client, username, start_page=start_page, max_pages=max_pages
         ):
+            existente = db.query(Fic).filter_by(ao3_id=item.work_id).one_or_none()
             try:
-                fic, estado = import_single_fic(
-                    db, client, item.work_id, force=force, stale_days=stale_days, archivo_dir=archivo_dir
-                )
-                if estado == "nuevo":
-                    result.fics_nuevos += 1
-                elif estado == "actualizado":
-                    result.fics_actualizados += 1
-                else:
+                if rapido and existente is not None:
+                    # Modo rápido: a lo ya conocido solo se le re-manda el
+                    # tag/nota actual (sin volver a pedirle la página del fic
+                    # a AO3) — mucho más rápido para un sync de todos los
+                    # días donde lo único nuevo son un puñado de bookmarks.
+                    apply_bookmark_tags(db, existente, item.tags, item.bookmarked_at, nota=item.nota)
                     result.fics_sin_cambios += 1
-                apply_bookmark_tags(db, fic, item.tags, item.bookmarked_at, nota=item.nota)
-                db.commit()
+                    db.commit()
+                else:
+                    fic, estado = import_single_fic(
+                        db, client, item.work_id, force=force, stale_days=stale_days, archivo_dir=archivo_dir
+                    )
+                    if estado == "nuevo":
+                        result.fics_nuevos += 1
+                    elif estado == "actualizado":
+                        result.fics_actualizados += 1
+                    else:
+                        result.fics_sin_cambios += 1
+                    apply_bookmark_tags(db, fic, item.tags, item.bookmarked_at, nota=item.nota)
+                    db.commit()
             except FicNotFoundError as exc:
                 if exc.fic is not None:
                     apply_bookmark_tags(db, exc.fic, item.tags, item.bookmarked_at, nota=item.nota)
@@ -414,6 +437,11 @@ def _run_bookmarks_import(
                 db.rollback()
                 result.errores += 1
                 result.detalles_error.append(f"{item.work_id}: {exc}")
+
+            if rapido:
+                consecutivos_conocidos = consecutivos_conocidos + 1 if existente is not None else 0
+                if consecutivos_conocidos >= RAPIDO_CORTE_CONSECUTIVOS:
+                    break
     except SessionRequestLimitReached as exc:
         result.detenido_por_limite = True
         result.detalles_error.append(str(exc))
@@ -484,6 +512,63 @@ def _run_history_import(
     return result
 
 
+def _run_listado_import(
+    db: Session,
+    client: RateLimitedClient,
+    *,
+    tipo: str,
+    url_template: str,
+    parse_page,
+    tag: str,
+    username: str,
+    start_page: int,
+    max_pages: int | None,
+    archivo_dir: Path | None = None,
+) -> ImportRunResult:
+    """Recorre un listado de AO3 (Marked for Later, Suscripciones...) y le
+    pone `tag` a cada fic encontrado — a un fic nuevo se lo importa entero,
+    a uno ya conocido solo se le agrega el tag, sin re-pedirle la página.
+    Comparte forma de recorrer páginas/reintentar con _run_bookmarks_import,
+    solo cambia de dónde vienen los ids y qué tag les pone."""
+    result = ImportRunResult(tipo=tipo)
+    try:
+        for ao3_id in _walk_listing_work_ids(
+            client, url_template, username, parse_page, start_page=start_page, max_pages=max_pages
+        ):
+            existente = db.query(Fic).filter_by(ao3_id=ao3_id).one_or_none()
+            try:
+                if existente is not None:
+                    apply_bookmark_tags(db, existente, [tag], None)
+                    result.fics_sin_cambios += 1
+                else:
+                    fic, _ = import_single_fic(db, client, ao3_id, archivo_dir=archivo_dir)
+                    apply_bookmark_tags(db, fic, [tag], None)
+                    result.fics_nuevos += 1
+                db.commit()
+            except FicNotFoundError as exc:
+                db.commit()
+                result.errores += 1
+                result.detalles_error.append(str(exc))
+            except SessionRequestLimitReached:
+                db.rollback()
+                raise
+            except Exception as exc:  # noqa: BLE001
+                db.rollback()
+                result.errores += 1
+                result.detalles_error.append(f"{ao3_id}: {exc}")
+    except SessionRequestLimitReached as exc:
+        result.detenido_por_limite = True
+        result.detalles_error.append(str(exc))
+    except RequestFailedError as exc:
+        result.detenido_por_limite = True
+        result.detalles_error.append(
+            f"AO3 nos siguió devolviendo error incluso después de reintentar: {exc}. "
+            "Esperá un rato (10-15 min) antes de volver a correr el import."
+        )
+
+    return result
+
+
 def run_bulk_import(
     db: Session,
     client: RateLimitedClient,
@@ -495,20 +580,117 @@ def run_bulk_import(
     start_page: int = 1,
     max_pages: int | None = None,
     archivo_dir: Path | None = None,
+    rapido: bool = False,
 ) -> ImportRunResult:
-    kwargs = dict(
-        username=username,
-        force=force,
-        stale_days=stale_days,
-        start_page=start_page,
-        max_pages=max_pages,
-        archivo_dir=archivo_dir,
-    )
     if tipo == "bookmarks":
-        return _run_bookmarks_import(db, client, **kwargs)
+        return _run_bookmarks_import(
+            db,
+            client,
+            username=username,
+            force=force,
+            stale_days=stale_days,
+            start_page=start_page,
+            max_pages=max_pages,
+            archivo_dir=archivo_dir,
+            rapido=rapido,
+        )
     if tipo == "history":
-        return _run_history_import(db, client, **kwargs)
+        return _run_history_import(
+            db,
+            client,
+            username=username,
+            force=force,
+            stale_days=stale_days,
+            start_page=start_page,
+            max_pages=max_pages,
+            archivo_dir=archivo_dir,
+        )
+    if tipo == "marcados":
+        return _run_listado_import(
+            db, client, tipo=tipo, url_template=HISTORY_MARKED_URL, parse_page=parse_history_page,
+            tag=TAG_MARCADOS, username=username, start_page=start_page, max_pages=max_pages, archivo_dir=archivo_dir,
+        )
+    if tipo == "suscripciones":
+        return _run_listado_import(
+            db, client, tipo=tipo, url_template=SUBSCRIPTIONS_URL, parse_page=parse_subscriptions_page,
+            tag=TAG_SUSCRIPCIONES, username=username, start_page=start_page, max_pages=max_pages, archivo_dir=archivo_dir,
+        )
     raise ValueError(f"tipo de import desconocido: {tipo}")
+
+
+def _refrescar_fic_con_novedades(
+    db: Session, client: RateLimitedClient, ao3_id: str, archivo_dir: Path | None = None
+) -> tuple[Fic, str, list[str]]:
+    """Como import_single_fic con force=True, pero además devuelve qué
+    novedades detectó (capítulo nuevo / completado) — lo necesita el import
+    de WIPs para armar el aviso por mail. No se agrega a import_single_fic
+    porque son muchos call sites que no necesitan ese dato."""
+    response = client.get(WORK_URL.format(ao3_id=ao3_id))
+    if response.status_code == 404:
+        existing = db.query(Fic).filter_by(ao3_id=ao3_id).one_or_none()
+        if existing is not None:
+            existing.deleted_detected_at = _utcnow()
+            existing.ultima_revision = _utcnow()
+            db.flush()
+        raise FicNotFoundError(ao3_id, fic=existing)
+    response.raise_for_status()
+
+    parsed = parse_work_page(response.text, ao3_id)
+    fic, es_nuevo, novedades = upsert_fic(db, parsed)
+    guardar_snapshot_html(db, fic, response.text, archivo_dir)
+    return fic, ("nuevo" if es_nuevo else "actualizado"), novedades
+
+
+def run_wips_import(
+    db: Session,
+    client: RateLimitedClient,
+    *,
+    stale_days: int = 3,
+    archivo_dir: Path | None = None,
+) -> tuple[ImportRunResult, list[dict]]:
+    """Vuelve a pedirle a AO3 los fics incompletos que hace rato no se
+    revisan, para detectar si sumaron capítulo o se completaron. A
+    diferencia de bookmarks/marcados no hay páginas de listado que recorrer
+    — la lista ya viene de nuestra propia base — así que no hace falta
+    presupuesto de tiempo ni reintentos de listado."""
+    result = ImportRunResult(tipo="wips")
+    novedades_para_mail: list[dict] = []
+
+    query = db.query(Fic).filter(Fic.complete.is_(False), Fic.deleted_detected_at.is_(None))
+    if stale_days is not None:
+        limite = _utcnow() - datetime.timedelta(days=stale_days)
+        query = query.filter((Fic.ultima_revision.is_(None)) | (Fic.ultima_revision < limite))
+    ao3_ids = [fic.ao3_id for fic in query.all()]
+
+    try:
+        for ao3_id in ao3_ids:
+            try:
+                fic, estado, novedades = _refrescar_fic_con_novedades(db, client, ao3_id, archivo_dir)
+                if estado == "nuevo":
+                    result.fics_nuevos += 1
+                elif estado == "actualizado":
+                    result.fics_actualizados += 1
+                else:
+                    result.fics_sin_cambios += 1
+                db.commit()
+                if novedades:
+                    novedades_para_mail.append({"ao3_id": ao3_id, "titulo": fic.titulo, "tipos": novedades})
+            except FicNotFoundError as exc:
+                db.commit()
+                result.errores += 1
+                result.detalles_error.append(str(exc))
+            except SessionRequestLimitReached:
+                db.rollback()
+                raise
+            except Exception as exc:  # noqa: BLE001
+                db.rollback()
+                result.errores += 1
+                result.detalles_error.append(f"{ao3_id}: {exc}")
+    except SessionRequestLimitReached as exc:
+        result.detenido_por_limite = True
+        result.detalles_error.append(str(exc))
+
+    return result, novedades_para_mail
 
 
 def check_deleted(

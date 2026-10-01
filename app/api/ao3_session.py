@@ -11,30 +11,31 @@ from app.config import settings
 from app.crypto import desencriptar
 
 
+def resolver_credenciales_ao3(cuenta) -> tuple[str, str]:
+    """Usuario/contraseña de AO3 efectivos para esta cuenta: los que
+    configuró en Ajustes si los tiene, o los del .env si el servidor corre
+    sin login real (ARCHIVUM_AUTH_TOKEN vacío) — nunca los del .env si hay
+    cuentas reales, para no mezclar la sesión de AO3 de una cuenta con la
+    de otra."""
+    username = getattr(cuenta, "ao3_username", None)
+    password_encriptada = getattr(cuenta, "ao3_password_encriptada", None)
+    if username and password_encriptada:
+        return username, desencriptar(password_encriptada)
+    if not settings.archivum_auth_token:
+        return settings.ao3_username, settings.ao3_password
+    raise HTTPException(status_code=409, detail="Todavía no configuraste tus credenciales de AO3 en Ajustes.")
+
+
 def build_authenticated_client(cuenta, **overrides) -> RateLimitedClient:
     """`**overrides` existe para los tests (inyectar sleep_fn/time_fn falsos
-    y no depender del reloj real ni del AO3_MIN_DELAY_SECONDS del .env).
-
-    Usa las credenciales de AO3 de la cuenta si las configuró en Ajustes.
-    Si no, y el servidor corre sin login real (ARCHIVUM_AUTH_TOKEN vacío),
-    cae a las del .env — nunca a las del .env si hay cuentas reales, para
-    no mezclar la sesión de AO3 de una cuenta con la de otra."""
+    y no depender del reloj real ni del AO3_MIN_DELAY_SECONDS del .env)."""
     if not settings.ao3_contact_email:
         raise HTTPException(
             status_code=500,
             detail="AO3_CONTACT_EMAIL no está configurado en .env del servidor.",
         )
 
-    username = getattr(cuenta, "ao3_username", None)
-    password_encriptada = getattr(cuenta, "ao3_password_encriptada", None)
-    if username and password_encriptada:
-        password = desencriptar(password_encriptada)
-    elif not settings.archivum_auth_token:
-        username, password = settings.ao3_username, settings.ao3_password
-    else:
-        raise HTTPException(
-            status_code=409, detail="Todavía no configuraste tus credenciales de AO3 en Ajustes."
-        )
+    username, password = resolver_credenciales_ao3(cuenta)
 
     kwargs = dict(
         contact_email=settings.ao3_contact_email,

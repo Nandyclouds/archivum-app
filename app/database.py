@@ -1,7 +1,7 @@
 from fastapi import Request
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
@@ -48,6 +48,15 @@ def get_session(request: Request):
         yield session
     finally:
         session.close()
+
+
+def nueva_sesion_para_cuenta(cuenta_id: int) -> Session:
+    """Para código que no puede usar Depends(get_session) — las tareas de
+    sync en segundo plano (ver app/api/routers/sync.py) corren DESPUÉS de
+    que la respuesta ya se mandó, así que no pueden reusar la sesión de la
+    request (esa ya se cerró)."""
+    engine = _engine_para_cuenta(cuenta_id)
+    return sessionmaker(bind=engine, autoflush=False, autocommit=False)()
 
 
 # Para app/cli.py (herramienta de desarrollo local, sin cuentas): mismo

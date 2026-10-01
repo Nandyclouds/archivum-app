@@ -74,12 +74,6 @@ _CUENTA_UNICA = SimpleNamespace(
 # por definición corren antes de tener una sesión).
 _RUTAS_PUBLICAS = {"/api/health", "/api/auth/login", "/api/auth/registro"}
 
-# Rutas que habla el workflow de GitHub Actions (nunca el frontend): piden
-# ARCHIVUM_SYNC_SECRET por header en vez del token de usuario. Ver
-# app/api/routers/sync.py. Hasta que el sync sea multi-cuenta, siempre
-# sincronizan la cuenta 1.
-_RUTAS_SYNC = {"/api/sync/known-ids", "/api/sync/ingest-fic", "/api/sync/ingest-epub", "/api/sync/incompletos"}
-
 
 @app.middleware("http")
 async def exigir_token(request: Request, call_next):
@@ -110,13 +104,6 @@ async def exigir_token(request: Request, call_next):
         and path.startswith("/api/recomendaciones/")
         and path != "/api/recomendaciones/"
     ):
-        return await call_next(request)
-
-    if path in _RUTAS_SYNC:
-        secret = request.headers.get("x-sync-secret")
-        if not settings.archivum_sync_secret or secret != settings.archivum_sync_secret:
-            return JSONResponse({"detail": "No autorizado"}, status_code=401)
-        request.state.cuenta = _CUENTA_UNICA
         return await call_next(request)
 
     if not settings.archivum_auth_token:

@@ -48,12 +48,8 @@ def _utcnow() -> datetime.datetime:
 
 def guardar_epub(db: Session, fic: Fic, content: bytes, archivo_dir: Path) -> Archivo:
     """Guarda bytes de EPUB ya descargados y registra/actualiza el `Archivo`.
-
-    Separado de `download_fic_epub` para que el runner remoto de GitHub
-    Actions (que descarga el EPUB desde una máquina con salida a AO3, ver
-    scripts/gh_action_sync.py) pueda reusar este mismo guardado sin pasar
-    por un `RateLimitedClient` local.
-    """
+    Separado de `download_fic_epub` para poder guardar bytes que ya se
+    tienen, sin pasar de nuevo por un `RateLimitedClient`."""
     archivo_dir.mkdir(parents=True, exist_ok=True)
     ruta = archivo_dir / f"{fic.ao3_id}.epub"
     ruta.write_bytes(content)

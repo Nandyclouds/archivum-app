@@ -86,18 +86,18 @@ export const api = {
     opcionesFiltro: () => request("/fics/opciones-filtro"),
   },
   ao3: {
-    // Tarda ~10s reales (login + fetch, con el rate limit de 4s entre
-    // peticiones a AO3 de por medio) — es intencional, no un timeout a
-    // arreglar. Solo funciona si ESTE server tiene salida a AO3 (uso local);
-    // en PythonAnywhere y similares usar api.sync.trigger en su lugar.
+    // Síncrono: tarda ~10s reales (login + fetch, con el rate limit de 4s
+    // entre peticiones a AO3 de por medio) — es intencional, no un timeout
+    // a arreglar. Para algo que puede tardar minutos (bookmarks, EPUB)
+    // usar api.sync.trigger en su lugar, que corre en segundo plano.
     importarPorUrl: (url, force = false) =>
       request("/ao3/import-fic", { method: "POST", body: JSON.stringify({ url, force }) }),
     descargarEpub: (ficId) => request(`/fics/${ficId}/download-epub`, { method: "POST" }),
   },
   sync: {
-    // Dispara el workflow de GitHub Actions (ver .github/workflows/ao3-sync.yml)
-    // para hosts sin salida directa a AO3. Es asíncrono: esto solo confirma
-    // que arrancó, no que ya terminó — tarda entre segundos y minutos.
+    // Corre en segundo plano del lado del servidor. Es asíncrono: esto
+    // solo confirma que arrancó, no que ya terminó — tarda entre segundos
+    // y minutos según el modo.
     trigger: (modo, { url, ao3Id } = {}) =>
       request("/sync/trigger", {
         method: "POST",
