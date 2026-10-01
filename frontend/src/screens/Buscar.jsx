@@ -37,6 +37,10 @@ export function Buscar() {
   const hizoLlorar = searchParams.get("hizo_llorar") === "1";
   const esRelectura = searchParams.get("es_relectura") === "1";
   const conResena = searchParams.get("con_resena"); // "true" | "false" | null
+  const leidoDesde = searchParams.get("leido_desde") || "";
+  const leidoHasta = searchParams.get("leido_hasta") || "";
+  const agregadoDesde = searchParams.get("agregado_desde") || "";
+  const agregadoHasta = searchParams.get("agregado_hasta") || "";
 
   function setFiltro(clave, valor) {
     const next = new URLSearchParams(searchParams);
@@ -73,6 +77,10 @@ export function Buscar() {
         anio,
         rating_exacto: ratingExacto,
         coleccion: coleccionId,
+        leido_desde: leidoDesde,
+        leido_hasta: leidoHasta,
+        agregado_desde: agregadoDesde,
+        agregado_hasta: agregadoHasta,
         ...(completo !== null ? { completo } : {}),
         ...(conNota ? { con_nota: true } : {}),
         ...(hizoLlorar ? { hizo_llorar: true } : {}),
@@ -97,6 +105,10 @@ export function Buscar() {
       anio,
       ratingExacto,
       coleccionId,
+      leidoDesde,
+      leidoHasta,
+      agregadoDesde,
+      agregadoHasta,
       hizoLlorar,
       esRelectura,
       conResena,
@@ -118,6 +130,10 @@ export function Buscar() {
     anio ||
     ratingExacto ||
     coleccionId ||
+    leidoDesde ||
+    leidoHasta ||
+    agregadoDesde ||
+    agregadoHasta ||
     hizoLlorar ||
     esRelectura ||
     conResena !== null;
@@ -128,7 +144,9 @@ export function Buscar() {
     (conNota ? 1 : 0) +
     (hizoLlorar ? 1 : 0) +
     (esRelectura ? 1 : 0) +
-    (ratingExacto ? 1 : 0);
+    (ratingExacto ? 1 : 0) +
+    (leidoDesde || leidoHasta ? 1 : 0) +
+    (agregadoDesde || agregadoHasta ? 1 : 0);
 
   return (
     <div>
@@ -282,13 +300,22 @@ export function Buscar() {
               <span className="arv-muted">{t("buscar.puntajeExacto")}</span>
               <div style={{ display: "inline-flex", gap: 1 }}>
                 {[1, 2, 3, 4, 5].map((n) => {
-                  const exacto = Number(ratingExacto) === n;
-                  const lleno = ratingExacto !== "" && n <= Number(ratingExacto);
+                  const llenado = ratingExacto
+                    ? Math.round(Math.max(0, Math.min(1, Number(ratingExacto) - (n - 1))) * 100)
+                    : 0;
+
+                  function elegir(e) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const esMitad = e.clientX - rect.left < rect.width / 2;
+                    const valor = n - 1 + (esMitad ? 0.5 : 1);
+                    setFiltro("rating_exacto", Number(ratingExacto) === valor ? "" : String(valor));
+                  }
+
                   return (
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setFiltro("rating_exacto", exacto ? "" : String(n))}
+                      onClick={elegir}
                       aria-label={t("buscar.ratingExacto", { count: n })}
                       title={t("buscar.ratingExacto", { count: n })}
                       style={{
@@ -296,14 +323,70 @@ export function Buscar() {
                         background: "transparent",
                         cursor: "pointer",
                         padding: 2,
-                        color: lleno ? "var(--color-accent)" : "var(--color-border)",
+                        color: "var(--color-border)",
                         display: "inline-flex",
                       }}
                     >
-                      <Star size={19} fill={lleno ? "currentColor" : "none"} />
+                      <span style={{ position: "relative", display: "inline-flex" }}>
+                        <Star size={19} />
+                        {llenado > 0 && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              overflow: "hidden",
+                              width: `${llenado}%`,
+                              color: "var(--color-accent)",
+                            }}
+                          >
+                            <Star size={19} fill="currentColor" />
+                          </span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            <div className="arv-filtros-fila" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+              <span className="arv-muted">{t("buscar.leidoEntre")}</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="date"
+                  className="arv-input"
+                  style={{ flex: 1, minWidth: 0 }}
+                  value={leidoDesde}
+                  onChange={(e) => setFiltro("leido_desde", e.target.value)}
+                />
+                <input
+                  type="date"
+                  className="arv-input"
+                  style={{ flex: 1, minWidth: 0 }}
+                  value={leidoHasta}
+                  onChange={(e) => setFiltro("leido_hasta", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="arv-filtros-fila" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+              <span className="arv-muted">{t("buscar.agregadoEntre")}</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="date"
+                  className="arv-input"
+                  style={{ flex: 1, minWidth: 0 }}
+                  value={agregadoDesde}
+                  onChange={(e) => setFiltro("agregado_desde", e.target.value)}
+                />
+                <input
+                  type="date"
+                  className="arv-input"
+                  style={{ flex: 1, minWidth: 0 }}
+                  value={agregadoHasta}
+                  onChange={(e) => setFiltro("agregado_hasta", e.target.value)}
+                />
               </div>
             </div>
 
@@ -365,6 +448,16 @@ export function Buscar() {
           {anio && <span className="arv-tag arv-tag-accent-2">{anio}</span>}
           {ratingExacto && (
             <span className="arv-tag arv-tag-accent-2">{t("buscar.ratingExacto", { count: Number(ratingExacto) })}</span>
+          )}
+          {(leidoDesde || leidoHasta) && (
+            <span className="arv-tag arv-tag-accent-2">
+              {t("buscar.leidoEntre")}: {leidoDesde || "…"} → {leidoHasta || "…"}
+            </span>
+          )}
+          {(agregadoDesde || agregadoHasta) && (
+            <span className="arv-tag arv-tag-accent-2">
+              {t("buscar.agregadoEntre")}: {agregadoDesde || "…"} → {agregadoHasta || "…"}
+            </span>
           )}
           {hizoLlorar && <span className="arv-tag arv-tag-accent-2">{t("buscar.hizoLlorar")}</span>}
           {esRelectura && <span className="arv-tag arv-tag-accent-2">{t("buscar.esRelectura")}</span>}

@@ -24,9 +24,16 @@ export function EstrellasInput({ value, onChange, size = 28 }) {
             onClick={(e) => onChange(valorDesdeClic(e, i))}
             aria-label={`${i + 1}`}
           >
-            <Star size={size} strokeWidth={1.75} className="arv-stars-input-track" />
-            <span className="arv-stars-input-fill" style={{ width: `${llenado}%` }}>
-              <Star size={size} strokeWidth={1.75} fill="currentColor" />
+            {/* Wrapper sin padding a propósito: si el % de ancho del relleno
+                se calculara contra el botón (que sí tiene padding para que
+                el área de clic sea más cómoda), el relleno queda corrido
+                respecto al ícono real — bug real visto con valores bajos o
+                a mitad de estrella. */}
+            <span className="arv-stars-input-icono">
+              <Star size={size} strokeWidth={1.75} />
+              <span className="arv-stars-input-fill" style={{ width: `${llenado}%` }}>
+                <Star size={size} strokeWidth={1.75} fill="currentColor" />
+              </span>
             </span>
           </button>
         );

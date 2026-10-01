@@ -102,6 +102,8 @@
     "estado": "Status",
     "resena": "Review",
     "puntajeExacto": "Exact rating",
+    "leidoEntre": "Read between",
+    "agregadoEntre": "Added between",
     "fandom": "Fandom",
     "etiqueta": "Tag",
     "coleccion": "Collection",

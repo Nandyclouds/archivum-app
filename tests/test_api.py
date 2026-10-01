@@ -426,6 +426,51 @@ def test_filtrar_fics_por_anio_no_duplica_por_relectura(client, db_session):
     assert len(r.json()) == 1
 
 
+def test_filtrar_fics_por_rango_leido(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    c = _crear_fic(db_session, ao3_id="3", titulo="C")
+    db_session.add_all(
+        [
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2026, 3, 10)),
+            Lectura(fic_id=b.id, estado="leido", fecha_fin=datetime.date(2026, 3, 20)),
+            Lectura(fic_id=c.id, estado="leido", fecha_fin=datetime.date(2026, 4, 1)),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"leido_desde": "2026-03-15", "leido_hasta": "2026-03-25"})
+    assert [f["titulo"] for f in r.json()] == ["B"]
+
+
+def test_filtrar_fics_por_rango_leido_no_duplica_por_relectura(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    db_session.add_all(
+        [
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2026, 3, 1)),
+            Lectura(fic_id=a.id, estado="leido", fecha_fin=datetime.date(2026, 3, 5), es_relectura=True),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"leido_desde": "2026-03-01", "leido_hasta": "2026-03-31"})
+    assert len(r.json()) == 1
+
+
+def test_filtrar_fics_por_rango_agregado(client, db_session):
+    a = _crear_fic(db_session, ao3_id="1", titulo="A")
+    b = _crear_fic(db_session, ao3_id="2", titulo="B")
+    a.fecha_primer_import = datetime.datetime(2026, 3, 10, 12, 0)
+    b.fecha_primer_import = datetime.datetime(2026, 4, 1, 12, 0)
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"agregado_desde": "2026-03-01", "agregado_hasta": "2026-03-31"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+    r = client.get("/api/fics", params={"agregado_hasta": "2026-03-10"})
+    assert [f["titulo"] for f in r.json()] == ["A"]
+
+
 def test_filtrar_fics_por_completo(client, db_session):
     _crear_fic(db_session, ao3_id="1", titulo="Completo", complete=True)
     _crear_fic(db_session, ao3_id="2", titulo="WIP", complete=False)

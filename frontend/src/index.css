@@ -1149,16 +1149,16 @@ select.arv-input {
 }
 
 .arv-stars {
-  position: relative;
   display: inline-flex;
+  gap: 2px;
   color: var(--color-border);
 }
-.arv-stars-track,
-.arv-stars-value {
-  display: flex;
-  gap: 2px;
+.arv-stars-star {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
 }
-.arv-stars-value {
+.arv-stars-fill {
   position: absolute;
   top: 0;
   left: 0;
@@ -1171,7 +1171,6 @@ select.arv-input {
   gap: 4px;
 }
 .arv-stars-input-star {
-  position: relative;
   display: inline-flex;
   border: none;
   background: transparent;
@@ -1181,13 +1180,15 @@ select.arv-input {
   line-height: 0;
   color: var(--color-border);
 }
-.arv-stars-input-track {
-  display: block;
+.arv-stars-input-icono {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
 }
 .arv-stars-input-fill {
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 0;
+  left: 0;
   overflow: hidden;
   color: var(--color-accent);
 }

@@ -4,7 +4,7 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.ao3 import downloader
 from app.ao3.client import RequestFailedError, SessionRequestLimitReached
@@ -72,6 +72,10 @@ def listar_fics(
         None, description="True = solo fics con alguna reseña propia, False = solo sin reseña"
     ),
     anio: int | None = Query(None, description="Restringe a fics con una lectura 'leido' completada este año"),
+    leido_desde: datetime.date | None = Query(None, description="Solo fics leídos (fecha_fin) desde esta fecha"),
+    leido_hasta: datetime.date | None = Query(None, description="Solo fics leídos (fecha_fin) hasta esta fecha"),
+    agregado_desde: datetime.date | None = Query(None, description="Solo fics agregados a la biblioteca desde esta fecha"),
+    agregado_hasta: datetime.date | None = Query(None, description="Solo fics agregados a la biblioteca hasta esta fecha"),
     incluir_borrados: bool = False,
     orden: str = Query(
         "titulo",
@@ -137,6 +141,24 @@ def listar_fics(
             Lectura.estado == "leido",
             func.strftime("%Y", Lectura.fecha_fin) == str(anio),
         ).distinct()
+    if leido_desde is not None or leido_hasta is not None:
+        # Alias propio: si ya se hizo join a Lectura más arriba (por "anio"),
+        # un segundo join sin alias pisaría las condiciones en vez de sumarse.
+        LecturaLeida = aliased(Lectura)
+        condiciones = [LecturaLeida.estado == "leido"]
+        if leido_desde is not None:
+            condiciones.append(LecturaLeida.fecha_fin >= leido_desde)
+        if leido_hasta is not None:
+            condiciones.append(LecturaLeida.fecha_fin <= leido_hasta)
+        query = query.join(LecturaLeida, LecturaLeida.fic_id == Fic.id).filter(*condiciones).distinct()
+    if agregado_desde is not None:
+        query = query.filter(Fic.fecha_primer_import >= agregado_desde)
+    if agregado_hasta is not None:
+        # fecha_primer_import es datetime; sumamos un día para que "hasta
+        # el 10" incluya todo el 10, no solo hasta las 00:00.
+        query = query.filter(
+            Fic.fecha_primer_import < agregado_hasta + datetime.timedelta(days=1)
+        )
     if estado:
         ultimas = (
             db.query(Lectura.fic_id, func.max(Lectura.id).label("ultima_id"))
