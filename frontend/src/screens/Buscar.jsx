@@ -551,6 +551,21 @@ export function Buscar() {
                   “{fic.nota_bookmark}”
                 </ConEmoji>
               )}
+              {conResena === "true" && fic.resena_texto && (
+                <ConEmoji
+                  as="div"
+                  className="arv-muted"
+                  style={{
+                    fontStyle: "italic",
+                    fontSize: 12.5,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  “{fic.resena_texto}”
+                </ConEmoji>
+              )}
             </div>
             <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
               {formatoCompacto(fic.word_count)}

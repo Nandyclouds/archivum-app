@@ -325,6 +325,29 @@ def test_filtrar_fics_por_con_resena(client, db_session):
     assert [f["titulo"] for f in r.json()] == ["Sin reseña"]
 
 
+def test_listado_incluye_un_preview_del_texto_de_la_resena_mas_reciente(client, db_session):
+    fic = _crear_fic(db_session, ao3_id="1", titulo="Con reseña")
+    db_session.add_all(
+        [
+            Resena(fic_id=fic.id, rating=4, texto="la primera vez", fecha=datetime.date(2024, 1, 1)),
+            Resena(fic_id=fic.id, rating=5, texto="la relectura", fecha=datetime.date(2026, 1, 1)),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"con_resena": True})
+    assert r.json()[0]["resena_texto"] == "la relectura"
+
+
+def test_listado_resena_texto_es_null_si_la_resena_no_tiene_texto(client, db_session):
+    fic = _crear_fic(db_session, ao3_id="1", titulo="Solo puntaje")
+    db_session.add(Resena(fic_id=fic.id, rating=4))
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"con_resena": True})
+    assert r.json()[0]["resena_texto"] is None
+
+
 def test_filtrar_fics_por_rating(client, db_session):
     a = _crear_fic(db_session, ao3_id="1", titulo="A")
     a.rating = "Explicit"

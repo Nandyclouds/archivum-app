@@ -153,6 +153,7 @@ class FicListItem(BaseModel):
     etiquetas_personales: list[EtiquetaPersonalOut] = []
     estado_actual: str | None = None
     nota_bookmark: str | None = None
+    resena_texto: str | None = None
 
 
 class ArchivoResumen(BaseModel):

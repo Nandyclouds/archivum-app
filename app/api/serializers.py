@@ -14,9 +14,17 @@ def estado_actual(fic: Fic) -> str | None:
     return max(fic.lecturas, key=lambda l: l.id).estado
 
 
+def resena_preview(fic: Fic) -> str | None:
+    con_texto = [r for r in fic.resenas if r.texto]
+    if not con_texto:
+        return None
+    return max(con_texto, key=lambda r: r.fecha).texto
+
+
 def to_list_item(fic: Fic) -> FicListItem:
     item = FicListItem.model_validate(fic)
     item.estado_actual = estado_actual(fic)
+    item.resena_texto = resena_preview(fic)
     return item
 
 
