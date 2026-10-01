@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import datetime
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, aliased
 
@@ -21,6 +23,7 @@ from app.models import (
     Lectura,
     Personaje,
     Resena,
+    ResenaImagen,
     Ship,
     TagAdicional,
 )
@@ -316,6 +319,67 @@ def borrar_resena(fic_id: int, resena_id: int, db: Session = Depends(get_session
     resena = _get_resena_or_404(db, fic_id, resena_id)
     db.delete(resena)
     db.commit()
+
+
+TIPOS_PERMITIDOS_IMAGEN_RESENA = {
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "image/jpeg": ".jpg",
+}
+TAMANO_MAXIMO_IMAGEN_RESENA = 15 * 1024 * 1024
+MAX_IMAGENES_POR_RESENA = 6
+
+
+@router.post("/{fic_id}/resenas/{resena_id}/imagenes", status_code=201)
+async def subir_imagen_resena(
+    fic_id: int, resena_id: int, archivo: UploadFile = File(...), db: Session = Depends(get_session)
+):
+    resena = _get_resena_or_404(db, fic_id, resena_id)
+    if len(resena.imagenes) >= MAX_IMAGENES_POR_RESENA:
+        raise HTTPException(status_code=422, detail=f"Máximo {MAX_IMAGENES_POR_RESENA} imágenes por reseña.")
+    if archivo.content_type not in TIPOS_PERMITIDOS_IMAGEN_RESENA:
+        raise HTTPException(status_code=415, detail="Formato no soportado (usá PNG, WEBP, GIF o JPG).")
+    contenido = await archivo.read()
+    if len(contenido) > TAMANO_MAXIMO_IMAGEN_RESENA:
+        raise HTTPException(status_code=413, detail="La imagen pesa más de 15MB.")
+
+    settings.resenas_dir.mkdir(parents=True, exist_ok=True)
+    extension = TIPOS_PERMITIDOS_IMAGEN_RESENA[archivo.content_type]
+    siguiente_orden = len(resena.imagenes)
+    ruta = settings.resenas_dir / f"{resena_id}_{siguiente_orden}{extension}"
+    ruta.write_bytes(contenido)
+
+    imagen = ResenaImagen(resena_id=resena_id, ruta_archivo=str(ruta), orden=siguiente_orden)
+    db.add(imagen)
+    db.commit()
+    db.refresh(resena)
+    return ResenaOut.model_validate(resena)
+
+
+@router.delete("/{fic_id}/resenas/{resena_id}/imagenes/{imagen_id}", status_code=204)
+def borrar_imagen_resena(fic_id: int, resena_id: int, imagen_id: int, db: Session = Depends(get_session)):
+    _get_resena_or_404(db, fic_id, resena_id)
+    imagen = db.get(ResenaImagen, imagen_id)
+    if imagen is None or imagen.resena_id != resena_id:
+        return
+    ruta = Path(imagen.ruta_archivo)
+    if ruta.is_file():
+        ruta.unlink()
+    db.delete(imagen)
+    db.commit()
+
+
+@router.get("/{fic_id}/resenas/{resena_id}/imagenes/{imagen_id}")
+def obtener_imagen_resena(fic_id: int, resena_id: int, imagen_id: int, db: Session = Depends(get_session)):
+    _get_resena_or_404(db, fic_id, resena_id)
+    imagen = db.get(ResenaImagen, imagen_id)
+    if imagen is None or imagen.resena_id != resena_id:
+        raise HTTPException(status_code=404, detail="Imagen no encontrada.")
+    ruta = Path(imagen.ruta_archivo)
+    if not ruta.is_file():
+        raise HTTPException(status_code=410, detail="El archivo ya no está en el disco.")
+    return FileResponse(ruta)
 
 
 @router.post("/{fic_id}/download-epub", response_model=ArchivoOut)

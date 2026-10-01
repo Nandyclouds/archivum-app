@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Droplet, Check, ChevronDown } from "lucide-react";
+import { Droplet, Check, ChevronDown, ImagePlus, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
@@ -18,7 +18,7 @@ function hoyISO() {
 export function FicDetalle() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const fic = useFetch(() => api.fics.get(id), [id]);
+  const fic = useFetch(() => api.fics.get(id), [id], `fic-detalle:${id}`);
 
   if (fic.loading) return <Cargando />;
   if (fic.error) return <ErrorCarga error={fic.error} onReintentar={fic.reload} />;
@@ -540,6 +540,88 @@ function EstadoLectura({ fic, lecturas, onChange }) {
   );
 }
 
+function GaleriaImagenesResena({ fic, resena, editable, onChange }) {
+  const { t } = useTranslation();
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function subir(archivo) {
+    if (!archivo) return;
+    setSubiendo(true);
+    setError(null);
+    try {
+      await api.resenas.subirImagen(fic.id, resena.id, archivo);
+      onChange();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  async function borrar(imagenId) {
+    await api.resenas.borrarImagen(fic.id, resena.id, imagenId);
+    onChange();
+  }
+
+  if (!resena.imagenes?.length && !editable) return null;
+
+  return (
+    <div style={{ margin: "10px 0" }}>
+      {resena.imagenes?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: editable ? 8 : 0 }}>
+          {resena.imagenes.map((img) => (
+            <div key={img.id} style={{ position: "relative" }}>
+              <img
+                src={api.resenas.imagenUrl(fic.id, resena.id, img.id)}
+                alt=""
+                style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 10 }}
+              />
+              {editable && (
+                <button
+                  onClick={() => borrar(img.id)}
+                  aria-label={t("ficDetalle.borrarImagenResena")}
+                  style={{
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                    border: "none",
+                    background: "var(--color-surface)",
+                    borderRadius: "50%",
+                    width: 22,
+                    height: 22,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "var(--shadow-card)",
+                    color: "var(--color-text-muted)",
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {editable && (resena.imagenes?.length ?? 0) < 6 && (
+        <label className="arv-btn arv-btn-secondary arv-btn-compacto" style={{ cursor: "pointer", display: "inline-flex", gap: 6 }}>
+          <ImagePlus size={14} />
+          {subiendo ? t("ficDetalle.subiendoImagen") : t("ficDetalle.agregarImagen")}
+          <input
+            type="file"
+            accept="image/png,image/webp,image/gif,image/jpeg"
+            hidden
+            onChange={(e) => subir(e.target.files[0])}
+          />
+        </label>
+      )}
+      {error && <p style={{ color: "var(--color-accent)", fontSize: 13, margin: "6px 0 0" }}>{error}</p>}
+    </div>
+  );
+}
+
 function MiResena({ fic, resena, onChange }) {
   const { t } = useTranslation();
   const [editando, setEditando] = useState(false);
@@ -579,6 +661,7 @@ function MiResena({ fic, resena, onChange }) {
               )}
             </div>
             <ConEmoji as="p">{resena.texto}</ConEmoji>
+            <GaleriaImagenesResena fic={fic} resena={resena} editable={false} onChange={onChange} />
           </>
         ) : (
           <p className="arv-muted">{t("ficDetalle.sinResena")}</p>
@@ -614,7 +697,14 @@ function MiResena({ fic, resena, onChange }) {
         placeholder={t("ficDetalle.resenaPlaceholder")}
         style={{ margin: "14px 0 10px", borderRadius: 12 }}
       />
-      <div style={{ display: "flex", gap: 8 }}>
+      {resena ? (
+        <GaleriaImagenesResena fic={fic} resena={resena} editable onChange={onChange} />
+      ) : (
+        <p className="arv-muted" style={{ fontSize: 13 }}>
+          {t("ficDetalle.guardaParaAgregarImagenes")}
+        </p>
+      )}
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button className="arv-btn" disabled={guardando} onClick={guardar}>
           {t("common.guardar")}
         </button>

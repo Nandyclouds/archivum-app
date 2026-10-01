@@ -166,7 +166,11 @@
     "ratingLabel": "Puntaje (toca media estrella o toda)",
     "hizoLlorarLabel": "¿Te hizo llorar?",
     "hizoLlorarBadge": "Lloré con este",
-    "resenaPlaceholder": "¿Qué te pareció?"
+    "resenaPlaceholder": "¿Qué te pareció?",
+    "agregarImagen": "Agregar imagen",
+    "subiendoImagen": "Subiendo…",
+    "borrarImagenResena": "Borrar imagen",
+    "guardaParaAgregarImagenes": "Guarda la reseña para poder agregar imágenes."
   },
   "colecciones": {
     "sinColecciones": "Todavía no tienes colecciones.",

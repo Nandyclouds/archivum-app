@@ -267,6 +267,23 @@ class Resena(Base):
     )
 
     fic: Mapped[Fic] = relationship(back_populates="resenas")
+    imagenes: Mapped[list["ResenaImagen"]] = relationship(
+        back_populates="resena", cascade="all, delete-orphan", order_by="ResenaImagen.orden"
+    )
+
+
+class ResenaImagen(Base):
+    __tablename__ = "resena_imagenes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    resena_id: Mapped[int] = mapped_column(
+        ForeignKey("resenas.id", ondelete="CASCADE"), index=True
+    )
+    ruta_archivo: Mapped[str] = mapped_column(String(500))
+    orden: Mapped[int] = mapped_column(Integer, default=0)
+    creado_en: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+
+    resena: Mapped[Resena] = relationship(back_populates="imagenes")
 
 
 class Coleccion(Base):

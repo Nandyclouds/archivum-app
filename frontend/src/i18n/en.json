@@ -166,7 +166,11 @@
     "ratingLabel": "Rating (tap half or full star)",
     "hizoLlorarLabel": "Made you cry?",
     "hizoLlorarBadge": "Cried at this one",
-    "resenaPlaceholder": "What did you think?"
+    "resenaPlaceholder": "What did you think?",
+    "agregarImagen": "Add image",
+    "subiendoImagen": "Uploading…",
+    "borrarImagenResena": "Delete image",
+    "guardaParaAgregarImagenes": "Save the review first to add images."
   },
   "colecciones": {
     "sinColecciones": "You don't have any collections yet.",

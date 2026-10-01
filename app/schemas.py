@@ -84,6 +84,12 @@ class LecturaUpdate(BaseModel):
         return v
 
 
+class ResenaImagenOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    orden: int
+
+
 class ResenaOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -93,6 +99,7 @@ class ResenaOut(BaseModel):
     contiene_spoilers: bool
     hizo_llorar: bool = False
     fecha: datetime.date
+    imagenes: list[ResenaImagenOut] = []
 
 
 class ResenaCreate(BaseModel):

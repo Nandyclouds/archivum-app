@@ -96,6 +96,25 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
+    imagenUrl: (ficId, resenaId, imagenId) =>
+      `${API_BASE}/fics/${ficId}/resenas/${resenaId}/imagenes/${imagenId}`,
+    subirImagen: async (ficId, resenaId, archivo) => {
+      const formData = new FormData();
+      formData.append("archivo", archivo);
+      const token = getToken();
+      const response = await fetch(`${API_BASE}/fics/${ficId}/resenas/${resenaId}/imagenes`, {
+        method: "POST",
+        headers: token ? { "X-Archivum-Token": token } : {},
+        body: formData,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(`${response.status}: ${body.detail ?? response.statusText}`);
+      }
+      return response.json();
+    },
+    borrarImagen: (ficId, resenaId, imagenId) =>
+      request(`/fics/${ficId}/resenas/${resenaId}/imagenes/${imagenId}`, { method: "DELETE" }),
   },
   colecciones: {
     list: () => request("/colecciones"),

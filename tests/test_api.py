@@ -1,4 +1,5 @@
 import datetime
+import io
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import Settings
 from app.database import Base, get_session
 from app.main import app
 from app.models import Archivo, Fandom, Fic, Lectura, Personaje, Resena, Ship, TagAdicional
@@ -567,6 +569,49 @@ def test_crear_y_actualizar_resena_hizo_llorar(client, db_session):
     )
     assert r.status_code == 200
     assert r.json()["hizo_llorar"] is False
+
+
+def test_subir_borrar_y_limite_de_imagenes_en_resena(client, db_session, tmp_path, monkeypatch):
+    monkeypatch.setattr(Settings, "resenas_dir", property(lambda self: tmp_path))
+    fic = _crear_fic(db_session)
+    r = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 5})
+    resena_id = r.json()["id"]
+
+    r = client.post(
+        f"/api/fics/{fic.id}/resenas/{resena_id}/imagenes",
+        files={"archivo": ("reaccion.gif", io.BytesIO(b"contenido falso"), "image/gif")},
+    )
+    assert r.status_code == 201
+    imagen_id = r.json()["imagenes"][0]["id"]
+    assert (tmp_path / f"{resena_id}_0.gif").read_bytes() == b"contenido falso"
+
+    r = client.get(f"/api/fics/{fic.id}")
+    assert len(r.json()["resenas"][0]["imagenes"]) == 1
+
+    r = client.delete(f"/api/fics/{fic.id}/resenas/{resena_id}/imagenes/{imagen_id}")
+    assert r.status_code == 204
+    assert not (tmp_path / f"{resena_id}_0.gif").is_file()
+    r = client.get(f"/api/fics/{fic.id}")
+    assert r.json()["resenas"][0]["imagenes"] == []
+
+
+def test_resena_rechaza_mas_de_seis_imagenes(client, db_session, tmp_path, monkeypatch):
+    monkeypatch.setattr(Settings, "resenas_dir", property(lambda self: tmp_path))
+    fic = _crear_fic(db_session)
+    resena_id = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 5}).json()["id"]
+
+    for _ in range(6):
+        r = client.post(
+            f"/api/fics/{fic.id}/resenas/{resena_id}/imagenes",
+            files={"archivo": ("a.png", io.BytesIO(b"x"), "image/png")},
+        )
+        assert r.status_code == 201
+
+    r = client.post(
+        f"/api/fics/{fic.id}/resenas/{resena_id}/imagenes",
+        files={"archivo": ("a.png", io.BytesIO(b"x"), "image/png")},
+    )
+    assert r.status_code == 422
 
 
 def test_colecciones_crud_y_fics(client, db_session):
