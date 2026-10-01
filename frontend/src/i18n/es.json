@@ -25,16 +25,16 @@
     "archivo": "Archivo"
   },
   "authGate": {
-    "subtitulo": "Ingresá el código de acceso para entrar.",
+    "subtitulo": "Ingresa el código de acceso para entrar.",
     "placeholder": "Código de acceso",
     "entrar": "Entrar",
     "verificando": "Verificando...",
-    "faltaCodigo": "Ingresá el código de acceso.",
+    "faltaCodigo": "Ingresa el código de acceso.",
     "codigoIncorrecto": "Código incorrecto."
   },
   "importarPorUrl": {
     "titulo": "Importar por link",
-    "info": "Pegá la URL de un fic de AO3 y se agrega a tu biblioteca. Funciona con fics con candado porque usa tu sesión conectada. El import corre en GitHub Actions (no en este server), así que tarda entre uno y varios minutos — no aparece al toque.",
+    "info": "Pega la URL de un fic de AO3 para agregarlo a tu biblioteca. Funciona incluso con fics restringidos, usando tu sesión. Corre en GitHub Actions, así que puede tardar unos minutos en aparecer.",
     "placeholder": "https://archiveofourown.org/works/...",
     "importar": "Importar",
     "disparando": "Disparando…",
@@ -81,7 +81,7 @@
     "todos": "Todos",
     "enAnio": "en {{anio}}",
     "todosLosAnios": "Todos los años",
-    "sinDatos": "Nada para mostrar acá todavía."
+    "sinDatos": "Nada para mostrar todavía."
   },
   "buscar": {
     "buscarPlaceholder": "Buscar en tu biblioteca…",
@@ -133,7 +133,7 @@
     "verCopiaArchivada": "Ver copia archivada",
     "notaBookmark": "MI NOTA DEL BOOKMARK",
     "colecciones": "Colecciones",
-    "sinColecciones": "Todavía no tenés colecciones.",
+    "sinColecciones": "Todavía no tienes colecciones.",
     "sinColeccionesFic": "No está en ninguna colección todavía.",
     "quitarDeColeccion": "Quitar de {{nombre}}",
     "nuevaColeccionPlaceholder": "Nueva colección…",
@@ -149,7 +149,7 @@
     "guardado": "guardado {{fecha}}",
     "descargaEnCamino": "Descarga en camino — puede tardar unos minutos en aparecer.",
     "estadoDeLectura": "Estado de lectura",
-    "estadoDeLecturaInfo": "Cada lectura marcada \"Leído\" —incluidas las relecturas— suma las palabras del fic a \"Palabras leídas\" y \"Fics leídos\" en el Panel. Cambiar el estado acá arriba actualiza tu lectura más reciente. Para que una relectura cuente aparte (y no pise la anterior), usá \"Registrar relectura\" más abajo: agrega una lectura nueva sin borrar la vieja.",
+    "estadoDeLecturaInfo": "Cada lectura marcada \"Leído\" —incluidas las relecturas— suma las palabras del fic a \"Palabras leídas\" y \"Fics leídos\" en el Panel. Cambiar el estado arriba actualiza tu lectura más reciente. Para que una relectura cuente aparte, usa \"Registrar relectura\" abajo: agrega una lectura nueva sin borrar la anterior.",
     "estados": {
       "pendiente": "Pendiente",
       "leyendo": "Leyendo",
@@ -163,13 +163,13 @@
     "miResena": "Mi reseña",
     "sinResena": "Todavía no dejaste una reseña.",
     "agregarResena": "Agregar reseña",
-    "ratingLabel": "Puntaje (tocá media estrella o toda)",
+    "ratingLabel": "Puntaje (toca media estrella o toda)",
     "hizoLlorarLabel": "¿Te hizo llorar?",
     "hizoLlorarBadge": "Lloré con este",
     "resenaPlaceholder": "¿Qué te pareció?"
   },
   "colecciones": {
-    "sinColecciones": "Todavía no tenés colecciones.",
+    "sinColecciones": "Todavía no tienes colecciones.",
     "ordenar": "Ordenar",
     "fics": "{{count}} fics",
     "nuevaColeccion": "Nueva colección",
@@ -184,7 +184,7 @@
   },
   "coleccionDetalle": {
     "fics": "{{count}} fics",
-    "sinFics": "Todavía no agregaste ningún fic acá.",
+    "sinFics": "Todavía no agregaste ningún fic aquí.",
     "quitarDeColeccion": "Quitar de la colección",
     "borrarColeccion": "Borrar colección"
   },
@@ -205,27 +205,27 @@
   },
   "ao3": {
     "titulo": "Importar / conectar AO3",
-    "info": "Traer bookmarks nuevos corre en GitHub Actions (no en este server), porque puede tardar y este host no tiene salida directa a AO3. Abajo se ve el historial de corridas hechas desde la terminal de tu PC, si alguna vez usás esa vía.",
+    "info": "Traer bookmarks nuevos corre en GitHub Actions, porque este servidor no tiene salida directa a AO3. Abajo se ve el historial de corridas hechas desde la terminal, si alguna vez usas esa vía.",
     "sinCorridas": "Todavía no corriste ninguna importación desde la terminal.",
     "nuevosYActualizados": "+{{nuevos}} nuevos · {{actualizados}} actualizados",
     "errores": "{{count}} errores",
     "actualizarBookmarks": "Actualizar bookmarks",
     "actualizarBookmarksInfo": "Trae los bookmarks nuevos que agregaste en AO3 desde la última vez. Corre en GitHub Actions, así que no hace falta que tu PC esté prendida — puede tardar varios minutos (o más, si AO3 está limitando peticiones).",
     "actualizarBookmarksRapido": "Actualizar bookmarks (rápido)",
-    "actualizarBookmarksRapidoInfo": "Como \"Actualizar bookmarks\", pero corta apenas encuentra una racha larga de bookmarks ya conocidos seguidos, en vez de recorrer todas las páginas siempre. Mucho más rápido cuando solo agregaste unos pocos bookmarks nuevos. La contra: si le editaste el tag o la nota a un bookmark viejo, este modo puede no enterarse — para eso usá el completo de vez en cuando.",
+    "actualizarBookmarksRapidoInfo": "Como \"Actualizar bookmarks\", pero corta apenas encuentra una racha larga de bookmarks ya conocidos seguidos, en vez de recorrer todas las páginas siempre. Más rápido cuando solo agregaste unos pocos bookmarks nuevos. La contra: si editaste el tag o la nota de un bookmark viejo, este modo puede no detectarlo — para eso usa el completo de vez en cuando.",
     "actualizarMarcados": "Actualizar Marked for Later",
-    "actualizarMarcadosInfo": "Trae los fics que marcaste como \"Marked for Later\" en tu History de AO3 (no es un bookmark). A los que ya conocés solo les agrega la etiqueta \"Marked for Later\" para encontrarlos en Colecciones, sin pisar el estado de lectura que ya tengan.",
+    "actualizarMarcadosInfo": "Trae los fics que marcaste como \"Marked for Later\" en tu History de AO3 (no es un bookmark). A los que ya conoces solo les agrega la etiqueta \"Marked for Later\" para encontrarlos en Colecciones, sin cambiar el estado de lectura que ya tengan.",
     "actualizarSuscripciones": "Sincronizar suscripciones",
-    "actualizarSuscripcionesInfo": "Trae los fics a los que estás suscripta en AO3 (distinto de bookmarks: podés suscribirte a uno sin bookmarkearlo). A los que ya conocés les agrega la etiqueta \"Suscripciones AO3\", y a los nuevos los importa enteros — así \"Revisar WIPs\" también los empieza a chequear.",
+    "actualizarSuscripcionesInfo": "Trae los fics a los que estás suscrita en AO3 (distinto de bookmarks: puedes suscribirte a uno sin bookmarkearlo). A los que ya conoces les agrega la etiqueta \"Suscripciones AO3\", y a los nuevos los importa completos — así \"Revisar WIPs\" también los empieza a revisar.",
     "actualizarWips": "Revisar WIPs",
-    "actualizarWipsInfo": "Vuelve a pedirle a AO3 los fics que tenés marcados como incompletos, para detectar si sumaron capítulo o se completaron — eso aparece en Novedades. Solo revisa los que no se chequearon en los últimos días, así que corridas seguidas no gastan de más.",
+    "actualizarWipsInfo": "Vuelve a pedirle a AO3 los fics marcados como incompletos, para detectar si sumaron capítulo o se completaron — eso aparece en Novedades. Solo revisa los que no se chequearon en los últimos días.",
     "actualizarAhora": "Actualizar ahora",
     "disparando": "Disparando…",
-    "syncEnCamino": "Sync en camino — volvé a revisar tu biblioteca en un rato."
+    "syncEnCamino": "Sincronización en curso — revisa tu biblioteca en un rato."
   },
   "novedades": {
     "titulo": "Novedades",
-    "sinNovedades": "No tenés novedades por ahora.",
+    "sinNovedades": "No tienes novedades por ahora.",
     "marcarTodas": "Marcar todas como leídas",
     "marcarLeida": "Marcar como leída",
     "completado": "¡Se completó!",
@@ -234,7 +234,7 @@
   },
   "recomendar": {
     "titulo": "Armar recomendación",
-    "info": "Elegí fics de una colección entera, o buscalos uno por uno, y generá un link para mandar — quien lo abra ve título, resumen, tags y el link a AO3 de cada uno, sin necesitar tu código de acceso.",
+    "info": "Elige fics de una colección entera, o búscalos uno por uno, y genera un link para compartir — quien lo abra ve título, resumen, tags y el link a AO3 de cada uno, sin necesitar tu código de acceso.",
     "tituloListaPlaceholder": "Título de la lista (opcional)",
     "notaPlaceholder": "Una nota para quien la reciba (opcional)",
     "desdeColeccion": "Agregar desde una colección",
@@ -245,7 +245,7 @@
     "quitarDeLaLista": "Quitar de la lista",
     "publicar": "Publicar y generar link",
     "publicando": "Publicando…",
-    "listoInfo": "¡Listo! Copiá este link para compartirlo:",
+    "listoInfo": "¡Listo! Copia este link para compartirlo:",
     "tusListas": "Tus listas publicadas",
     "sinListas": "Todavía no publicaste ninguna lista.",
     "sinTitulo": "Sin título",
@@ -262,7 +262,7 @@
     "esperaLimite": "Puede tardar ~10 segundos por el límite de velocidad de AO3.",
     "sinLink": "No encontré un link",
     "algoFallo": "Algo falló",
-    "pegaloAca": "Pegalo acá:",
+    "pegaloAca": "Pégalo aquí:",
     "importar": "Importar",
     "volverAlPanel": "Volver al panel"
   },
@@ -276,7 +276,7 @@
     "cambiarFoto": "Cambiar foto",
     "moverFoto": "Mover foto",
     "verEnGrande": "Ver en grande",
-    "arrastraParaMover": "Arrastrá para mover",
+    "arrastraParaMover": "Arrastra para mover",
     "favoritos": "Favoritos",
     "verLos": "ver los {{count}}",
     "buscarFicPlaceholder": "Buscar un fic para agregar…",
@@ -329,13 +329,13 @@
     "colorDeAcento": "Color de acento",
     "ajustes": "Ajustes",
     "emojisPersonalizados": "Emojis personalizados",
-    "emojisPersonalizadosInfo": "Subí una imagen y ponele un nombre corto: después escribí :nombre: en tu bio, notas o reseñas y se va a mostrar como ese sticker.",
+    "emojisPersonalizadosInfo": "Sube una imagen y ponle un nombre corto: después escribe :nombre: en tu bio, notas o reseñas y se mostrará como ese sticker.",
     "nombreEmojiPlaceholder": "nombre (sin espacios)",
     "subirEmoji": "Agregar",
     "subiendoEmoji": "Agregando…",
     "borrarEmoji": "Borrar emoji {{nombre}}",
     "gifsPersonalizados": "Gifs del perfil",
-    "gifsPersonalizadosInfo": "Hasta 3 gifs chiquitos para decorar tu perfil, opcionales — se muestran al lado de tu insignia solo los que subiste, sin espacios vacíos por los que falten.",
+    "gifsPersonalizadosInfo": "Hasta 3 gifs pequeños y opcionales para decorar tu perfil — se muestran junto a tu insignia solo los que subas.",
     "subirGifBtn": "Subir",
     "cambiarGif": "Cambiar",
     "borrarGif": "Borrar gif {{n}}"
