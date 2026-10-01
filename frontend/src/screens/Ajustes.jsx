@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2 } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { InfoPopover } from "../components/InfoPopover";
 import { useEmojisPersonalizados } from "../lib/EmojiPersonalizadoContext";
 import { cambiarIdioma } from "../i18n";
+import { clearToken } from "../lib/auth";
 import { aplicarTema, aplicarColorAcento, obtenerTema, obtenerColorAcento } from "../lib/tema";
 
 export function Ajustes() {
@@ -14,6 +15,8 @@ export function Ajustes() {
       <Preferencias />
       <EmojisPersonalizados />
       <GifsPersonalizados />
+      <InvitacionesAdmin />
+      <CuentaActual />
     </div>
   );
 }
@@ -253,6 +256,109 @@ function GifsPersonalizados() {
         })}
       </div>
       {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+    </div>
+  );
+}
+
+function InvitacionesAdmin() {
+  const { t } = useTranslation();
+  const yo = useFetch(() => api.auth.yo(), [], "auth-yo");
+  const invitaciones = useFetch(() => api.auth.invitaciones.list(), [], "auth-invitaciones");
+  const [generando, setGenerando] = useState(false);
+  const [error, setError] = useState("");
+  const [copiado, setCopiado] = useState(null);
+
+  if (!yo.data?.es_admin) return null;
+
+  async function generar() {
+    setGenerando(true);
+    setError("");
+    try {
+      await api.auth.invitaciones.create();
+      invitaciones.reload();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerando(false);
+    }
+  }
+
+  async function copiar(codigo) {
+    await navigator.clipboard.writeText(codigo);
+    setCopiado(codigo);
+    setTimeout(() => setCopiado(null), 1500);
+  }
+
+  return (
+    <div className="arv-card">
+      <h3 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        {t("perfil.invitaciones")}
+        <InfoPopover>{t("perfil.invitacionesInfo")}</InfoPopover>
+      </h3>
+
+      <button className="arv-btn arv-btn-secondary" disabled={generando} onClick={generar} style={{ marginBottom: 14 }}>
+        {generando ? t("perfil.generando") : t("perfil.generarInvitacion")}
+      </button>
+      {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+
+      {(invitaciones.data ?? []).length === 0 ? (
+        <p className="arv-muted">{t("perfil.sinInvitaciones")}</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {invitaciones.data.map((inv) => (
+            <div
+              key={inv.codigo}
+              style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}
+            >
+              <code style={{ background: "var(--color-surface-alt)", padding: "2px 6px", borderRadius: 4 }}>
+                {inv.codigo}
+              </code>
+              <span className="arv-muted">
+                {inv.usada ? t("perfil.invitacionUsadaPor", { email: inv.usada_por_email }) : t("perfil.invitacionSinUsar")}
+              </span>
+              {!inv.usada && (
+                <button
+                  onClick={() => copiar(inv.codigo)}
+                  aria-label={t("perfil.copiarCodigo")}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--color-text-muted)", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
+                >
+                  <Copy size={13} />
+                  {copiado === inv.codigo && t("perfil.codigoCopiado")}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CuentaActual() {
+  const { t } = useTranslation();
+  const yo = useFetch(() => api.auth.yo(), [], "auth-yo");
+
+  async function salir() {
+    try {
+      await api.auth.logout();
+    } catch {
+      // si el token ya no servía esto también falla, pero igual queremos limpiar y recargar
+    }
+    clearToken();
+    window.location.reload();
+  }
+
+  if (!yo.data) return null;
+
+  return (
+    <div className="arv-card">
+      <h3 style={{ marginBottom: 14 }}>{t("perfil.cuenta")}</h3>
+      <p className="arv-muted" style={{ marginBottom: 14 }}>
+        {yo.data.email}
+      </p>
+      <button className="arv-btn arv-btn-secondary" onClick={salir}>
+        {t("perfil.cerrarSesion")}
+      </button>
     </div>
   );
 }

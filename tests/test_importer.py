@@ -33,7 +33,8 @@ def _archivo_dir_temporal(tmp_path, monkeypatch):
     """Evita que los tests escriban snapshots HTML en el data/archivo/ real."""
     from app.config import Settings
 
-    monkeypatch.setattr(Settings, "archivo_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "archivo_dir", lambda self, cuenta_id: tmp_path)
+    monkeypatch.setattr(Settings, "archivo_dir_legado", property(lambda self: tmp_path))
 
 
 @pytest.fixture()

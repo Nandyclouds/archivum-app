@@ -25,12 +25,15 @@
     "archivo": "Archive"
   },
   "authGate": {
-    "subtitulo": "Enter the access code to log in.",
-    "placeholder": "Access code",
+    "tabLogin": "Log in",
+    "tabRegistro": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "codigoInvitacion": "Invitation code",
     "entrar": "Enter",
+    "crearCuenta": "Create account",
     "verificando": "Verifying...",
-    "faltaCodigo": "Enter the access code.",
-    "codigoIncorrecto": "Incorrect code."
+    "faltanDatos": "Fill in all the fields."
   },
   "importarPorUrl": {
     "titulo": "Import by link",
@@ -342,6 +345,17 @@
     "gifsPersonalizadosInfo": "Up to 3 tiny gifs to decorate your profile, optional — only the ones you uploaded show up next to your badge, no empty slots for the ones you skip.",
     "subirGifBtn": "Upload",
     "cambiarGif": "Change",
-    "borrarGif": "Delete gif {{n}}"
+    "borrarGif": "Delete gif {{n}}",
+    "invitaciones": "Invitations",
+    "invitacionesInfo": "Generate a code so someone else can create their own account. Each code works once.",
+    "generarInvitacion": "Generate invitation",
+    "generando": "Generating…",
+    "invitacionSinUsar": "Unused",
+    "invitacionUsadaPor": "Used by {{email}}",
+    "copiarCodigo": "Copy",
+    "codigoCopiado": "Copied",
+    "sinInvitaciones": "You haven't generated any invitations yet.",
+    "cuenta": "Account",
+    "cerrarSesion": "Log out"
   }
 }

@@ -14,7 +14,7 @@ from app.models import Coleccion, Fic
 
 @pytest.fixture(autouse=True)
 def _perfil_dir_temporal(tmp_path, monkeypatch):
-    monkeypatch.setattr(Settings, "perfil_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "perfil_dir", lambda self, cuenta_id: tmp_path)
 
 
 @pytest.fixture()

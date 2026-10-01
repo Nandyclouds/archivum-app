@@ -12,7 +12,9 @@ from app.ao3 import downloader
 from app.ao3.client import RequestFailedError, SessionRequestLimitReached
 from app.api.ao3_session import build_authenticated_client
 from app.api.serializers import to_archivo_out, to_detail, to_list_item
+from app.auth import get_cuenta_actual
 from app.config import settings
+from app.control_models import Cuenta
 from app.database import get_session
 from app.models import (
     ColeccionFic,
@@ -333,7 +335,11 @@ MAX_IMAGENES_POR_RESENA = 6
 
 @router.post("/{fic_id}/resenas/{resena_id}/imagenes", status_code=201)
 async def subir_imagen_resena(
-    fic_id: int, resena_id: int, archivo: UploadFile = File(...), db: Session = Depends(get_session)
+    fic_id: int,
+    resena_id: int,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_session),
+    cuenta: Cuenta = Depends(get_cuenta_actual),
 ):
     resena = _get_resena_or_404(db, fic_id, resena_id)
     if len(resena.imagenes) >= MAX_IMAGENES_POR_RESENA:
@@ -344,10 +350,11 @@ async def subir_imagen_resena(
     if len(contenido) > TAMANO_MAXIMO_IMAGEN_RESENA:
         raise HTTPException(status_code=413, detail="La imagen pesa más de 15MB.")
 
-    settings.resenas_dir.mkdir(parents=True, exist_ok=True)
+    resenas_dir = settings.resenas_dir(cuenta.id)
+    resenas_dir.mkdir(parents=True, exist_ok=True)
     extension = TIPOS_PERMITIDOS_IMAGEN_RESENA[archivo.content_type]
     siguiente_orden = len(resena.imagenes)
-    ruta = settings.resenas_dir / f"{resena_id}_{siguiente_orden}{extension}"
+    ruta = resenas_dir / f"{resena_id}_{siguiente_orden}{extension}"
     ruta.write_bytes(contenido)
 
     imagen = ResenaImagen(resena_id=resena_id, ruta_archivo=str(ruta), orden=siguiente_orden)
@@ -383,14 +390,14 @@ def obtener_imagen_resena(fic_id: int, resena_id: int, imagen_id: int, db: Sessi
 
 
 @router.post("/{fic_id}/download-epub", response_model=ArchivoOut)
-def descargar_epub(fic_id: int, db: Session = Depends(get_session)):
+def descargar_epub(fic_id: int, db: Session = Depends(get_session), cuenta: Cuenta = Depends(get_cuenta_actual)):
     """Baja el EPUB de este fic ya, desde la app (sin terminal). Requiere
     login a AO3 (~4s) + la descarga en sí, respetando el mismo rate limit
     que el resto del importador."""
     fic = _get_fic_or_404(db, fic_id)
     client = build_authenticated_client()
     try:
-        archivo = downloader.download_fic_epub(db, client, fic, settings.archivo_dir)
+        archivo = downloader.download_fic_epub(db, client, fic, settings.archivo_dir(cuenta.id))
         db.commit()
     except downloader.DownloadError as exc:
         db.rollback()

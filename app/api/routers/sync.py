@@ -182,6 +182,8 @@ def ingest_epub(payload: IngestEpubRequest, db: Session = Depends(get_session)):
     if fic is None:
         raise HTTPException(status_code=404, detail=f"Fic {payload.ao3_id} no encontrado.")
     contenido = base64.b64decode(payload.content_base64)
-    guardar_epub(db, fic, contenido, settings.archivo_dir)
+    # Las rutas de sync siempre corren como la cuenta 1 (ver _CUENTA_UNICA en
+    # app/main.py) hasta que la Etapa 3 traiga sync por cuenta.
+    guardar_epub(db, fic, contenido, settings.archivo_dir(1))
     db.commit()
     return {"ao3_id": fic.ao3_id, "bytes": len(contenido)}

@@ -19,6 +19,7 @@ app en esa URL) mostraba el JSON crudo en vez de la app. Bug real.
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routers import (
     ao3_import,
     archivos,
+    auth,
     colecciones,
     emojis,
     etiquetas,
@@ -40,13 +42,20 @@ from app.api.routers import (
     stats,
     sync,
 )
+from app.auth import resolver_cuenta_por_token
 from app.config import settings
+from app.control_db import ControlBase, ControlSessionLocal, control_engine
+from app.control_models import Cuenta, Invitacion, Sesion  # noqa: F401 — registran las tablas en ControlBase
 
 app = FastAPI(title="Archivum API", version="0.1.0")
 
-# CORS abierto a propósito: esta app es para un máximo de 3 personas, cada
-# una con su propia copia (ver Tarea 1), sin cuentas/registro. El control de
-# acceso real es ARCHIVUM_AUTH_TOKEN (ver abajo), no CORS.
+# Tablas de cuentas/invitaciones/sesiones: esquema chico y estable, sin
+# migraciones propias por ahora (a diferencia de la base de cada cuenta,
+# que sí usa Alembic — ver migrations/).
+ControlBase.metadata.create_all(control_engine)
+
+# CORS abierto a propósito: el control de acceso real es el login (ver
+# abajo), no CORS.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -54,33 +63,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rutas /api que no piden ningún token: solo el health check (monitoreo).
-_RUTAS_PUBLICAS = {"/api/health"}
+# Cuenta fija que se usa cuando no hay login real (ver más abajo) — mismo
+# comportamiento que tenía el ARCHIVUM_AUTH_TOKEN vacío antes de que
+# existieran las cuentas: todo pega contra una única biblioteca.
+_CUENTA_UNICA = SimpleNamespace(id=1, es_admin=True, email="cuenta-unica@archivum.local")
+
+# Rutas /api que no piden ningún token: health check, y login/registro (que
+# por definición corren antes de tener una sesión).
+_RUTAS_PUBLICAS = {"/api/health", "/api/auth/login", "/api/auth/registro"}
 
 # Rutas que habla el workflow de GitHub Actions (nunca el frontend): piden
 # ARCHIVUM_SYNC_SECRET por header en vez del token de usuario. Ver
-# app/api/routers/sync.py — mandan de vuelta lo que scrapearon de AO3 desde
-# una máquina que sí tiene salida a internet, a diferencia de PythonAnywhere.
+# app/api/routers/sync.py. Hasta que el sync sea multi-cuenta, siempre
+# sincronizan la cuenta 1.
 _RUTAS_SYNC = {"/api/sync/known-ids", "/api/sync/ingest-fic", "/api/sync/ingest-epub", "/api/sync/incompletos"}
 
 
 @app.middleware("http")
 async def exigir_token(request: Request, call_next):
-    """Controla acceso a /api/*: token de usuario, o secreto de sync para GH Actions.
+    """Controla acceso a /api/* y deja la cuenta resuelta en
+    request.state.cuenta para el resto de las dependencias (ver
+    app/database.py, app/auth.py).
 
-    ARCHIVUM_AUTH_TOKEN vacío (default local) = sin auth en rutas normales,
-    como antes. Se pone un valor real en cuanto la app se expone en un
-    dominio público (PythonAnywhere) — ahí sí cualquiera con la URL podría
-    leer/escribir en la biblioteca sin esto.
+    ARCHIVUM_AUTH_TOKEN vacío (default local/tests) = sin login real, todo
+    pega contra la misma cuenta única — así sigue funcionando el desarrollo
+    local y la suite de tests sin tocarlos. Con un valor puesto (producción),
+    el token tiene que resolver a una sesión real creada por /auth/login o
+    /auth/registro.
 
     Acepta el token por header (llamadas normales del frontend) o por query
     param `?token=` (el link de "ver copia archivada" se abre directo en el
     navegador/otra app, sin forma de mandar headers custom).
-
-    Las rutas de sync son distintas: a diferencia del token de usuario, acá
-    NO hay default abierto — si ARCHIVUM_SYNC_SECRET no está seteado, esas
-    rutas quedan inaccesibles (fail-closed), porque son de escritura y las
-    habla una máquina, no una persona con el código de acceso.
     """
     path = request.url.path
     if request.method == "OPTIONS" or not path.startswith("/api") or path in _RUTAS_PUBLICAS:
@@ -88,9 +101,8 @@ async def exigir_token(request: Request, call_next):
 
     # Una lista de recomendaciones puntual (/api/recomendaciones/<token>) es
     # pública a propósito: es un link para mandarle a alguien que no tiene
-    # (ni debería necesitar) el token de acceso a la app. Sin el trailing
-    # slash no matchea /api/recomendaciones (el listado completo, ese sí
-    # pide el token normal, más abajo).
+    # (ni debería necesitar) una cuenta. Sin el trailing slash no matchea
+    # /api/recomendaciones (el listado completo, ese sí pide login).
     if (
         request.method == "GET"
         and path.startswith("/api/recomendaciones/")
@@ -102,12 +114,19 @@ async def exigir_token(request: Request, call_next):
         secret = request.headers.get("x-sync-secret")
         if not settings.archivum_sync_secret or secret != settings.archivum_sync_secret:
             return JSONResponse({"detail": "No autorizado"}, status_code=401)
+        request.state.cuenta = _CUENTA_UNICA
         return await call_next(request)
 
-    if settings.archivum_auth_token:
-        token = request.headers.get("x-archivum-token") or request.query_params.get("token")
-        if token != settings.archivum_auth_token:
-            return JSONResponse({"detail": "No autorizado"}, status_code=401)
+    if not settings.archivum_auth_token:
+        request.state.cuenta = _CUENTA_UNICA
+        return await call_next(request)
+
+    token = request.headers.get("x-archivum-token") or request.query_params.get("token")
+    with ControlSessionLocal() as db:
+        cuenta = resolver_cuenta_por_token(db, token)
+    if cuenta is None:
+        return JSONResponse({"detail": "No autorizado"}, status_code=401)
+    request.state.cuenta = cuenta
     return await call_next(request)
 
 
@@ -136,6 +155,7 @@ app.include_router(novedades.router, prefix="/api")
 app.include_router(recomendaciones.router, prefix="/api")
 app.include_router(emojis.router, prefix="/api")
 app.include_router(masivo.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["health"])

@@ -16,6 +16,9 @@ from app.ao3.client import RequestFailedError, SessionRequestLimitReached
 from app.ao3.parser import work_id_from_url
 from app.api.ao3_session import build_authenticated_client
 from app.api.serializers import to_detail
+from app.auth import get_cuenta_actual
+from app.config import settings
+from app.control_models import Cuenta
 from app.database import get_session
 from app.schemas import FicDetail
 
@@ -28,14 +31,18 @@ class ImportarFicRequest(BaseModel):
 
 
 @router.post("/import-fic", response_model=FicDetail)
-def importar_fic_por_url(payload: ImportarFicRequest, db: Session = Depends(get_session)):
+def importar_fic_por_url(
+    payload: ImportarFicRequest, db: Session = Depends(get_session), cuenta: Cuenta = Depends(get_cuenta_actual)
+):
     ao3_id = work_id_from_url(payload.url)
     if ao3_id is None:
         raise HTTPException(status_code=400, detail=f"No reconozco un id de fic en '{payload.url}'.")
 
     client = build_authenticated_client()
     try:
-        fic, _ = importer.import_single_fic(db, client, ao3_id, force=payload.force)
+        fic, _ = importer.import_single_fic(
+            db, client, ao3_id, force=payload.force, archivo_dir=settings.archivo_dir(cuenta.id)
+        )
         db.commit()
     except importer.FicNotFoundError as exc:
         db.commit()

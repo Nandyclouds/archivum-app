@@ -215,7 +215,7 @@ def guardar_snapshot_html(db: Session, fic: Fic, html: str, archivo_dir: Path | 
     última copia conocida. Alcanza para el objetivo de "no perder el fic si
     el autor lo borra"; versionado completo sería sobreingeniería acá.
     """
-    archivo_dir = archivo_dir or settings.archivo_dir
+    archivo_dir = archivo_dir or settings.archivo_dir_legado
     archivo_dir.mkdir(parents=True, exist_ok=True)
     contenido = html.encode("utf-8")
     ruta = archivo_dir / f"{fic.ao3_id}.html"

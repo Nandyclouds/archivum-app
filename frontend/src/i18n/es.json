@@ -25,12 +25,15 @@
     "archivo": "Archivo"
   },
   "authGate": {
-    "subtitulo": "Ingresa el código de acceso para entrar.",
-    "placeholder": "Código de acceso",
+    "tabLogin": "Iniciar sesión",
+    "tabRegistro": "Crear cuenta",
+    "email": "Correo",
+    "password": "Contraseña",
+    "codigoInvitacion": "Código de invitación",
     "entrar": "Entrar",
+    "crearCuenta": "Crear cuenta",
     "verificando": "Verificando...",
-    "faltaCodigo": "Ingresa el código de acceso.",
-    "codigoIncorrecto": "Código incorrecto."
+    "faltanDatos": "Completa todos los campos."
   },
   "importarPorUrl": {
     "titulo": "Importar por link",
@@ -342,6 +345,17 @@
     "gifsPersonalizadosInfo": "Hasta 3 gifs pequeños y opcionales para decorar tu perfil — se muestran junto a tu insignia solo los que subas.",
     "subirGifBtn": "Subir",
     "cambiarGif": "Cambiar",
-    "borrarGif": "Borrar gif {{n}}"
+    "borrarGif": "Borrar gif {{n}}",
+    "invitaciones": "Invitaciones",
+    "invitacionesInfo": "Genera un código para que otra persona cree su propia cuenta. Cada código se usa una sola vez.",
+    "generarInvitacion": "Generar invitación",
+    "generando": "Generando…",
+    "invitacionSinUsar": "Sin usar",
+    "invitacionUsadaPor": "Usada por {{email}}",
+    "copiarCodigo": "Copiar",
+    "codigoCopiado": "Copiado",
+    "sinInvitaciones": "Todavía no generaste ninguna invitación.",
+    "cuenta": "Cuenta",
+    "cerrarSesion": "Cerrar sesión"
   }
 }

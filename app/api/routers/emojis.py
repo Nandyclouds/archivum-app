@@ -12,7 +12,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.auth import get_cuenta_actual
 from app.config import settings
+from app.control_models import Cuenta
 from app.database import get_session
 from app.models import EmojiPersonalizado
 from app.schemas import EmojiPersonalizadoOut
@@ -40,6 +42,7 @@ async def crear(
     nombre: str = Form(...),
     archivo: UploadFile = File(...),
     db: Session = Depends(get_session),
+    cuenta: Cuenta = Depends(get_cuenta_actual),
 ):
     nombre = nombre.strip().lower()
     if not NOMBRE_VALIDO.match(nombre):
@@ -56,9 +59,10 @@ async def crear(
     if len(contenido) > TAMANO_MAXIMO:
         raise HTTPException(status_code=413, detail="La imagen pesa más de 2MB.")
 
-    settings.emojis_dir.mkdir(parents=True, exist_ok=True)
+    emojis_dir = settings.emojis_dir(cuenta.id)
+    emojis_dir.mkdir(parents=True, exist_ok=True)
     extension = TIPOS_PERMITIDOS[archivo.content_type]
-    ruta = settings.emojis_dir / f"{nombre}{extension}"
+    ruta = emojis_dir / f"{nombre}{extension}"
     ruta.write_bytes(contenido)
 
     emoji = EmojiPersonalizado(nombre=nombre, ruta_archivo=str(ruta))

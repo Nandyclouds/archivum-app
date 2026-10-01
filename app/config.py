@@ -36,6 +36,9 @@ class Settings(BaseSettings):
 
     @property
     def db_path(self) -> Path:
+        """Base de datos de un solo tenant: la usa app/cli.py (herramienta
+        de desarrollo local, sin cuentas) y el script que migró esos datos
+        a la cuenta 1. La API web usa user_db_path(cuenta_id)."""
         path = Path(self.archivum_db_path)
         if not path.is_absolute():
             path = BASE_DIR / path
@@ -46,20 +49,32 @@ class Settings(BaseSettings):
         return f"sqlite:///{self.db_path}"
 
     @property
-    def archivo_dir(self) -> Path:
+    def archivo_dir_legado(self) -> Path:
+        """Para app/cli.py y guardar_snapshot_html cuando no se le pasa un
+        archivo_dir explícito — mismo criterio que db_path arriba."""
         return BASE_DIR / "data" / "archivo"
 
     @property
-    def perfil_dir(self) -> Path:
-        return BASE_DIR / "data" / "perfil"
+    def control_db_path(self) -> Path:
+        return BASE_DIR / "data" / "control.db"
 
-    @property
-    def emojis_dir(self) -> Path:
-        return BASE_DIR / "data" / "emojis"
+    def user_data_dir(self, cuenta_id: int) -> Path:
+        return BASE_DIR / "data" / "users" / str(cuenta_id)
 
-    @property
-    def resenas_dir(self) -> Path:
-        return BASE_DIR / "data" / "resenas"
+    def user_db_path(self, cuenta_id: int) -> Path:
+        return self.user_data_dir(cuenta_id) / "archivum.db"
+
+    def archivo_dir(self, cuenta_id: int) -> Path:
+        return self.user_data_dir(cuenta_id) / "archivo"
+
+    def perfil_dir(self, cuenta_id: int) -> Path:
+        return self.user_data_dir(cuenta_id) / "perfil"
+
+    def emojis_dir(self, cuenta_id: int) -> Path:
+        return self.user_data_dir(cuenta_id) / "emojis"
+
+    def resenas_dir(self, cuenta_id: int) -> Path:
+        return self.user_data_dir(cuenta_id) / "resenas"
 
 
 settings = Settings()

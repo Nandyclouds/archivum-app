@@ -19,12 +19,6 @@ async function request(path, options = {}) {
     },
     ...options,
   });
-  if (response.status === 401) {
-    // Token inválido/vencido: lo tiramos así AuthGate vuelve a pedirlo.
-    clearToken();
-    window.location.reload();
-    throw new Error("401: No autorizado");
-  }
   if (!response.ok) {
     let detail = response.statusText;
     try {
@@ -32,6 +26,16 @@ async function request(path, options = {}) {
       detail = body.detail ?? JSON.stringify(body);
     } catch {
       // sin body legible, nos quedamos con statusText
+    }
+    if (response.status === 401) {
+      // Solo si HABÍA un token: significa que ya no sirve (sesión vencida),
+      // así que lo tiramos y recargamos para que AuthGate pida uno nuevo. Sin
+      // token no hay nada que limpiar — es un login fallido o una pantalla
+      // sin iniciar sesión todavía, y eso lo maneja quien llamó.
+      if (token) {
+        clearToken();
+        window.location.reload();
+      }
     }
     throw new Error(`${response.status}: ${detail}`);
   }
@@ -53,6 +57,21 @@ function buildQuery(params) {
 }
 
 export const api = {
+  auth: {
+    login: (email, password) =>
+      request("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+    registro: (email, password, codigoInvitacion) =>
+      request("/auth/registro", {
+        method: "POST",
+        body: JSON.stringify({ email, password, codigo_invitacion: codigoInvitacion }),
+      }),
+    logout: () => request("/auth/logout", { method: "POST" }),
+    yo: () => request("/auth/yo"),
+    invitaciones: {
+      list: () => request("/auth/invitaciones"),
+      create: () => request("/auth/invitaciones", { method: "POST" }),
+    },
+  },
   fics: {
     list: (params = {}) => request(`/fics?${buildQuery(params)}`),
     get: (id) => request(`/fics/${id}`),

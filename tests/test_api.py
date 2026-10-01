@@ -572,7 +572,7 @@ def test_crear_y_actualizar_resena_hizo_llorar(client, db_session):
 
 
 def test_subir_borrar_y_limite_de_imagenes_en_resena(client, db_session, tmp_path, monkeypatch):
-    monkeypatch.setattr(Settings, "resenas_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "resenas_dir", lambda self, cuenta_id: tmp_path)
     fic = _crear_fic(db_session)
     r = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 5})
     resena_id = r.json()["id"]
@@ -596,7 +596,7 @@ def test_subir_borrar_y_limite_de_imagenes_en_resena(client, db_session, tmp_pat
 
 
 def test_resena_rechaza_mas_de_seis_imagenes(client, db_session, tmp_path, monkeypatch):
-    monkeypatch.setattr(Settings, "resenas_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "resenas_dir", lambda self, cuenta_id: tmp_path)
     fic = _crear_fic(db_session)
     resena_id = client.post(f"/api/fics/{fic.id}/resenas", json={"rating": 5}).json()["id"]
 

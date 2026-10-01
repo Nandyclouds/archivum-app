@@ -14,7 +14,7 @@ from app.main import app
 def db_session(tmp_path, monkeypatch):
     from app.config import settings
 
-    monkeypatch.setattr(type(settings), "emojis_dir", property(lambda self: tmp_path / "emojis"))
+    monkeypatch.setattr(type(settings), "emojis_dir", lambda self, cuenta_id: tmp_path / "emojis")
 
     engine = create_engine(
         "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool

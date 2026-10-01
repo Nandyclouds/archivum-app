@@ -23,7 +23,7 @@ def _read(name: str) -> str:
 
 @pytest.fixture(autouse=True)
 def _archivo_dir_temporal(tmp_path, monkeypatch):
-    monkeypatch.setattr(Settings, "archivo_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "archivo_dir", lambda self, cuenta_id: tmp_path)
 
 
 @pytest.fixture(autouse=True)

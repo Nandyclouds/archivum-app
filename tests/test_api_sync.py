@@ -55,7 +55,7 @@ def con_sync_secret(monkeypatch):
 def _archivo_dir_temporal(tmp_path, monkeypatch):
     from app.config import Settings
 
-    monkeypatch.setattr(Settings, "archivo_dir", property(lambda self: tmp_path))
+    monkeypatch.setattr(Settings, "archivo_dir", lambda self, cuenta_id: tmp_path)
 
 
 def _headers(secret):
