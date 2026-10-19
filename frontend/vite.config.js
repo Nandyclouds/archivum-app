@@ -36,9 +36,22 @@ export default defineConfig({
         },
       },
       workbox: {
-        // sin cache agresivo: es una app local contra datos que cambian
-        // seguido, no queremos servir stats viejas desde el service worker
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            // GET a la API: siempre intenta la red primero (nunca sirve
+            // datos viejos mientras hay internet) y solo si no hay
+            // conexión cae a la última respuesta guardada — así se puede
+            // seguir viendo lo que ya se abrió antes, sin internet.
+            urlPattern: ({ url, request }) => request.method === "GET" && url.pathname.startsWith("/api/"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "archivum-api-cache",
+              networkTimeoutSeconds: 10,
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
         // El navigateFallback (necesario para que rutas de React Router
         // como /fics/5 funcionen al entrar directo) por defecto intercepta
         // TODA navegación de página completa, incluida la API. Toda la API

@@ -10,4 +10,9 @@ export function setToken(token) {
 
 export function clearToken() {
   localStorage.removeItem(STORAGE_KEY);
+  // Si el próximo login es de otra cuenta en este mismo dispositivo, no
+  // debería poder ver sin internet lo que quedó cacheado de esta sesión.
+  if ("caches" in window) {
+    caches.delete("archivum-api-cache").catch(() => {});
+  }
 }
