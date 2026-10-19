@@ -12,7 +12,7 @@ export function TopCompleto() {
   const { tipo } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const anio = searchParams.get("anio") || "";
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   const anios = useFetch(() => api.stats.palabrasPorAnio());
   const aniosDisponibles = (anios.data ?? []).map((p) => p.periodo).sort().reverse();
@@ -106,6 +106,8 @@ export function TopCompleto() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={datos.data?.map((f) => f.id) ?? []}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             datos.reload();

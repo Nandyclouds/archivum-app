@@ -17,7 +17,7 @@ export function Buscar() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
   const q = searchParams.get("q") || "";
   const fandom = searchParams.get("fandom") || "";
   const ship = searchParams.getAll("ship");
@@ -580,6 +580,8 @@ export function Buscar() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={fics.data?.map((f) => f.id) ?? []}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             fics.reload();

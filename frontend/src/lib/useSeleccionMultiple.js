@@ -21,5 +21,9 @@ export function useSeleccionMultiple() {
 
   const limpiar = useCallback(() => setSeleccion(new Set()), []);
 
-  return { seleccion, activa: seleccion.size > 0, activar, alternar, limpiar };
+  const seleccionarTodos = useCallback((ids) => {
+    setSeleccion(new Set(ids));
+  }, []);
+
+  return { seleccion, activa: seleccion.size > 0, activar, alternar, limpiar, seleccionarTodos };
 }

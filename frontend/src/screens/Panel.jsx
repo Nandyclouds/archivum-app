@@ -11,7 +11,7 @@ export function Panel() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const anio = searchParams.get("anio") ?? "";
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   function setAnio(valor) {
     setSearchParams(valor ? { anio: valor } : {}, { replace: true });
@@ -211,6 +211,8 @@ export function Panel() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={recientes.data?.map((f) => f.id) ?? []}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             recientes.reload();

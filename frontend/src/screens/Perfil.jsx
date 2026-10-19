@@ -34,7 +34,7 @@ export function Perfil() {
   // Identidad, la insignia de CabeceraPerfil quedaba desactualizada hasta
   // recargar la página porque cada una tenía su propia copia).
   const perfil = useFetch(() => api.perfil.get(), [], "perfil-datos");
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   return (
     <div>
@@ -77,6 +77,8 @@ export function Perfil() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={fics.data?.map((f) => f.id) ?? []}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             fics.reload();

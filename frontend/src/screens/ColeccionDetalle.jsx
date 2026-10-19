@@ -14,7 +14,7 @@ export function ColeccionDetalle() {
   const navigate = useNavigate();
   const coleccion = useFetch(() => api.colecciones.get(id), [id]);
   const fics = useFetch(() => api.fics.list({ coleccion: id, limit: 200 }), [id]);
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   const [editando, setEditando] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -132,6 +132,8 @@ export function ColeccionDetalle() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={fics.data?.map((f) => f.id) ?? []}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             fics.reload();

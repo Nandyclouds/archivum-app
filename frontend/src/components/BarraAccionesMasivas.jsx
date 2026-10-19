@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Library, Tag, CircleCheck, Share2, X } from "lucide-react";
+import { Library, Tag, CircleCheck, CheckCheck, Share2, X } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 
@@ -9,8 +9,10 @@ const ESTADOS = ["pendiente", "leyendo", "leido", "abandonado"];
 
 /** Barra fija abajo que aparece mientras hay fics seleccionados (modo
  * selección de FilaFicSeleccionable) — agregar a colección/etiqueta, cambiar
- * estado de lectura, o mandar a armar una recomendación, todo en lote. */
-export function BarraAccionesMasivas({ seleccionIds, onLimpiar, onAplicado }) {
+ * estado de lectura, o mandar a armar una recomendación, todo en lote.
+ * `todosLosIds`/`onSeleccionarTodos` son opcionales: sin ellos, simplemente
+ * no aparece el botón de seleccionar todo. */
+export function BarraAccionesMasivas({ seleccionIds, onLimpiar, onAplicado, todosLosIds, onSeleccionarTodos }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [panel, setPanel] = useState(null); // "coleccion" | "etiqueta" | "estado" | null
@@ -121,6 +123,16 @@ export function BarraAccionesMasivas({ seleccionIds, onLimpiar, onAplicado }) {
       <div className="arv-masivo-barra">
         <span className="arv-masivo-cuenta">{t("buscar.seleccionados", { count: ids.length })}</span>
         <div style={{ display: "flex", gap: 4 }}>
+          {todosLosIds && (
+            <button
+              className="arv-icon-btn"
+              onClick={() => onSeleccionarTodos(todosLosIds)}
+              aria-label={t("buscar.seleccionarTodos")}
+              title={t("buscar.seleccionarTodos")}
+            >
+              <CheckCheck size={17} />
+            </button>
+          )}
           <button
             className={`arv-icon-btn${panel === "coleccion" ? " active" : ""}`}
             onClick={() => alternarPanel("coleccion")}

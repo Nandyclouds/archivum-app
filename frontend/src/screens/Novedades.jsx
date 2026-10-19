@@ -10,7 +10,7 @@ import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 export function Novedades() {
   const { t, i18n } = useTranslation();
   const { lista, cargando, recargar } = useNovedades();
-  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar } = useSeleccionMultiple();
+  const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   if (cargando) return <Cargando />;
 
@@ -91,6 +91,8 @@ export function Novedades() {
         <BarraAccionesMasivas
           seleccionIds={seleccion}
           onLimpiar={limpiar}
+          todosLosIds={[...new Set(lista.map((n) => n.fic_id))]}
+          onSeleccionarTodos={seleccionarTodos}
           onAplicado={() => {
             limpiar();
             recargar();
