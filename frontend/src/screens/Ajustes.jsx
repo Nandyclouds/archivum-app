@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Trash2 } from "lucide-react";
+import { ArrowUpDown, Copy, Trash2 } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { InfoPopover } from "../components/InfoPopover";
@@ -268,6 +268,7 @@ function InvitacionesAdmin() {
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState("");
   const [copiado, setCopiado] = useState(null);
+  const [ordenAscendente, setOrdenAscendente] = useState(false);
 
   if (!yo.data?.es_admin) return null;
 
@@ -290,6 +291,11 @@ function InvitacionesAdmin() {
     setTimeout(() => setCopiado(null), 1500);
   }
 
+  const lista = [...(invitaciones.data ?? [])].sort((a, b) => {
+    const diff = new Date(a.creada_en) - new Date(b.creada_en);
+    return ordenAscendente ? diff : -diff;
+  });
+
   return (
     <div className="arv-card">
       <h3 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
@@ -297,36 +303,47 @@ function InvitacionesAdmin() {
         <InfoPopover>{t("perfil.invitacionesInfo")}</InfoPopover>
       </h3>
 
-      <button className="arv-btn arv-btn-secondary" disabled={generando} onClick={generar} style={{ marginBottom: 14 }}>
-        {generando ? t("perfil.generando") : t("perfil.generarInvitacion")}
-      </button>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <button className="arv-btn arv-btn-secondary" disabled={generando} onClick={generar}>
+          {generando ? t("perfil.generando") : t("perfil.generarInvitacion")}
+        </button>
+        {lista.length > 1 && (
+          <button
+            className="arv-btn arv-btn-secondary"
+            onClick={() => setOrdenAscendente((v) => !v)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <ArrowUpDown size={14} />
+            {ordenAscendente ? t("perfil.masAntiguoPrimero") : t("perfil.masNuevoPrimero")}
+          </button>
+        )}
+      </div>
       {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
-      {(invitaciones.data ?? []).length === 0 ? (
+      {lista.length === 0 ? (
         <p className="arv-muted">{t("perfil.sinInvitaciones")}</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {invitaciones.data.map((inv) => (
-            <div
-              key={inv.codigo}
-              style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}
-            >
-              <code style={{ background: "var(--color-surface-alt)", padding: "2px 6px", borderRadius: 4 }}>
-                {inv.codigo}
-              </code>
-              <span className="arv-muted">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {lista.map((inv) => (
+            <div key={inv.codigo} style={{ fontSize: 13 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <code style={{ background: "var(--color-surface-alt)", padding: "2px 6px", borderRadius: 4 }}>
+                  {inv.codigo}
+                </code>
+                {!inv.usada && (
+                  <button
+                    onClick={() => copiar(inv.codigo)}
+                    aria-label={t("perfil.copiarCodigo")}
+                    style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--color-text-muted)", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <Copy size={13} />
+                    {copiado === inv.codigo && t("perfil.codigoCopiado")}
+                  </button>
+                )}
+              </div>
+              <span className="arv-muted" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
                 {inv.usada ? t("perfil.invitacionUsadaPor", { email: inv.usada_por_email }) : t("perfil.invitacionSinUsar")}
               </span>
-              {!inv.usada && (
-                <button
-                  onClick={() => copiar(inv.codigo)}
-                  aria-label={t("perfil.copiarCodigo")}
-                  style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--color-text-muted)", padding: 0, display: "flex", alignItems: "center", gap: 4 }}
-                >
-                  <Copy size={13} />
-                  {copiado === inv.codigo && t("perfil.codigoCopiado")}
-                </button>
-              )}
             </div>
           ))}
         </div>

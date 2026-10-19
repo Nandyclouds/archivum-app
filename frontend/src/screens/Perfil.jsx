@@ -24,7 +24,7 @@ const PALETA_FAVORITOS = [
 export function Perfil() {
   const { t } = useTranslation();
   const fics = useFetch(
-    () => api.fics.list({ limit: 200, orden: "ultima_lectura" }),
+    () => api.fics.list({ limit: 1000, orden: "ultima_lectura" }),
     [],
     "perfil-historial"
   );

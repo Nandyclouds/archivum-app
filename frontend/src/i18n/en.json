@@ -356,6 +356,8 @@
     "copiarCodigo": "Copy",
     "codigoCopiado": "Copied",
     "sinInvitaciones": "You haven't generated any invitations yet.",
+    "masNuevoPrimero": "Newest first",
+    "masAntiguoPrimero": "Oldest first",
     "cuenta": "Account",
     "cerrarSesion": "Log out",
     "credencialesAo3": "AO3 credentials",
