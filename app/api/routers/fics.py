@@ -88,6 +88,7 @@ def listar_fics(
         "'recientes' (agregados a la biblioteca más recientemente primero) o "
         "'palabras' (más palabras primero)",
     ),
+    direccion: str = Query("desc", pattern="^(asc|desc)$", description="Sentido de 'orden' — no aplica a 'titulo'"),
     limit: int = Query(50, le=1000),
     offset: int = 0,
 ):
@@ -175,19 +176,21 @@ def listar_fics(
             .join(Lectura, Lectura.id == ultimas.c.ultima_id)
             .filter(Lectura.estado == estado)
         )
+    ascendente = direccion == "asc"
     if orden == "recientes":
-        query = query.order_by(Fic.fecha_primer_import.desc())
+        columna = Fic.fecha_primer_import.asc() if ascendente else Fic.fecha_primer_import.desc()
+        query = query.order_by(columna)
     elif orden == "palabras":
-        query = query.order_by(Fic.word_count.desc())
+        columna = Fic.word_count.asc() if ascendente else Fic.word_count.desc()
+        query = query.order_by(columna)
     elif orden == "ultima_lectura":
         ultimas_fechas = (
             db.query(Lectura.fic_id, func.max(Lectura.fecha_fin).label("ultima_fecha"))
             .group_by(Lectura.fic_id)
             .subquery()
         )
-        query = query.outerjoin(ultimas_fechas, ultimas_fechas.c.fic_id == Fic.id).order_by(
-            ultimas_fechas.c.ultima_fecha.desc().nulls_last(), Fic.titulo
-        )
+        columna = ultimas_fechas.c.ultima_fecha.asc().nulls_last() if ascendente else ultimas_fechas.c.ultima_fecha.desc().nulls_last()
+        query = query.outerjoin(ultimas_fechas, ultimas_fechas.c.fic_id == Fic.id).order_by(columna, Fic.titulo)
     else:
         query = query.order_by(Fic.titulo)
 

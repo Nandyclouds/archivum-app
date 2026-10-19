@@ -311,6 +311,8 @@
     "citaFavoritaEtiqueta": "CITA FAVORITA",
     "de": "de {{fuente}}",
     "historialDeLectura": "Historial de lectura",
+    "ordenUltimaLectura": "Último leído",
+    "ordenUltimoAgregado": "Último agregado",
     "sinFicsImportados": "Todavía no importaste ningún fic.",
     "bucketLabel": {
       "drabble (<1k)": "Drabble (<1k)",

@@ -133,6 +133,33 @@ def test_listar_fics_orden_ultima_lectura(client, db_session):
     assert [f["titulo"] for f in r.json()] == ["Leído hace poco", "Leído hace mucho", "Sin leer"]
 
 
+def test_listar_fics_direccion_ascendente(client, db_session):
+    viejo = _crear_fic(db_session, ao3_id="1", titulo="Viejo")
+    viejo.fecha_primer_import = datetime.datetime(2024, 1, 1)
+    nuevo = _crear_fic(db_session, ao3_id="2", titulo="Nuevo")
+    nuevo.fecha_primer_import = datetime.datetime(2026, 1, 1)
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "recientes", "direccion": "asc"})
+    assert [f["titulo"] for f in r.json()] == ["Viejo", "Nuevo"]
+
+
+def test_listar_fics_ultima_lectura_direccion_ascendente(client, db_session):
+    leido_hace_poco = _crear_fic(db_session, ao3_id="1", titulo="Leído hace poco")
+    leido_hace_mucho = _crear_fic(db_session, ao3_id="2", titulo="Leído hace mucho")
+    sin_leer = _crear_fic(db_session, ao3_id="3", titulo="Sin leer")
+    db_session.add_all(
+        [
+            Lectura(fic_id=leido_hace_poco.id, estado="leido", fecha_fin=datetime.date(2026, 1, 1)),
+            Lectura(fic_id=leido_hace_mucho.id, estado="leido", fecha_fin=datetime.date(2020, 1, 1)),
+        ]
+    )
+    db_session.commit()
+
+    r = client.get("/api/fics", params={"orden": "ultima_lectura", "direccion": "asc"})
+    assert [f["titulo"] for f in r.json()] == ["Leído hace mucho", "Leído hace poco", "Sin leer"]
+
+
 def test_categorias_warnings_se_parsean_como_lista(client, db_session):
     fic = _crear_fic(db_session)
     fic.categorias = "F/M|Multi"

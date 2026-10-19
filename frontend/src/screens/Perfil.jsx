@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Settings, User } from "lucide-react";
+import { ArrowUpDown, Pencil, Settings, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -23,10 +23,12 @@ const PALETA_FAVORITOS = [
 
 export function Perfil() {
   const { t } = useTranslation();
+  const [ordenHistorial, setOrdenHistorial] = useState("ultima_lectura");
+  const [direccionHistorial, setDireccionHistorial] = useState("desc");
   const fics = useFetch(
-    () => api.fics.list({ limit: 1000, orden: "ultima_lectura" }),
-    [],
-    "perfil-historial"
+    () => api.fics.list({ limit: 1000, orden: ordenHistorial, direccion: direccionHistorial }),
+    [ordenHistorial, direccionHistorial],
+    `perfil-historial:${ordenHistorial}:${direccionHistorial}`
   );
   // Se pide una sola vez acá y se pasa a las tres secciones que lo
   // necesitan (antes cada una lo pedía por su cuenta: 3 pedidos idénticos
@@ -45,7 +47,31 @@ export function Perfil() {
       <Graficos />
 
       <div className="arv-card" style={seleccionActiva ? { marginBottom: 90 } : undefined}>
-        <h3>{t("perfil.historialDeLectura")}</h3>
+        <h3 style={{ marginBottom: 10 }}>{t("perfil.historialDeLectura")}</h3>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+          <div className="arv-segmentado">
+            <button
+              className={ordenHistorial === "ultima_lectura" ? "active" : ""}
+              onClick={() => setOrdenHistorial("ultima_lectura")}
+            >
+              {t("perfil.ordenUltimaLectura")}
+            </button>
+            <button
+              className={ordenHistorial === "recientes" ? "active" : ""}
+              onClick={() => setOrdenHistorial("recientes")}
+            >
+              {t("perfil.ordenUltimoAgregado")}
+            </button>
+          </div>
+          <button
+            className="arv-icon-btn"
+            onClick={() => setDireccionHistorial((d) => (d === "desc" ? "asc" : "desc"))}
+            aria-label={direccionHistorial === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
+            title={direccionHistorial === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
+          >
+            <ArrowUpDown size={16} />
+          </button>
+        </div>
         {fics.loading && <Cargando />}
         {fics.error && <ErrorCarga error={fics.error} onReintentar={fics.reload} />}
         {fics.data?.length === 0 && <Vacio>{t("perfil.sinFicsImportados")}</Vacio>}
