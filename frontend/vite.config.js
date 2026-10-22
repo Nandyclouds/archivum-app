@@ -41,12 +41,15 @@ export default defineConfig({
             // GET a la API: siempre intenta la red primero (nunca sirve
             // datos viejos mientras hay internet) y solo si no hay
             // conexión cae a la última respuesta guardada — así se puede
-            // seguir viendo lo que ya se abrió antes, sin internet.
+            // seguir viendo lo que ya se abrió antes, sin internet. Sin
+            // networkTimeoutSeconds a propósito: con un límite de tiempo,
+            // una conexión lenta (pero funcionando) caía igual a la
+            // versión vieja antes de que la respuesta real llegara — una
+            // red de verdad caída falla sola, rápido, sin necesitar reloj.
             urlPattern: ({ url, request }) => request.method === "GET" && url.pathname.startsWith("/api/"),
             handler: "NetworkFirst",
             options: {
               cacheName: "archivum-api-cache",
-              networkTimeoutSeconds: 10,
               cacheableResponse: { statuses: [200] },
               expiration: { maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
