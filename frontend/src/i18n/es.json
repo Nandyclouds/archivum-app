@@ -267,7 +267,7 @@
   },
   "compartir": {
     "importando": "Importando…",
-    "esperaLimite": "Puede tardar ~10 segundos por el límite de velocidad de AO3.",
+    "importEnCamino": "Import en camino",
     "sinLink": "No encontré un link",
     "algoFallo": "Algo falló",
     "pegaloAca": "Pégalo aquí:",

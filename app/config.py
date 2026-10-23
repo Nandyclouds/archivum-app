@@ -33,6 +33,16 @@ class Settings(BaseSettings):
     gmail_address: str = ""
     gmail_app_password: str = ""
 
+    # El sync con AO3 corre en GitHub Actions, no en este servidor — Hetzner
+    # no le llega de forma confiable a AO3 (ver app/api/routers/sync.py).
+    # ARCHIVUM_SYNC_SECRET lo usa el workflow para autenticarse de vuelta
+    # contra /api/sync/*; GITHUB_PAT/GITHUB_REPO/GITHUB_WORKFLOW_FILE son
+    # para que esta app pueda disparar el workflow vía la API de GitHub.
+    archivum_sync_secret: str = ""
+    github_pat: str = ""
+    github_repo: str = ""
+    github_workflow_file: str = "ao3-sync.yml"
+
     @property
     def db_path(self) -> Path:
         """Base de datos de un solo tenant: la usa app/cli.py (herramienta

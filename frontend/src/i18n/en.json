@@ -267,7 +267,7 @@
   },
   "compartir": {
     "importando": "Importing…",
-    "esperaLimite": "It can take ~10 seconds because of AO3's rate limit.",
+    "importEnCamino": "Import on its way",
     "sinLink": "I couldn't find a link",
     "algoFallo": "Something went wrong",
     "pegaloAca": "Paste it here:",

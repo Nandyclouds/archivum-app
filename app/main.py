@@ -74,6 +74,21 @@ _CUENTA_UNICA = SimpleNamespace(
 # por definición corren antes de tener una sesión).
 _RUTAS_PUBLICAS = {"/api/health", "/api/auth/login", "/api/auth/registro"}
 
+# Rutas que habla el workflow de GitHub Actions (nunca el frontend): piden
+# ARCHIVUM_SYNC_SECRET por header en vez del token de usuario. Ver
+# app/api/routers/sync.py.
+_RUTAS_SYNC_POR_CUENTA = {
+    "/api/sync/known-ids",
+    "/api/sync/ingest-fic",
+    "/api/sync/ingest-epub",
+    "/api/sync/incompletos",
+    "/api/sync/credenciales-ao3",
+    "/api/sync/notificar-novedades",
+}
+# Esta no es de una cuenta en particular: lista todas, para la corrida
+# diaria programada (ver .github/workflows/ao3-sync.yml).
+_RUTAS_SYNC_GLOBALES = {"/api/sync/cuentas-activas"}
+
 
 @app.middleware("http")
 async def exigir_token(request: Request, call_next):
@@ -104,6 +119,26 @@ async def exigir_token(request: Request, call_next):
         and path.startswith("/api/recomendaciones/")
         and path != "/api/recomendaciones/"
     ):
+        return await call_next(request)
+
+    if path in _RUTAS_SYNC_GLOBALES:
+        secret = request.headers.get("x-sync-secret")
+        if not settings.archivum_sync_secret or secret != settings.archivum_sync_secret:
+            return JSONResponse({"detail": "No autorizado"}, status_code=401)
+        return await call_next(request)
+
+    if path in _RUTAS_SYNC_POR_CUENTA:
+        secret = request.headers.get("x-sync-secret")
+        if not settings.archivum_sync_secret or secret != settings.archivum_sync_secret:
+            return JSONResponse({"detail": "No autorizado"}, status_code=401)
+        cuenta_id = request.query_params.get("cuenta_id")
+        if not cuenta_id or not cuenta_id.isdigit():
+            return JSONResponse({"detail": "Falta cuenta_id"}, status_code=400)
+        with ControlSessionLocal() as db:
+            cuenta = db.get(Cuenta, int(cuenta_id))
+        if cuenta is None or not cuenta.activa:
+            return JSONResponse({"detail": "No autorizado"}, status_code=401)
+        request.state.cuenta = cuenta
         return await call_next(request)
 
     if not settings.archivum_auth_token:

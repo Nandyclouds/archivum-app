@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
@@ -7,13 +7,17 @@ import { api } from "../lib/api";
 // vite.config.js). Chrome manda la URL compartida en ?url=..., pero a veces
 // (compartir texto seleccionado en vez del link de la barra) viene en
 // ?text=... — probamos los dos.
+//
+// El import corre en segundo plano (GitHub Actions, ver app/api/routers/
+// sync.py — este servidor no le llega de forma confiable a AO3), así que
+// acá solo se dispara y se avisa que puede tardar unos minutos, no se
+// puede saltar directo al fic todavía.
 export function Compartir() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
   const [estado, setEstado] = useState("cargando");
   const [error, setError] = useState(null);
   const [urlManual, setUrlManual] = useState("");
-  const navigate = useNavigate();
 
   const urlCompartida = params.get("url") || extraerUrl(params.get("text")) || "";
 
@@ -22,22 +26,22 @@ export function Compartir() {
       setEstado("sin-url");
       return;
     }
-    api.ao3
-      .importarPorUrl(urlCompartida)
-      .then((fic) => navigate(`/fics/${fic.id}`, { replace: true }))
+    api.sync
+      .trigger("fic", { url: urlCompartida })
+      .then(() => setEstado("disparado"))
       .catch((err) => {
         setEstado("error");
         setError(err.message);
       });
-  }, [urlCompartida, navigate]);
+  }, [urlCompartida]);
 
   async function importarManual() {
     if (!urlManual.trim()) return;
     setEstado("cargando");
     setError(null);
     try {
-      const fic = await api.ao3.importarPorUrl(urlManual.trim());
-      navigate(`/fics/${fic.id}`, { replace: true });
+      await api.sync.trigger("fic", { url: urlManual.trim() });
+      setEstado("disparado");
     } catch (err) {
       setEstado("error");
       setError(err.message);
@@ -48,7 +52,18 @@ export function Compartir() {
     return (
       <div className="arv-card">
         <h3>{t("compartir.importando")}</h3>
-        <p className="arv-muted">{t("compartir.esperaLimite")}</p>
+      </div>
+    );
+  }
+
+  if (estado === "disparado") {
+    return (
+      <div className="arv-card">
+        <h3>{t("compartir.importEnCamino")}</h3>
+        <p className="arv-muted">{t("importarPorUrl.enCamino")}</p>
+        <Link to="/panel" className="arv-muted" style={{ display: "block", marginTop: 12 }}>
+          {t("compartir.volverAlPanel")}
+        </Link>
       </div>
     );
   }
