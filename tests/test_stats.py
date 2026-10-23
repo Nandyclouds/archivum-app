@@ -165,8 +165,32 @@ def test_resumen_general(session):
     assert resumen["total_fics"] == 1
     assert resumen["total_lecturas_leido"] == 1
     assert resumen["total_palabras_leidas"] == 1000
+    assert resumen["total_lecturas_leyendo"] == 0
+    assert resumen["total_palabras_leyendo"] == 0
     assert resumen["total_fandoms"] == 1
     assert resumen["total_ships"] == 1
+
+
+def test_resumen_general_cuenta_lo_que_esta_leyendo_aparte_de_lo_leido(session):
+    """Un fic 'leyendo' (sin terminar) suma a su propio total, no al de
+    'leído' — si no, "palabras leídas" incluiría fics que todavía no
+    terminó."""
+    terminado = _make_fic(session, ao3_id="1", titulo="A", word_count=1000, complete=True, fandom="F")
+    a_medias = _make_fic(session, ao3_id="2", titulo="B", word_count=5000, complete=False, fandom="F")
+    session.add(Lectura(fic_id=terminado.id, estado="leido", fecha_fin=datetime.date(2025, 1, 1)))
+    session.add(Lectura(fic_id=a_medias.id, estado="leyendo"))
+    session.commit()
+
+    resumen = stats.resumen_general(session)
+    assert resumen["total_lecturas_leido"] == 1
+    assert resumen["total_palabras_leidas"] == 1000
+    assert resumen["total_lecturas_leyendo"] == 1
+    assert resumen["total_palabras_leyendo"] == 5000
+
+    # No se filtra por año: es un estado actual, no algo que "pasó" en 2025.
+    resumen_2025 = stats.resumen_general(session, anio=2025)
+    assert resumen_2025["total_lecturas_leyendo"] == 1
+    assert resumen_2025["total_palabras_leyendo"] == 5000
 
 
 def test_resumen_general_filtrado_por_anio(session):

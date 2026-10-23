@@ -125,7 +125,14 @@ export function Panel() {
           Object.entries(estadoLectura.data).map(([estado, total]) => (
             <Link to={`/buscar?estado=${estado}`} className="arv-list-item arv-row-link" key={estado}>
               <span>{t(`panel.estadoLabel.${estado}`, estado)}</span>
-              <strong>{total}</strong>
+              <strong>
+                {total}
+                {estado === "leyendo" && r.total_palabras_leyendo > 0 && (
+                  <span className="arv-muted" style={{ fontWeight: "normal", marginLeft: 6 }}>
+                    ({t("panel.palabrasLeyendo", { palabras: formatoCompacto(r.total_palabras_leyendo) })})
+                  </span>
+                )}
+              </strong>
             </Link>
           ))}
         {estadoLectura.data && Object.keys(estadoLectura.data).length === 0 && (

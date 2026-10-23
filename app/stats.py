@@ -253,6 +253,12 @@ def resumen_general(session: Session, anio: int | None = None) -> dict:
 
     Con `anio`, todo lo demás se restringe a lecturas completadas ese año
     (mismo criterio que `top_fandoms`/`top_ships`, ver `_filtrar_por_anio_leido`).
+
+    `total_lecturas_leyendo`/`total_palabras_leyendo` son aparte: fics que
+    está leyendo AHORA (estado='leyendo', sin fecha_fin todavía), así que no
+    tiene sentido filtrarlos por año — son siempre el total actual, se pida
+    el año que se pida. Van separados de los "leídos" a propósito: contarlos
+    juntos haría que "palabras leídas" incluyera fics que todavía no terminó.
     """
     total_fics = session.query(func.count(Fic.id)).scalar()
 
@@ -270,10 +276,19 @@ def resumen_general(session: Session, anio: int | None = None) -> dict:
         fandoms_leidos = _filtrar_por_anio_leido(fandoms_leidos, FicFandom.fic_id, anio)
         ships_leidos = _filtrar_por_anio_leido(ships_leidos, FicShip.fic_id, anio)
 
+    lecturas_leyendo = session.query(func.count(Lectura.id)).filter(Lectura.estado == "leyendo")
+    palabras_leyendo = (
+        session.query(func.coalesce(func.sum(Fic.word_count), 0))
+        .join(Lectura, Lectura.fic_id == Fic.id)
+        .filter(Lectura.estado == "leyendo")
+    )
+
     return {
         "total_fics": total_fics,
         "total_lecturas_leido": lecturas_leido.scalar(),
         "total_palabras_leidas": palabras_leidas.scalar(),
+        "total_lecturas_leyendo": lecturas_leyendo.scalar(),
+        "total_palabras_leyendo": palabras_leyendo.scalar(),
         "total_fandoms": fandoms_leidos.scalar(),
         "total_ships": ships_leidos.scalar(),
     }

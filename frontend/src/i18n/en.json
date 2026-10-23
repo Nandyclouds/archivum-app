@@ -59,6 +59,7 @@
     "todaviaNoHayFics": "No fics imported yet.",
     "estadoDeLectura": "Reading status",
     "sinEstadoMarcado": "You haven't marked any fic with a reading status yet.",
+    "palabrasLeyendo": "{{palabras}} words",
     "shipsFavoritos": "Favorite ships",
     "shipsFavoritosEnAnio": "Favorite ships in {{anio}}",
     "sinShips": "No ships yet.",

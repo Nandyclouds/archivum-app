@@ -59,6 +59,7 @@
     "todaviaNoHayFics": "Todavía no hay fics importados.",
     "estadoDeLectura": "Estado de lectura",
     "sinEstadoMarcado": "Todavía no marcaste ningún fic con un estado de lectura.",
+    "palabrasLeyendo": "{{palabras}} palabras",
     "shipsFavoritos": "Ships favoritos",
     "shipsFavoritosEnAnio": "Ships favoritos en {{anio}}",
     "sinShips": "Sin ships todavía.",
