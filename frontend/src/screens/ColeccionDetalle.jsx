@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
@@ -12,8 +13,13 @@ export function ColeccionDetalle() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const [direccion, setDireccion] = useState("desc");
   const coleccion = useFetch(() => api.colecciones.get(id), [id]);
-  const fics = useFetch(() => api.fics.list({ coleccion: id, limit: 200 }), [id]);
+  const fics = useFetch(
+    () => api.fics.list({ coleccion: id, limit: 200, orden: "recientes", direccion }),
+    [id, direccion],
+    `coleccion-detalle:${id}:${direccion}`
+  );
   const { seleccion, activa: seleccionActiva, activar, alternar, limpiar, seleccionarTodos } = useSeleccionMultiple();
 
   const [editando, setEditando] = useState(false);
@@ -80,9 +86,19 @@ export function ColeccionDetalle() {
             </button>
           </div>
         )}
-        <p className="arv-muted" style={{ marginBottom: 0 }}>
-          {t("coleccionDetalle.fics", { count: c.cantidad_fics })}
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p className="arv-muted" style={{ marginBottom: 0 }}>
+            {t("coleccionDetalle.fics", { count: c.cantidad_fics })}
+          </p>
+          <button
+            className="arv-icon-btn"
+            onClick={() => setDireccion((d) => (d === "desc" ? "asc" : "desc"))}
+            aria-label={direccion === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
+            title={direccion === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
+          >
+            <ArrowUpDown size={16} />
+          </button>
+        </div>
       </div>
 
       {fics.loading && <Cargando />}
