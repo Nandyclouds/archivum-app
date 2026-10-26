@@ -91,12 +91,22 @@ export function ColeccionDetalle() {
             {t("coleccionDetalle.fics", { count: c.cantidad_fics })}
           </p>
           <button
-            className="arv-icon-btn"
             onClick={() => setDireccion((d) => (d === "desc" ? "asc" : "desc"))}
             aria-label={direccion === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
             title={direccion === "desc" ? t("perfil.masNuevoPrimero") : t("perfil.masAntiguoPrimero")}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "var(--color-text-muted)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 6,
+              flex: "none",
+            }}
           >
-            <ArrowUpDown size={16} />
+            <ArrowUpDown size={18} />
           </button>
         </div>
       </div>
