@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import base64
 import os
+import random
 import sys
 import time
 
@@ -44,11 +45,19 @@ from app.ao3.importer import (
 from app.ao3.parser import parse_history_page, parse_subscriptions_page, parse_work_page, work_id_from_url
 
 # Tope de tiempo total para los modos que recorren varias páginas de listado
-# (bookmarks, marcados): AO3 a veces devuelve 429/503 sostenido durante un
-# rato — reintentamos con pausas en vez de morir de una, pero sin pasarnos
-# del límite de minutos del runner de GitHub Actions.
-PRESUPUESTO_TOTAL_SEGUNDOS = 50 * 60
-ESPERA_ENTRE_REINTENTOS_SEGUNDOS = 5 * 60
+# (bookmarks, marcados): AO3 a veces devuelve 429/503/525 sostenido durante
+# un rato — reintentamos con pausas en vez de morir de una. Antes esto
+# llegaba a los 50 min del runner, lo que en la práctica significaba
+# machacar a AO3 con reintentos cada 5 min durante casi una hora seguida sin
+# lograr nada (ver corridas de prueba de octubre 2026) — probablemente lo
+# contrario de lo que conviene si el bloqueo es por reputación de IP. Ahora
+# se corta antes y, si sigue fallando, es mejor volver a correrlo más tarde
+# (corrida nueva, con su propia sesión) que insistir en la misma ventana.
+PRESUPUESTO_TOTAL_SEGUNDOS = 15 * 60
+ESPERA_ENTRE_REINTENTOS_SEGUNDOS = 3 * 60
+# Margen aleatorio sumado a la espera entre reintentos, para no repetir
+# siempre el mismo intervalo exacto.
+JITTER_REINTENTOS_SEGUNDOS = 60
 
 # Nombre de la colección donde caen los fics de "Marked for Later" — mismo
 # mecanismo que cualquier otro tag de bookmark (ver reading_status.py), pero
@@ -98,7 +107,10 @@ def _build_client() -> RateLimitedClient:
     if not contact_email:
         print("Falta AO3_CONTACT_EMAIL.", file=sys.stderr)
         sys.exit(1)
-    return RateLimitedClient(contact_email=contact_email, min_delay_seconds=6.0)
+    # Delay más largo y con jitter (8 a 14s entre pedidos, en vez de 6s fijos
+    # siempre iguales): más lento, pero un patrón menos reconocible como bot
+    # para la mitigación de Cloudflare.
+    return RateLimitedClient(contact_email=contact_email, min_delay_seconds=8.0, jitter_seconds=6.0)
 
 
 def _login(client: RateLimitedClient, username: str, password: str) -> None:
@@ -292,8 +304,9 @@ def modo_bookmarks(
             if transcurrido + ESPERA_ENTRE_REINTENTOS_SEGUNDOS > PRESUPUESTO_TOTAL_SEGUNDOS:
                 print(f"AO3 sigue fallando y se acabó el presupuesto de tiempo: {exc}")
                 break
-            print(f"AO3 falló listando páginas ({exc}). Esperando 5 min antes de reintentar...")
-            time.sleep(ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
+            espera = ESPERA_ENTRE_REINTENTOS_SEGUNDOS + random.uniform(0, JITTER_REINTENTOS_SEGUNDOS)
+            print(f"AO3 falló listando páginas ({exc}). Esperando {espera / 60:.1f} min antes de reintentar...")
+            time.sleep(espera)
             # Reanudar desde la página donde se cortó (progreso["pagina"]),
             # no desde la 1: volver a pedir todas las páginas ya vistas cuesta
             # una petición rate-limitada c/u, y con AO3 fallando seguido eso
@@ -363,8 +376,9 @@ def _sync_listado_con_tag(
             if transcurrido + ESPERA_ENTRE_REINTENTOS_SEGUNDOS > PRESUPUESTO_TOTAL_SEGUNDOS:
                 print(f"AO3 sigue fallando y se acabó el presupuesto de tiempo: {exc}")
                 break
-            print(f"AO3 falló listando páginas ({exc}). Esperando 5 min antes de reintentar...")
-            time.sleep(ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
+            espera = ESPERA_ENTRE_REINTENTOS_SEGUNDOS + random.uniform(0, JITTER_REINTENTOS_SEGUNDOS)
+            print(f"AO3 falló listando páginas ({exc}). Esperando {espera / 60:.1f} min antes de reintentar...")
+            time.sleep(espera)
             # Igual que en modo_bookmarks: reanudar desde progreso["pagina"]
             # en vez de la página 1, para no quemar el presupuesto de tiempo
             # re-pidiendo páginas de listado ya vistas.

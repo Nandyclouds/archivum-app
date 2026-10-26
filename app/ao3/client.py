@@ -9,6 +9,7 @@ acuerde de respetarlos.
 
 from __future__ import annotations
 
+import random
 import time
 from dataclasses import dataclass, field
 
@@ -35,6 +36,10 @@ class RequestFailedError(Exception):
 class RateLimitedClient:
     contact_email: str
     min_delay_seconds: float = 4.0
+    # Margen aleatorio (0 a jitter_seconds) que se suma a min_delay_seconds en
+    # cada espera: un delay siempre idéntico entre pedidos es un patrón fácil
+    # de reconocer como bot; con jitter cada intervalo queda distinto.
+    jitter_seconds: float = 0.0
     max_requests_per_session: int = 500
     max_backoff_retries: int = 6
     backoff_base_seconds: float = 2.0
@@ -43,6 +48,7 @@ class RateLimitedClient:
     # Inyectables para tests: evitan esperas reales de segundos/horas.
     sleep_fn: callable = field(default=time.sleep)
     time_fn: callable = field(default=time.monotonic)
+    random_fn: callable = field(default=random.uniform)
     http_session: requests.Session | None = None
 
     def __post_init__(self):
@@ -117,6 +123,9 @@ class RateLimitedClient:
         if self._last_request_at is None:
             return
         elapsed = self.time_fn() - self._last_request_at
-        remaining = self.min_delay_seconds - elapsed
+        objetivo = self.min_delay_seconds
+        if self.jitter_seconds:
+            objetivo += self.random_fn(0, self.jitter_seconds)
+        remaining = objetivo - elapsed
         if remaining > 0:
             self.sleep_fn(remaining)
