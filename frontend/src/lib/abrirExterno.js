@@ -33,7 +33,15 @@ export function abrirEnNavegadorExterno(url) {
   const esAndroid = /Android/i.test(navigator.userAgent);
   if (esAndroid) {
     const sinEsquema = absoluta.replace(/^https?:\/\//, "");
-    window.location.href = `intent://${sinEsquema}#Intent;scheme=https;package=com.android.chrome;end;`;
+    // S.browser_fallback_url es clave: si el celular no tiene Chrome
+    // instalado con ese package exacto (nada raro fuera de la Play Store,
+    // o en celulares que vienen con otro navegador por default), Android
+    // no sabe qué hacer con el intent y lo que termina abriendo (o cómo lo
+    // renderiza) queda indefinido — justo el tipo de cosa que explicaría
+    // que el "modo lectura" se vea distinto en otro celular sin que haya
+    // cambiado nada del lado del servidor. Con el fallback, si Chrome no
+    // está, Android navega normal a esta URL en el navegador que sí haya.
+    window.location.href = `intent://${sinEsquema}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(absoluta)};end;`;
   } else {
     window.open(absoluta, "_blank", "noopener");
   }
