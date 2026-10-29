@@ -53,6 +53,10 @@ _MODO_LECTURA = """
     text-align: left !important;
     box-shadow: none !important;
     border-color: #e3d3b6 !important;
+    color: #222 !important;
+  }
+  a, a:visited {
+    color: #a0522d !important;
   }
   p { margin: 0 0 1.2em !important; }
 </style>
