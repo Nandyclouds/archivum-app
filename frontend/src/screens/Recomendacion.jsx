@@ -157,11 +157,13 @@ function FicRecomendado({ fic, token, estaLogueada }) {
           )}
           {estaLogueada && (
             <button
-              className="arv-btn arv-btn-secondary arv-reco-fic-link"
+              className={`arv-btn arv-btn-secondary arv-reco-fic-link${
+                estado === "hecho" ? " arv-reco-fic-link-hecho" : ""
+              }`}
               disabled={estado === "agregando" || estado === "hecho"}
               onClick={agregar}
             >
-              {estado === "hecho" ? t("recomendacion.agregado") : t("recomendacion.agregarALecturas")}
+              {estado === "hecho" ? `✓ ${t("recomendacion.agregado")}` : t("recomendacion.agregarALecturas")}
             </button>
           )}
         </div>

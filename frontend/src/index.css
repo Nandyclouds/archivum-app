@@ -1557,6 +1557,16 @@ select.arv-input {
   font-size: 12.5px;
   text-decoration: none;
 }
+/* El estado "ya agregado" queda disabled (no se puede volver a tocar), pero
+   .arv-btn:disabled baja la opacidad al 50% — con eso se ve apagado al lado
+   de los otros dos botones de la fila en vez de distinto a propósito. Este
+   estilo no dimmea: usa los mismos colores que los tags del fic, para que
+   toda la fila (tags + botones) se vea como un mismo lenguaje visual. */
+.arv-reco-fic-link-hecho:disabled {
+  opacity: 1;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
 .arv-reco-footer {
   text-align: center;
   color: var(--color-text-muted);
