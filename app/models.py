@@ -229,6 +229,12 @@ class Fic(Base):
         back_populates="fic", cascade="all, delete-orphan"
     )
 
+    @property
+    def tiene_copia_html(self) -> bool:
+        """Para ListaFicOut: si una lista de recomendaciones puede ofrecer
+        la copia archivada de este fic además del link a AO3."""
+        return any(a.formato == "html" for a in self.archivos)
+
 
 class Lectura(Base):
     __tablename__ = "lecturas"

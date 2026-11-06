@@ -264,7 +264,16 @@
   },
   "recomendacion": {
     "noExiste": "This list doesn't exist or was deleted.",
-    "hechoCon": "Made with Archivum"
+    "hechoCon": "Made with Archivum",
+    "verCopiaArchivada": "View archived copy",
+    "agregarALecturas": "Add to my reading list",
+    "agregarTodosALecturas": "Add all to my reading list",
+    "agregando": "Adding…",
+    "agregado": "Added",
+    "yaLaTenias": "Already had it",
+    "errorAgregar": "Couldn't add it: {{msg}}",
+    "resultadoImportar": "{{nuevos}} new, {{yaTenia}} already had",
+    "iniciaSesionParaAgregar": "Log in to your own Archivum account to add these fics to your reading list."
   },
   "compartir": {
     "importando": "Importing…",

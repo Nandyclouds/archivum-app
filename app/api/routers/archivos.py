@@ -63,6 +63,25 @@ _MODO_LECTURA = """
 """
 
 
+def servir_snapshot_html(ruta: Path) -> HTMLResponse:
+    """Sirve un snapshot HTML guardado en disco con el "modo lectura"
+    inyectado — reusado tanto para /archivos/{id}/contenido (biblioteca
+    propia) como para el link público de recomendaciones (ver
+    app/api/routers/recomendaciones.py), que muestra la copia archivada de
+    quien armó la lista."""
+    if not ruta.is_file():
+        raise HTTPException(
+            status_code=410,
+            detail="El archivo ya no está en el disco (¿se movió o se borró data/archivo/?).",
+        )
+    html = ruta.read_text(encoding="utf-8", errors="replace")
+    if "</body>" in html:
+        html = html.replace("</body>", f"{_MODO_LECTURA}</body>", 1)
+    else:
+        html += _MODO_LECTURA
+    return HTMLResponse(html)
+
+
 @router.get("", response_model=list[ArchivoOut])
 def listar_archivos(db: Session = Depends(get_session)):
     archivos = db.query(Archivo).order_by(Archivo.fecha_descarga.desc()).all()
@@ -82,21 +101,15 @@ def obtener_contenido_archivo(archivo_id: int, db: Session = Depends(get_session
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
     ruta = Path(archivo.ruta_local)
+    if archivo.formato == "html":
+        return servir_snapshot_html(ruta)
+
     if not ruta.is_file():
         raise HTTPException(
             status_code=410,
             detail="El archivo ya no está en el disco (¿se movió o se borró data/archivo/?).",
         )
-
     media_type = MEDIA_TYPES.get(archivo.formato, "application/octet-stream")
-    if archivo.formato == "html":
-        html = ruta.read_text(encoding="utf-8", errors="replace")
-        if "</body>" in html:
-            html = html.replace("</body>", f"{_MODO_LECTURA}</body>", 1)
-        else:
-            html += _MODO_LECTURA
-        return HTMLResponse(html)
-
     nombre = f"{archivo.fic.titulo}.{archivo.formato}".replace("/", "-")
     return FileResponse(ruta, media_type=media_type, filename=nombre)
 

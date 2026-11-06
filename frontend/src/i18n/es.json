@@ -264,7 +264,16 @@
   },
   "recomendacion": {
     "noExiste": "Esta lista no existe o fue borrada.",
-    "hechoCon": "Hecho con Archivum"
+    "hechoCon": "Hecho con Archivum",
+    "verCopiaArchivada": "Ver copia archivada",
+    "agregarALecturas": "Agregar a mis lecturas",
+    "agregarTodosALecturas": "Agregar todos a mis lecturas",
+    "agregando": "Agregando…",
+    "agregado": "Agregado",
+    "yaLaTenias": "Ya la tenías",
+    "errorAgregar": "No se pudo agregar: {{msg}}",
+    "resultadoImportar": "{{nuevos}} nuevo(s), {{yaTenia}} ya los tenías",
+    "iniciaSesionParaAgregar": "Iniciá sesión en tu propia cuenta de Archivum para agregar estos fics a tus lecturas."
   },
   "compartir": {
     "importando": "Importando…",

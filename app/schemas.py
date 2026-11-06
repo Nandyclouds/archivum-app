@@ -196,6 +196,10 @@ class ListaFicOut(BaseModel):
     no tiene tu token de acceso."""
 
     model_config = ConfigDict(from_attributes=True)
+    # Expuesto a propósito: solo sirve para pedir la copia archivada de ESTE
+    # fic puntual (ver /recomendaciones/{token}/fics/{id}/contenido) o para
+    # elegir qué importar — no da acceso a nada fuera de esta lista.
+    id: int
     titulo: str
     autor: str
     url: str
@@ -212,6 +216,7 @@ class ListaFicOut(BaseModel):
     ships: list[ShipOut] = []
     personajes: list[PersonajeOut] = []
     tags_adicionales: list[TagAdicionalOut] = []
+    tiene_copia_html: bool = False
 
     @field_validator("categorias", "warnings", mode="before")
     @classmethod
@@ -241,6 +246,15 @@ class ListaRecomendadaCreate(BaseModel):
     titulo: str | None = None
     nota: str | None = None
     fic_ids: list[int] = Field(min_length=1)
+
+
+class ListaRecomendadaImportarRequest(BaseModel):
+    fic_ids: list[int] = Field(min_length=1)
+
+
+class ListaRecomendadaImportarResultado(BaseModel):
+    importados: int
+    ya_en_biblioteca: int
 
 
 class ColeccionOut(BaseModel):

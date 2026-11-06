@@ -247,6 +247,16 @@ export const api = {
     // Pública (ver app/main.py) — no manda el token, o lo manda y no importa:
     // este endpoint no lo exige.
     get: (token) => request(`/recomendaciones/${token}`),
+    // También pública, por el mismo motivo — la copia archivada de un fic
+    // puntual de la lista, para cuando AO3 está caído.
+    copiaArchivadaUrl: (token, ficId) => `${API_BASE}/recomendaciones/${token}/fics/${ficId}/contenido`,
+    // Esta sí pide login: agrega fics de la lista a la biblioteca de quien
+    // la abre (si ya tiene cuenta en la app).
+    importar: (token, ficIds) =>
+      request(`/recomendaciones/${token}/importar`, {
+        method: "POST",
+        body: JSON.stringify({ fic_ids: ficIds }),
+      }),
   },
   stats: {
     resumen: (anio) => request(`/stats/resumen${anio ? `?anio=${anio}` : ""}`),

@@ -46,6 +46,8 @@ from app.auth import resolver_cuenta_por_token
 from app.config import settings
 from app.control_db import ControlBase, ControlSessionLocal, control_engine
 from app.control_models import Cuenta, Invitacion, Sesion  # noqa: F401 — registran las tablas en ControlBase
+from app.database import nueva_sesion_para_cuenta
+from app.models import ListaRecomendada
 
 app = FastAPI(title="Archivum API", version="0.1.0")
 
@@ -90,6 +92,25 @@ _RUTAS_SYNC_POR_CUENTA = {
 _RUTAS_SYNC_GLOBALES = {"/api/sync/cuentas-activas"}
 
 
+def _resolver_cuenta_por_token_de_lista(token: str) -> Cuenta | None:
+    """A qué cuenta pertenece una lista de recomendaciones, buscando por su
+    token público (ver app/api/routers/recomendaciones.py — ListaRecomendada
+    vive en la base de cada cuenta, no en la de control, así que no hay
+    forma más directa de saberlo). Son pocas cuentas, así que recorrerlas
+    todas es aceptable."""
+    with ControlSessionLocal() as control_db:
+        cuentas = control_db.query(Cuenta).filter(Cuenta.activa.is_(True)).all()
+        for cuenta in cuentas:
+            db = nueva_sesion_para_cuenta(cuenta.id)
+            try:
+                existe = db.query(ListaRecomendada).filter_by(token=token).first() is not None
+            finally:
+                db.close()
+            if existe:
+                return cuenta
+    return None
+
+
 @app.middleware("http")
 async def exigir_token(request: Request, call_next):
     """Controla acceso a /api/* y deja la cuenta resuelta en
@@ -110,15 +131,26 @@ async def exigir_token(request: Request, call_next):
     if request.method == "OPTIONS" or not path.startswith("/api") or path in _RUTAS_PUBLICAS:
         return await call_next(request)
 
-    # Una lista de recomendaciones puntual (/api/recomendaciones/<token>) es
-    # pública a propósito: es un link para mandarle a alguien que no tiene
-    # (ni debería necesitar) una cuenta. Sin el trailing slash no matchea
-    # /api/recomendaciones (el listado completo, ese sí pide login).
+    # Una lista de recomendaciones puntual (/api/recomendaciones/<token>, o
+    # la copia archivada de uno de sus fics) es pública a propósito: es un
+    # link para mandarle a alguien que no tiene (ni debería necesitar) una
+    # cuenta. Sin el trailing slash no matchea /api/recomendaciones (el
+    # listado completo, ese sí pide login). Igual hay que resolver de QUÉ
+    # cuenta es (para que get_session abra la base correcta): el token no
+    # viene de un login, así que se busca por el token mismo.
     if (
         request.method == "GET"
         and path.startswith("/api/recomendaciones/")
         and path != "/api/recomendaciones/"
     ):
+        if not settings.archivum_auth_token:
+            request.state.cuenta = _CUENTA_UNICA
+            return await call_next(request)
+        token_lista = path.removeprefix("/api/recomendaciones/").split("/", 1)[0]
+        cuenta = _resolver_cuenta_por_token_de_lista(token_lista)
+        if cuenta is None:
+            return JSONResponse({"detail": "Lista no encontrada"}, status_code=404)
+        request.state.cuenta = cuenta
         return await call_next(request)
 
     if path in _RUTAS_SYNC_GLOBALES:

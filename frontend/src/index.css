@@ -1563,3 +1563,16 @@ select.arv-input {
   font-size: 12px;
   margin-top: 28px;
 }
+.arv-reco-agregar-todos {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.arv-reco-agregar-todos p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.arv-reco-aviso-login {
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
