@@ -260,7 +260,11 @@
     "sinTitulo": "Sin título",
     "fics": "{{count}} fics",
     "copiarLink": "Copiar link",
-    "borrarLista": "Borrar lista"
+    "borrarLista": "Borrar lista",
+    "verFics": "Ver fics de la lista",
+    "ocultarFics": "Ocultar fics de la lista",
+    "quitarFicPublicado": "Quitar este fic de la lista",
+    "listaSinFics": "Esta lista se quedó sin fics."
   },
   "recomendacion": {
     "noExiste": "Esta lista no existe o fue borrada.",
@@ -273,7 +277,9 @@
     "yaLaTenias": "Ya la tenías",
     "errorAgregar": "No se pudo agregar: {{msg}}",
     "resultadoImportar": "{{nuevos}} nuevo(s), {{yaTenia}} ya los tenías",
-    "iniciaSesionParaAgregar": "Iniciá sesión en tu propia cuenta de Archivum para agregar estos fics a tus lecturas."
+    "iniciaSesionParaAgregar": "Iniciá sesión en tu propia cuenta de Archivum para agregar estos fics a tus lecturas.",
+    "buscarPlaceholder": "Buscar por título o tag…",
+    "sinResultadosBusqueda": "No encontré fics con esa búsqueda."
   },
   "compartir": {
     "importando": "Importando…",

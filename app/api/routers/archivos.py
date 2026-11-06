@@ -63,6 +63,46 @@ _MODO_LECTURA = """
 """
 
 
+def _quitar_div_por_id(html: str, div_id: str) -> str:
+    """Borra por completo un <div id="...">...</div> (contando aperturas y
+    cierres para encontrar el que corresponde), en vez de solo esconderlo
+    con CSS: lo que hay adentro no queda ni en el código fuente de la
+    página que se sirve."""
+    marcador = f'id="{div_id}"'
+    idx_marcador = html.find(marcador)
+    if idx_marcador == -1:
+        return html
+    inicio = html.rfind("<div", 0, idx_marcador)
+    fin_apertura = html.find(">", idx_marcador)
+    if inicio == -1 or fin_apertura == -1:
+        return html
+
+    pos = fin_apertura + 1
+    profundidad = 1
+    while profundidad > 0:
+        siguiente_apertura = html.find("<div", pos)
+        siguiente_cierre = html.find("</div>", pos)
+        if siguiente_cierre == -1:
+            return html  # HTML raro/incompleto: mejor no tocar nada
+        if siguiente_apertura != -1 and siguiente_apertura < siguiente_cierre:
+            profundidad += 1
+            pos = siguiente_apertura + 4
+        else:
+            profundidad -= 1
+            pos = siguiente_cierre + len("</div>")
+    return html[:inicio] + html[pos:]
+
+
+# El snapshot se guardó con la sesión de AO3 de quien bookmarkeó el fic, así
+# que el HTML crudo trae pegado el formulario (oculto con CSS, pero presente
+# en el código fuente) para editar SU bookmark privado — notas, tags
+# ("bookmark_form_placement") y su usuario de AO3 — más el de postear un
+# comentario nuevo prefirmado con su usuario ("add_comment_placeholder").
+# Nunca son parte del fic en sí, así que se borran siempre al servir la
+# copia (propia o compartida), no solo se ocultan.
+_IDS_PERSONALES_A_QUITAR = ("bookmark_form_placement", "add_comment_placeholder")
+
+
 def servir_snapshot_html(ruta: Path) -> HTMLResponse:
     """Sirve un snapshot HTML guardado en disco con el "modo lectura"
     inyectado — reusado tanto para /archivos/{id}/contenido (biblioteca
@@ -75,6 +115,8 @@ def servir_snapshot_html(ruta: Path) -> HTMLResponse:
             detail="El archivo ya no está en el disco (¿se movió o se borró data/archivo/?).",
         )
     html = ruta.read_text(encoding="utf-8", errors="replace")
+    for div_id in _IDS_PERSONALES_A_QUITAR:
+        html = _quitar_div_por_id(html, div_id)
     if "</body>" in html:
         html = html.replace("</body>", f"{_MODO_LECTURA}</body>", 1)
     else:

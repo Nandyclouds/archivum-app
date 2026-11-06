@@ -161,3 +161,65 @@ def test_copia_archivada_publica_404_si_no_hay_copia(client, db_session):
 
     r = client.get(f"/api/recomendaciones/{token}/fics/{fic.id}/contenido")
     assert r.status_code == 404
+
+
+def test_copia_archivada_publica_no_trae_el_bookmark_ni_el_comentario_de_quien_la_guardo(
+    client, db_session, tmp_path
+):
+    fic = _crear_fic(db_session)
+    ruta = tmp_path / "1.html"
+    ruta.write_text(
+        """<html><body>
+        <p>Hola</p>
+        <div id="bookmark_form_placement" class="wrapper toggled">
+          <div class="post bookmark" id="bookmark-form">
+            <input value="Leidos 2024" name="bookmark[tag_string]" />
+          </div>
+        </div>
+        <div id="add_comment_placeholder">
+          <div id="add_comment">Comment as FerAsdfgh</div>
+        </div>
+        </body></html>""",
+        encoding="utf-8",
+    )
+    db_session.add(
+        Archivo(fic_id=fic.id, formato="html", ruta_local=str(ruta), hash_sha256="x", tamano=10)
+    )
+    db_session.commit()
+
+    token = client.post("/api/recomendaciones", json={"fic_ids": [fic.id]}).json()["token"]
+
+    r = client.get(f"/api/recomendaciones/{token}/fics/{fic.id}/contenido")
+    assert r.status_code == 200
+    assert "Hola" in r.text
+    assert "Leidos 2024" not in r.text
+    assert "FerAsdfgh" not in r.text
+    assert "bookmark_form_placement" not in r.text
+    assert "add_comment_placeholder" not in r.text
+
+
+def test_quitar_fic_de_lista_publicada(client, db_session):
+    f1 = _crear_fic(db_session, ao3_id="1", titulo="Primero")
+    f2 = _crear_fic(db_session, ao3_id="2", titulo="Segundo")
+    creada = client.post("/api/recomendaciones", json={"fic_ids": [f1.id, f2.id]}).json()
+
+    r = client.delete(f"/api/recomendaciones/{creada['id']}/fics/{f1.id}")
+    assert r.status_code == 204
+
+    detalle = client.get(f"/api/recomendaciones/{creada['token']}").json()
+    assert [f["titulo"] for f in detalle["fics"]] == ["Segundo"]
+
+
+def test_quitar_fic_que_no_esta_en_la_lista_da_404(client, db_session):
+    f1 = _crear_fic(db_session, ao3_id="1")
+    f2 = _crear_fic(db_session, ao3_id="2")
+    creada = client.post("/api/recomendaciones", json={"fic_ids": [f1.id]}).json()
+
+    r = client.delete(f"/api/recomendaciones/{creada['id']}/fics/{f2.id}")
+    assert r.status_code == 404
+
+
+def test_quitar_fic_de_lista_inexistente_da_404(client, db_session):
+    fic = _crear_fic(db_session)
+    r = client.delete(f"/api/recomendaciones/9999/fics/{fic.id}")
+    assert r.status_code == 404

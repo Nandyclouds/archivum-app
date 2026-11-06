@@ -7,6 +7,25 @@ import { getToken } from "../lib/auth";
 import { abrirEnNavegadorExterno } from "../lib/abrirExterno";
 import { Cargando } from "../components/EstadoCarga";
 
+function normalizar(texto) {
+  return texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+function ficCoincideConBusqueda(fic, busqueda) {
+  if (!busqueda) return true;
+  const tags = [
+    ...fic.fandoms.map((f) => f.nombre),
+    ...fic.ships.map((s) => s.nombre),
+    ...fic.personajes.map((p) => p.nombre),
+    ...fic.tags_adicionales.map((tg) => tg.nombre),
+  ];
+  const haystack = normalizar([fic.titulo, ...tags].join(" "));
+  return haystack.includes(normalizar(busqueda));
+}
+
 export function Recomendacion() {
   const { t } = useTranslation();
   const { token } = useParams();
@@ -14,6 +33,7 @@ export function Recomendacion() {
   const estaLogueada = !!getToken();
   const [estadoTodos, setEstadoTodos] = useState("idle"); // idle | agregando | hecho | error
   const [mensajeTodos, setMensajeTodos] = useState("");
+  const [busqueda, setBusqueda] = useState("");
 
   async function agregarTodos() {
     setEstadoTodos("agregando");
@@ -68,9 +88,25 @@ export function Recomendacion() {
             <p className="arv-muted arv-reco-aviso-login">{t("recomendacion.iniciaSesionParaAgregar")}</p>
           )}
 
-          {lista.data.fics.map((fic, i) => (
-            <FicRecomendado fic={fic} token={token} estaLogueada={estaLogueada} key={i} />
-          ))}
+          {lista.data.fics.length > 1 && (
+            <input
+              className="arv-input"
+              style={{ marginBottom: 16 }}
+              placeholder={t("recomendacion.buscarPlaceholder")}
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          )}
+
+          {(() => {
+            const ficsFiltrados = lista.data.fics.filter((fic) => ficCoincideConBusqueda(fic, busqueda));
+            if (ficsFiltrados.length === 0) {
+              return <p className="arv-muted">{t("recomendacion.sinResultadosBusqueda")}</p>;
+            }
+            return ficsFiltrados.map((fic) => (
+              <FicRecomendado fic={fic} token={token} estaLogueada={estaLogueada} key={fic.id} />
+            ));
+          })()}
         </>
       )}
 

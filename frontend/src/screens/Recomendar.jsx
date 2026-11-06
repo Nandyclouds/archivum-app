@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Trash2, Copy, Check, X } from "lucide-react";
+import { Trash2, Copy, Check, X, ChevronDown } from "lucide-react";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
@@ -221,26 +221,97 @@ export function Recomendar() {
         {listas.error && <ErrorCarga error={listas.error} onReintentar={listas.reload} />}
         {listas.data?.length === 0 && <Vacio>{t("recomendar.sinListas")}</Vacio>}
         {listas.data?.map((l) => (
-          <div className="arv-list-item" key={l.id}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {l.titulo || t("recomendar.sinTitulo")}
-              </div>
-              <span className="arv-muted" style={{ fontSize: 12 }}>
-                {t("recomendar.fics", { count: l.cantidad_fics })}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flex: "none" }}>
-              <button className="arv-icon-btn" onClick={() => copiarLink(l.token)} aria-label={t("recomendar.copiarLink")}>
-                <Copy size={15} />
-              </button>
-              <button className="arv-icon-btn" onClick={() => borrarLista(l.id)} aria-label={t("recomendar.borrarLista")}>
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
+          <ListaPublicada
+            lista={l}
+            key={l.id}
+            onCopiarLink={() => copiarLink(l.token)}
+            onBorrarLista={() => borrarLista(l.id)}
+            onCambio={listas.reload}
+          />
         ))}
       </div>
+    </div>
+  );
+}
+
+function ListaPublicada({ lista, onCopiarLink, onBorrarLista, onCambio }) {
+  const { t } = useTranslation();
+  const [expandida, setExpandida] = useState(false);
+  const detalle = useFetch(
+    () => (expandida ? api.recomendaciones.get(lista.token) : Promise.resolve(null)),
+    [expandida, lista.token]
+  );
+
+  async function quitarFic(ficId) {
+    await api.recomendaciones.quitarFic(lista.id, ficId);
+    detalle.reload();
+    onCambio();
+  }
+
+  return (
+    <div style={{ borderBottom: "1px solid var(--color-border)" }}>
+      <div className="arv-list-item" style={{ borderBottom: "none", cursor: "pointer" }} onClick={() => setExpandida((v) => !v)}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {lista.titulo || t("recomendar.sinTitulo")}
+          </div>
+          <span className="arv-muted" style={{ fontSize: 12 }}>
+            {t("recomendar.fics", { count: lista.cantidad_fics })}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flex: "none" }}>
+          <ChevronDown
+            size={16}
+            style={{ transform: expandida ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}
+            aria-label={expandida ? t("recomendar.ocultarFics") : t("recomendar.verFics")}
+          />
+          <button
+            className="arv-icon-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopiarLink();
+            }}
+            aria-label={t("recomendar.copiarLink")}
+          >
+            <Copy size={15} />
+          </button>
+          <button
+            className="arv-icon-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onBorrarLista();
+            }}
+            aria-label={t("recomendar.borrarLista")}
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+
+      {expandida && (
+        <div style={{ paddingBottom: 8 }}>
+          {detalle.loading && <Cargando />}
+          {detalle.data?.fics.length === 0 && (
+            <p className="arv-muted" style={{ margin: "0 0 10px" }}>
+              {t("recomendar.listaSinFics")}
+            </p>
+          )}
+          {detalle.data?.fics.map((fic) => (
+            <div className="arv-list-item" style={{ paddingLeft: 14 }} key={fic.id}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {fic.titulo}
+              </span>
+              <button
+                className="arv-icon-btn"
+                onClick={() => quitarFic(fic.id)}
+                aria-label={t("recomendar.quitarFicPublicado")}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

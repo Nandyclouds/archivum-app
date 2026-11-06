@@ -202,6 +202,23 @@ def importar_a_mi_biblioteca(
         db_origen.close()
 
 
+@router.delete("/{lista_id}/fics/{fic_id}", status_code=204)
+def quitar_fic(lista_id: int, fic_id: int, db: Session = Depends(get_session)):
+    """Saca un fic de una lista ya publicada sin borrar la lista entera (el
+    link sigue sirviendo, solo que ya no lo muestra). Si alguien ya lo había
+    agregado a sus lecturas desde el link, esa copia no se toca — esto solo
+    cambia qué se ve de ahora en más."""
+    lista = db.get(ListaRecomendada, lista_id)
+    if lista is None:
+        raise HTTPException(status_code=404, detail="Lista no encontrada")
+    borrado = (
+        db.query(ListaRecomendadaFic).filter_by(lista_id=lista_id, fic_id=fic_id).delete()
+    )
+    if not borrado:
+        raise HTTPException(status_code=404, detail="Ese fic no está en esta lista")
+    db.commit()
+
+
 @router.delete("/{lista_id}", status_code=204)
 def borrar(lista_id: int, db: Session = Depends(get_session)):
     lista = db.get(ListaRecomendada, lista_id)
