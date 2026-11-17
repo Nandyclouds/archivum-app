@@ -130,6 +130,7 @@ export function ColeccionDetalle() {
             <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
+              {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
             </div>
             {!seleccionActiva && (
               <button

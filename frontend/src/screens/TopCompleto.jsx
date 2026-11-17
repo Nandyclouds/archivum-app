@@ -84,6 +84,7 @@ export function TopCompleto() {
                 <div>
                   <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
                   <div className="titulo">{fic.titulo}</div>
+                  {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
                 </div>
                 <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   {fic.word_count.toLocaleString()} {t("common.palabras")}

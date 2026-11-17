@@ -536,6 +536,7 @@ export function Buscar() {
             <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
+              {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
               {conNota && fic.nota_bookmark && (
                 <ConEmoji
                   as="div"

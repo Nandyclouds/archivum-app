@@ -154,6 +154,7 @@ class FicListItem(BaseModel):
     estado_actual: str | None = None
     nota_bookmark: str | None = None
     resena_texto: str | None = None
+    summary: str | None = None
 
 
 class ArchivoResumen(BaseModel):

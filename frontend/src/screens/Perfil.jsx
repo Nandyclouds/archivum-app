@@ -88,6 +88,7 @@ export function Perfil() {
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
+              {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
             </div>
             <div className="meta" style={{ textAlign: "right" }}>
               <div>{f.estado_actual ?? t("common.sinEstado")}</div>

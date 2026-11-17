@@ -164,9 +164,12 @@ export function Recomendar() {
                 style={{ cursor: idsEnSeleccion.has(fic.id) ? "default" : "pointer" }}
                 onClick={() => agregarFic(fic)}
               >
-                <span style={idsEnSeleccion.has(fic.id) ? { color: "var(--color-text-muted)" } : undefined}>
-                  {fic.titulo}
-                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={idsEnSeleccion.has(fic.id) ? { color: "var(--color-text-muted)" } : undefined}>
+                    {fic.titulo}
+                  </div>
+                  {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+                </div>
                 {idsEnSeleccion.has(fic.id) && <Check size={14} />}
               </div>
             ))}
@@ -183,9 +186,12 @@ export function Recomendar() {
           <div style={{ marginBottom: 16 }}>
             {seleccion.map((f) => (
               <div className="arv-list-item" key={f.id}>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {f.titulo}
-                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {f.titulo}
+                  </div>
+                  {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
+                </div>
                 <button
                   onClick={() => quitarFic(f.id)}
                   aria-label={t("recomendar.quitarDeLaLista")}
@@ -298,9 +304,12 @@ function ListaPublicada({ lista, onCopiarLink, onBorrarLista, onCambio }) {
           )}
           {detalle.data?.fics.map((fic) => (
             <div className="arv-list-item" style={{ paddingLeft: 14 }} key={fic.id}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {fic.titulo}
-              </span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {fic.titulo}
+                </div>
+                {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+              </div>
               <button
                 className="arv-icon-btn"
                 onClick={() => quitarFic(fic.id)}

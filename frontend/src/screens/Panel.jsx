@@ -209,6 +209,7 @@ export function Panel() {
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
+              {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
             </div>
           </FilaFicSeleccionable>
         ))}
