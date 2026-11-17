@@ -6,6 +6,7 @@ import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { ResumenFic } from "../components/ResumenFic";
 import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
 import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
@@ -130,7 +131,7 @@ export function ColeccionDetalle() {
             <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
-              {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+              <ResumenFic texto={fic.summary} />
             </div>
             {!seleccionActiva && (
               <button

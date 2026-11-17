@@ -1338,6 +1338,21 @@ select.arv-input {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.arv-fic-resumen-abierto {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.arv-fic-resumen-toggle {
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 0 0;
+  display: block;
+}
 
 .arv-ajustes-fila {
   display: flex;

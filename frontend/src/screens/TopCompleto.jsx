@@ -4,6 +4,7 @@ import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { ResumenFic } from "../components/ResumenFic";
 import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
 import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
@@ -84,7 +85,7 @@ export function TopCompleto() {
                 <div>
                   <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
                   <div className="titulo">{fic.titulo}</div>
-                  {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+                  <ResumenFic texto={fic.summary} />
                 </div>
                 <div className="meta" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                   {fic.word_count.toLocaleString()} {t("common.palabras")}

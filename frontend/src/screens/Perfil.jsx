@@ -8,6 +8,7 @@ import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { ConEmoji } from "../components/ConEmoji";
 import { DoodleFlor, DoodleHoja, DoodleRamita } from "../components/Doodles";
 import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { ResumenFic } from "../components/ResumenFic";
 import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
 import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
@@ -88,7 +89,7 @@ export function Perfil() {
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
-              {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
+              <ResumenFic texto={f.summary} />
             </div>
             <div className="meta" style={{ textAlign: "right" }}>
               <div>{f.estado_actual ?? t("common.sinEstado")}</div>

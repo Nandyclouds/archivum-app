@@ -13,7 +13,9 @@
     "sinFandom": "Sin fandom",
     "sinEstado": "sin estado",
     "palabras": "palabras",
-    "quitar": "Quitar"
+    "quitar": "Quitar",
+    "leerMas": "Leer más",
+    "leerMenos": "Leer menos"
   },
   "nav": {
     "panel": "Panel",

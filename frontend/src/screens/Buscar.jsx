@@ -10,6 +10,7 @@ import { ImportarPorUrl } from "../components/ImportarPorUrl";
 import { MultiSelect } from "../components/MultiSelect";
 import { SelectorDesplegable } from "../components/SelectorDesplegable";
 import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { ResumenFic } from "../components/ResumenFic";
 import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
 import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
@@ -536,7 +537,7 @@ export function Buscar() {
             <div style={{ minWidth: 0 }}>
               <div className="fandom">{fic.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{fic.titulo}</div>
-              {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+              <ResumenFic texto={fic.summary} />
               {conNota && fic.nota_bookmark && (
                 <ConEmoji
                   as="div"

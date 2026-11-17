@@ -6,6 +6,7 @@ import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga, Vacio } from "../components/EstadoCarga";
 import { InfoPopover } from "../components/InfoPopover";
+import { ResumenFic } from "../components/ResumenFic";
 
 export function Recomendar() {
   const { t } = useTranslation();
@@ -168,7 +169,7 @@ export function Recomendar() {
                   <div style={idsEnSeleccion.has(fic.id) ? { color: "var(--color-text-muted)" } : undefined}>
                     {fic.titulo}
                   </div>
-                  {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+                  <ResumenFic texto={fic.summary} />
                 </div>
                 {idsEnSeleccion.has(fic.id) && <Check size={14} />}
               </div>
@@ -190,7 +191,7 @@ export function Recomendar() {
                   <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {f.titulo}
                   </div>
-                  {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
+                  <ResumenFic texto={f.summary} />
                 </div>
                 <button
                   onClick={() => quitarFic(f.id)}
@@ -308,7 +309,7 @@ function ListaPublicada({ lista, onCopiarLink, onBorrarLista, onCambio }) {
                 <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {fic.titulo}
                 </div>
-                {fic.summary && <div className="arv-fic-resumen">{fic.summary}</div>}
+                <ResumenFic texto={fic.summary} />
               </div>
               <button
                 className="arv-icon-btn"

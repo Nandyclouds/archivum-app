@@ -4,6 +4,7 @@ import { useFetch } from "../lib/useFetch";
 import { api } from "../lib/api";
 import { Cargando, ErrorCarga } from "../components/EstadoCarga";
 import { FilaFicSeleccionable } from "../components/FilaFicSeleccionable";
+import { ResumenFic } from "../components/ResumenFic";
 import { BarraAccionesMasivas } from "../components/BarraAccionesMasivas";
 import { useSeleccionMultiple } from "../lib/useSeleccionMultiple";
 
@@ -209,7 +210,7 @@ export function Panel() {
             <div>
               <div className="fandom">{f.fandoms[0]?.nombre ?? t("common.sinFandom")}</div>
               <div className="titulo">{f.titulo}</div>
-              {f.summary && <div className="arv-fic-resumen">{f.summary}</div>}
+              <ResumenFic texto={f.summary} />
             </div>
           </FilaFicSeleccionable>
         ))}

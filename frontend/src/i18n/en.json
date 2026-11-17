@@ -13,7 +13,9 @@
     "sinFandom": "No fandom",
     "sinEstado": "no status",
     "palabras": "words",
-    "quitar": "Remove"
+    "quitar": "Remove",
+    "leerMas": "Read more",
+    "leerMenos": "Read less"
   },
   "nav": {
     "panel": "Dashboard",
