@@ -240,6 +240,11 @@ def download_cmd(
                 f"Guardados como HTML (AO3 no ofrece EPUB para esos): {result.guardados_como_html}  "
                 f"Errores: {result.errores}"
             )
+            typer.echo(
+                "(Los fics sin EPUB no se vuelven a revisar en próximas corridas — "
+                f"quedan anotados en {ARCHIVO_DIR / 'sin_epub_ao3.json'}; "
+                "borrá ese archivo si querés que se vuelvan a chequear.)"
+            )
             for detalle in result.detalles_error:
                 typer.secho(f"  ! {detalle}", fg=typer.colors.YELLOW)
             if result.detenido_por_limite:

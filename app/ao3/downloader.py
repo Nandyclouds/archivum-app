@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,6 +20,31 @@ from app.ao3.client import RateLimitedClient, SessionRequestLimitReached
 from app.ao3.importer import WORK_URL, guardar_snapshot_html
 from app.ao3.parser import parse_work_page
 from app.models import Archivo, Fic
+
+# Lista de ao3_id para los que ya confirmamos que AO3 no ofrece EPUB (solo
+# HTML) — vive en un archivo aparte, no en la base, para no tocar el
+# esquema compartido con la app web por una optimización que solo le sirve
+# a este comando local. Si AO3 llega a agregar soporte de EPUB para alguno
+# más adelante, no se va a notar hasta que se borre esta lista (a mano, o
+# el archivo entero) y se vuelva a correr `download --all-unarchived`.
+_NOMBRE_ARCHIVO_SIN_EPUB = "sin_epub_ao3.json"
+
+
+def _cargar_sin_epub(archivo_dir: Path) -> set[str]:
+    ruta = archivo_dir / _NOMBRE_ARCHIVO_SIN_EPUB
+    if not ruta.is_file():
+        return set()
+    return set(json.loads(ruta.read_text(encoding="utf-8")))
+
+
+def _marcar_sin_epub(archivo_dir: Path, ao3_id: str) -> None:
+    ids = _cargar_sin_epub(archivo_dir)
+    if ao3_id in ids:
+        return
+    ids.add(ao3_id)
+    archivo_dir.mkdir(parents=True, exist_ok=True)
+    ruta = archivo_dir / _NOMBRE_ARCHIVO_SIN_EPUB
+    ruta.write_text(json.dumps(sorted(ids)), encoding="utf-8")
 
 
 class DownloadError(Exception):
@@ -92,7 +118,9 @@ def download_fic_epub(
     parsed = parse_work_page(page_response.text, fic.ao3_id)
     if parsed.epub_url is None:
         if fallback_html:
-            return guardar_snapshot_html(db, fic, page_response.text, archivo_dir)
+            archivo = guardar_snapshot_html(db, fic, page_response.text, archivo_dir)
+            _marcar_sin_epub(archivo_dir, fic.ao3_id)
+            return archivo
         raise NoEpubDisponibleError(fic.ao3_id)
 
     epub_response = client.get(parsed.epub_url)
@@ -105,12 +133,14 @@ def download_all_unarchived(
     db: Session, client: RateLimitedClient, archivo_dir: Path
 ) -> DownloadRunResult:
     ya_archivados = db.query(Archivo.fic_id).filter_by(formato="epub").subquery()
+    sin_epub_conocidos = _cargar_sin_epub(archivo_dir)
     fics = (
         db.query(Fic)
         .filter(Fic.deleted_detected_at.is_(None))
         .filter(~Fic.id.in_(db.query(ya_archivados.c.fic_id)))
         .all()
     )
+    fics = [f for f in fics if f.ao3_id not in sin_epub_conocidos]
 
     result = DownloadRunResult()
     try:

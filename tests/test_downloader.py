@@ -219,3 +219,26 @@ def test_download_all_unarchived_guarda_html_si_ao3_no_ofrece_epub(db, client, a
     assert result.errores == 0
     archivo = db.query(Archivo).filter_by(fic_id=fic.id, formato="html").one()
     assert archivo.ruta_local is not None
+
+
+@responses.activate
+def test_download_all_unarchived_no_vuelve_a_pedir_fics_sin_epub_conocidos(db, client, archivo_dir):
+    fic = _importar_fic_1(db, client)
+
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page_sin_epub.html"),
+        status=200,
+    )
+    primer_resultado = downloader.download_all_unarchived(db, client, archivo_dir)
+    assert primer_resultado.guardados_como_html == 1
+
+    # Segunda corrida: ni una sola petición mockeada nueva — si pidiera de
+    # nuevo la página de fic 1, `responses` haría fallar el test.
+    segundo_resultado = downloader.download_all_unarchived(db, client, archivo_dir)
+
+    assert segundo_resultado.descargados == 0
+    assert segundo_resultado.guardados_como_html == 0
+    assert segundo_resultado.errores == 0
+    assert fic.ao3_id in downloader._cargar_sin_epub(archivo_dir)
