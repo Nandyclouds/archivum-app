@@ -122,3 +122,52 @@ def test_rechaza_usuario_o_contraseña_vacíos(client, cuenta_logueada):
         headers=_headers(cuenta_logueada),
     )
     assert r.status_code == 422
+
+
+def test_guardar_cookie_de_sesion_de_ao3(client, cuenta_logueada):
+    r = client.put(
+        "/api/auth/ao3-session-cookie",
+        json={"ao3_session_cookie": "una-cookie-de-verdad"},
+        headers=_headers(cuenta_logueada),
+    )
+    assert r.status_code == 200
+
+    r = client.get("/api/auth/yo", headers=_headers(cuenta_logueada))
+    assert r.json()["ao3_session_cookie_configurada"] is True
+
+
+def test_la_cookie_se_guarda_cifrada(client, cuenta_logueada):
+    client.put(
+        "/api/auth/ao3-session-cookie",
+        json={"ao3_session_cookie": "una-cookie-de-verdad"},
+        headers=_headers(cuenta_logueada),
+    )
+
+    import app.control_db as control_db_module
+
+    with control_db_module.ControlSessionLocal() as db:
+        cuenta = db.query(Cuenta).filter_by(email="nanda@example.com").one()
+        assert cuenta.ao3_session_cookie_encriptada != "una-cookie-de-verdad"
+        assert desencriptar(cuenta.ao3_session_cookie_encriptada) == "una-cookie-de-verdad"
+
+
+def test_borrar_cookie_de_sesion_de_ao3(client, cuenta_logueada):
+    client.put(
+        "/api/auth/ao3-session-cookie",
+        json={"ao3_session_cookie": "una-cookie-de-verdad"},
+        headers=_headers(cuenta_logueada),
+    )
+    r = client.delete("/api/auth/ao3-session-cookie", headers=_headers(cuenta_logueada))
+    assert r.status_code == 204
+
+    r = client.get("/api/auth/yo", headers=_headers(cuenta_logueada))
+    assert r.json()["ao3_session_cookie_configurada"] is False
+
+
+def test_rechaza_cookie_vacia(client, cuenta_logueada):
+    r = client.put(
+        "/api/auth/ao3-session-cookie",
+        json={"ao3_session_cookie": "   "},
+        headers=_headers(cuenta_logueada),
+    )
+    assert r.status_code == 422

@@ -28,6 +28,13 @@ class Cuenta(ControlBase):
     ao3_username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ao3_password_encriptada: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # Alternativa a usuario/contraseña para cuando AO3 bloquea el login
+    # automatizado (ej. desafío "Shields are up!" en /users/login, nov 2026):
+    # cookie de sesión copiada a mano de un navegador ya logueado (ver
+    # app/ao3/auth.py, login_with_cookie). Vence cada tanto — la usuaria la
+    # vuelve a pegar en Ajustes cuando el sync empieza a fallar de nuevo.
+    ao3_session_cookie_encriptada: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+
 
 class Invitacion(ControlBase):
     __tablename__ = "invitaciones"

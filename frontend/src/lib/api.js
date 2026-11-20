@@ -79,6 +79,14 @@ export const api = {
         }),
       borrar: () => request("/auth/ao3-credenciales", { method: "DELETE" }),
     },
+    ao3SessionCookie: {
+      actualizar: (cookie) =>
+        request("/auth/ao3-session-cookie", {
+          method: "PUT",
+          body: JSON.stringify({ ao3_session_cookie: cookie }),
+        }),
+      borrar: () => request("/auth/ao3-session-cookie", { method: "DELETE" }),
+    },
   },
   fics: {
     list: (params = {}) => request(`/fics?${buildQuery(params)}`),

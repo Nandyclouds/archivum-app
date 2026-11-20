@@ -428,6 +428,68 @@ function CredencialesAo3() {
         )}
       </div>
       {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+
+      <hr style={{ margin: "16px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
+      <CookieSesionAo3 yo={yo} />
+    </div>
+  );
+}
+
+function CookieSesionAo3({ yo }) {
+  const { t } = useTranslation();
+  const [cookie, setCookie] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+
+  async function guardar() {
+    if (!cookie.trim()) return;
+    setGuardando(true);
+    setError("");
+    try {
+      await api.auth.ao3SessionCookie.actualizar(cookie.trim());
+      setCookie("");
+      yo.reload();
+    } catch (err) {
+      setError(err.message.replace(/^\d+:\s*/, ""));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function borrar() {
+    await api.auth.ao3SessionCookie.borrar();
+    yo.reload();
+  }
+
+  return (
+    <div>
+      <h4 style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        {t("perfil.cookieAo3Titulo")}
+        <InfoPopover>{t("perfil.cookieAo3Info")}</InfoPopover>
+      </h4>
+      <p className="arv-muted" style={{ marginBottom: 10, fontSize: 13 }}>
+        {yo.data?.ao3_session_cookie_configurada ? t("perfil.cookieAo3Configurada") : t("perfil.cookieAo3SinConfigurar")}
+      </p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+        <input
+          className="arv-input"
+          style={{ flex: "1 1 220px", minWidth: 0 }}
+          placeholder={t("perfil.cookieAo3Placeholder")}
+          value={cookie}
+          onChange={(e) => setCookie(e.target.value)}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="arv-btn arv-btn-secondary" disabled={guardando || !cookie.trim()} onClick={guardar}>
+          {guardando ? t("common.guardando") : t("common.guardar")}
+        </button>
+        {yo.data?.ao3_session_cookie_configurada && (
+          <button className="arv-btn arv-btn-secondary" onClick={borrar}>
+            {t("perfil.borrarCookieAo3")}
+          </button>
+        )}
+      </div>
+      {error && <p style={{ color: "var(--color-accent)", fontSize: 13, marginTop: 8 }}>{error}</p>}
     </div>
   );
 }

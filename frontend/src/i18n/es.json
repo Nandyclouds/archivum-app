@@ -386,6 +386,12 @@
     "ao3SinConectar": "Todavía no conectaste tu cuenta de AO3.",
     "ao3UsuarioPlaceholder": "Usuario de AO3",
     "ao3PasswordPlaceholder": "Contraseña de AO3",
-    "desconectarAo3": "Desconectar"
+    "desconectarAo3": "Desconectar",
+    "cookieAo3Titulo": "Cookie de sesión de AO3",
+    "cookieAo3Info": "Para cuando AO3 bloquea el login automático (usuario/contraseña) con un desafío anti-bot. Logueate en AO3 con tu navegador de siempre, abrí las herramientas de desarrollador (F12) → Application/Almacenamiento → Cookies → archiveofourown.org, copiá el valor de la cookie \"_otwarchive_session\" y pegalo acá. Vence cada tanto — cuando el sync empiece a fallar de nuevo, repetí el proceso.",
+    "cookieAo3Configurada": "Cookie guardada.",
+    "cookieAo3SinConfigurar": "No cargaste una cookie todavía (no hace falta si el login normal te funciona).",
+    "cookieAo3Placeholder": "Valor de la cookie _otwarchive_session",
+    "borrarCookieAo3": "Borrar cookie"
   }
 }

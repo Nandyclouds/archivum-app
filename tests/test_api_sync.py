@@ -306,8 +306,31 @@ def test_credenciales_ao3_devuelve_lo_que_configuro_la_cuenta(client, con_sync_s
     assert response.json() == {
         "ao3_username": "lunaescribe",
         "ao3_password": "secreta",
+        "ao3_session_cookie": None,
         "email": "nanda@example.com",
     }
+
+
+def test_credenciales_ao3_incluye_la_cookie_de_sesion_si_esta_cargada(client, con_sync_secret, control_db, monkeypatch):
+    monkeypatch.setattr(settings, "archivum_encryption_key", "zMWJb0d6tsHnMWQJBWVfTFbMnDaR5f6b9yfsMbVF8_w=")
+    with control_db() as db:
+        cuenta = Cuenta(
+            email="nanda@example.com",
+            password_hash=hashear_password("x"),
+            ao3_username="lunaescribe",
+            ao3_password_encriptada=encriptar("secreta"),
+            ao3_session_cookie_encriptada=encriptar("una-cookie-de-verdad"),
+        )
+        db.add(cuenta)
+        db.commit()
+        db.refresh(cuenta)
+        cuenta_id_real = cuenta.id
+
+    response = client.get(
+        "/api/sync/credenciales-ao3", headers=_headers(con_sync_secret), params={"cuenta_id": cuenta_id_real}
+    )
+    assert response.status_code == 200
+    assert response.json()["ao3_session_cookie"] == "una-cookie-de-verdad"
 
 
 def test_credenciales_ao3_cuenta_sin_ao3_conectado_da_409(client, con_sync_secret, cuenta_id):

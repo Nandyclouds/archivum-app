@@ -386,6 +386,12 @@
     "ao3SinConectar": "You haven't connected your AO3 account yet.",
     "ao3UsuarioPlaceholder": "AO3 username",
     "ao3PasswordPlaceholder": "AO3 password",
-    "desconectarAo3": "Disconnect"
+    "desconectarAo3": "Disconnect",
+    "cookieAo3Titulo": "AO3 session cookie",
+    "cookieAo3Info": "For when AO3 blocks automated login (username/password) with an anti-bot challenge. Log into AO3 in your regular browser, open developer tools (F12) → Application/Storage → Cookies → archiveofourown.org, copy the value of the \"_otwarchive_session\" cookie and paste it here. It expires every so often — when sync starts failing again, repeat the process.",
+    "cookieAo3Configurada": "Cookie saved.",
+    "cookieAo3SinConfigurar": "You haven't added a cookie yet (not needed if normal login works for you).",
+    "cookieAo3Placeholder": "Value of the _otwarchive_session cookie",
+    "borrarCookieAo3": "Delete cookie"
   }
 }

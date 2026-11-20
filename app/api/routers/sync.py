@@ -132,7 +132,15 @@ def credenciales_ao3(cuenta: Cuenta = Depends(get_cuenta_actual)):
     password_encriptada = getattr(cuenta, "ao3_password_encriptada", None)
     if not username or not password_encriptada:
         raise HTTPException(status_code=409, detail="Esta cuenta no tiene credenciales de AO3 configuradas.")
-    return {"ao3_username": username, "ao3_password": desencriptar(password_encriptada), "email": cuenta.email}
+    cookie_encriptada = getattr(cuenta, "ao3_session_cookie_encriptada", None)
+    return {
+        "ao3_username": username,
+        "ao3_password": desencriptar(password_encriptada),
+        # Alternativa cuando AO3 bloquea el login automatizado (ver
+        # app/ao3/auth.py, login_with_cookie) — None si la cuenta no cargó una.
+        "ao3_session_cookie": desencriptar(cookie_encriptada) if cookie_encriptada else None,
+        "email": cuenta.email,
+    }
 
 
 @router.get("/known-ids")

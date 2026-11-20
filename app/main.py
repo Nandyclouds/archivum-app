@@ -69,7 +69,12 @@ app.add_middleware(
 # comportamiento que tenía el ARCHIVUM_AUTH_TOKEN vacío antes de que
 # existieran las cuentas: todo pega contra una única biblioteca.
 _CUENTA_UNICA = SimpleNamespace(
-    id=1, es_admin=True, email="cuenta-unica@archivum.local", ao3_username=None, ao3_password_encriptada=None
+    id=1,
+    es_admin=True,
+    email="cuenta-unica@archivum.local",
+    ao3_username=None,
+    ao3_password_encriptada=None,
+    ao3_session_cookie_encriptada=None,
 )
 
 # Rutas /api que no piden ningún token: health check, y login/registro (que

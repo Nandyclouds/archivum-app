@@ -97,6 +97,7 @@ def yo(cuenta: Cuenta = Depends(get_cuenta_actual)):
         "email": cuenta.email,
         "es_admin": cuenta.es_admin,
         "ao3_username": getattr(cuenta, "ao3_username", None),
+        "ao3_session_cookie_configurada": bool(getattr(cuenta, "ao3_session_cookie_encriptada", None)),
     }
 
 
@@ -131,6 +132,43 @@ def borrar_ao3_credenciales(
         return
     cuenta.ao3_username = None
     cuenta.ao3_password_encriptada = None
+    db.commit()
+
+
+class Ao3SessionCookieUpdate(BaseModel):
+    ao3_session_cookie: str
+
+
+@router.put("/ao3-session-cookie")
+def actualizar_ao3_session_cookie(
+    payload: Ao3SessionCookieUpdate,
+    db: Session = Depends(get_control_session),
+    cuenta_actual: Cuenta = Depends(get_cuenta_actual),
+):
+    """Alternativa a usuario/contraseña para cuando AO3 bloquea el login
+    automatizado (ver app/ao3/auth.py, login_with_cookie): la cookie
+    '_otwarchive_session' de un login ya hecho a mano en un navegador de
+    verdad. Vence cada tanto — hay que volver a pegarla cuando el sync
+    empiece a fallar de nuevo."""
+    valor = payload.ao3_session_cookie.strip()
+    if not valor:
+        raise HTTPException(status_code=422, detail="Falta el valor de la cookie.")
+    cuenta = db.get(Cuenta, cuenta_actual.id)
+    if cuenta is None:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada.")
+    cuenta.ao3_session_cookie_encriptada = encriptar(valor)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/ao3-session-cookie", status_code=204)
+def borrar_ao3_session_cookie(
+    db: Session = Depends(get_control_session), cuenta_actual: Cuenta = Depends(get_cuenta_actual)
+):
+    cuenta = db.get(Cuenta, cuenta_actual.id)
+    if cuenta is None:
+        return
+    cuenta.ao3_session_cookie_encriptada = None
     db.commit()
 
 

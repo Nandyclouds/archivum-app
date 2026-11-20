@@ -88,9 +88,10 @@ def _sync_headers() -> dict:
     return {"X-Sync-Secret": secret}
 
 
-def _obtener_credenciales(base_url: str, headers: dict, cuenta_id: int) -> tuple[str, str, str]:
-    """(ao3_username, ao3_password, email) de la cuenta, pedidas al propio
-    servidor — ver GET /api/sync/credenciales-ao3."""
+def _obtener_credenciales(base_url: str, headers: dict, cuenta_id: int) -> tuple[str, str, str | None, str]:
+    """(ao3_username, ao3_password, ao3_session_cookie, email) de la cuenta,
+    pedidas al propio servidor — ver GET /api/sync/credenciales-ao3.
+    ao3_session_cookie es None si la cuenta no cargó una en Ajustes."""
     response = requests.get(
         f"{base_url}/api/sync/credenciales-ao3", headers=headers, params={"cuenta_id": cuenta_id}, timeout=15
     )
@@ -99,7 +100,7 @@ def _obtener_credenciales(base_url: str, headers: dict, cuenta_id: int) -> tuple
         sys.exit(1)
     response.raise_for_status()
     data = response.json()
-    return data["ao3_username"], data["ao3_password"], data["email"]
+    return data["ao3_username"], data["ao3_password"], data.get("ao3_session_cookie"), data["email"]
 
 
 def _build_client() -> RateLimitedClient:
@@ -113,7 +114,18 @@ def _build_client() -> RateLimitedClient:
     return RateLimitedClient(contact_email=contact_email, min_delay_seconds=8.0, jitter_seconds=6.0)
 
 
-def _login(client: RateLimitedClient, username: str, password: str) -> None:
+def _login(client: RateLimitedClient, username: str, password: str, session_cookie: str | None) -> None:
+    """Si la cuenta cargó una cookie de sesión (ver Ajustes), se prueba
+    primero — evita el POST a /users/login, que es lo que AO3 bloquea con
+    el desafío "Shields are up!" (nov 2026). Si la cookie venció o no hay
+    ninguna cargada, cae a usuario/contraseña como siempre."""
+    if session_cookie:
+        try:
+            auth.login_with_cookie(client, session_cookie)
+            return
+        except auth.LoginError as exc:
+            print(f"Cookie de sesión de AO3 no sirvió ({exc}), pruebo con usuario/contraseña...", file=sys.stderr)
+
     try:
         auth.login(client, username, password)
     except auth.LoginError as exc:
@@ -460,9 +472,9 @@ def main() -> None:
 
     base_url = _base_url()
     headers = _sync_headers()
-    username, password, _email = _obtener_credenciales(base_url, headers, args.cuenta_id)
+    username, password, session_cookie, _email = _obtener_credenciales(base_url, headers, args.cuenta_id)
     client = _build_client()
-    _login(client, username, password)
+    _login(client, username, password, session_cookie)
 
     if args.modo == "fic":
         if not args.url:
