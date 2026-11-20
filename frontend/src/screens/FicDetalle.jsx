@@ -67,27 +67,6 @@ export function FicDetalle() {
 
         {f.summary && <p>{f.summary}</p>}
 
-        {f.nota_bookmark && (
-          <div
-            style={{
-              background: "var(--color-surface-2)",
-              borderRadius: 12,
-              padding: "10px 14px",
-              marginBottom: 14,
-            }}
-          >
-            <div className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.05em", marginBottom: 4 }}>
-              {t("ficDetalle.notaBookmark")}
-            </div>
-            <ConEmoji
-              as="p"
-              style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
-            >
-              {f.nota_bookmark}
-            </ConEmoji>
-          </div>
-        )}
-
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <a className="arv-btn arv-btn-secondary" href={f.url} target="_blank" rel="noreferrer">
             {t("ficDetalle.verEnAo3")}
@@ -623,6 +602,28 @@ function GaleriaImagenesResena({ fic, resena, editable, onChange, onNecesitaRese
   );
 }
 
+function NotaBookmark({ texto }) {
+  const { t } = useTranslation();
+  if (!texto) return null;
+  return (
+    <div
+      style={{
+        background: "var(--color-surface-2)",
+        borderRadius: 12,
+        padding: "10px 14px",
+        marginBottom: 14,
+      }}
+    >
+      <div className="arv-muted" style={{ fontSize: 10.5, letterSpacing: "0.05em", marginBottom: 4 }}>
+        {t("ficDetalle.notaBookmark")}
+      </div>
+      <ConEmoji as="p" style={{ margin: 0, fontStyle: "italic", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+        {texto}
+      </ConEmoji>
+    </div>
+  );
+}
+
 function MiResena({ fic, resena, onChange }) {
   const { t } = useTranslation();
   const [editando, setEditando] = useState(false);
@@ -660,6 +661,7 @@ function MiResena({ fic, resena, onChange }) {
     return (
       <div className="arv-card">
         <h3>{t("ficDetalle.miResena")}</h3>
+        <NotaBookmark texto={fic.nota_bookmark} />
         {resena ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
@@ -687,6 +689,7 @@ function MiResena({ fic, resena, onChange }) {
   return (
     <div className="arv-card">
       <h3>{t("ficDetalle.miResena")}</h3>
+      <NotaBookmark texto={fic.nota_bookmark} />
       <label className="arv-muted">{t("ficDetalle.ratingLabel")}</label>
       <div style={{ margin: "6px 0 14px" }}>
         <EstrellasInput value={Number(rating)} onChange={setRating} />
