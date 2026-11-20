@@ -17,6 +17,12 @@ class Settings(BaseSettings):
 
     ao3_username: str = ""
     ao3_password: str = ""
+    # Alternativa a usuario/contraseña para app/cli.py: cookie de sesión
+    # copiada a mano de un navegador ya logueado (ver app/ao3/auth.py,
+    # login_with_cookie) — hace falta cuando AO3 bloquea el login
+    # automatizado (ej. desafío "Shields are up!" en /users/login). Si está
+    # puesta, se usa esta en vez de usuario/contraseña.
+    ao3_session_cookie: str = ""
     ao3_contact_email: str = ""
     ao3_min_delay_seconds: float = 4.0
     ao3_max_requests_per_session: int = 500

@@ -41,3 +41,25 @@ def test_login_credenciales_invalidas(client):
 def test_login_sin_credenciales(client):
     with pytest.raises(auth.LoginError):
         auth.login(client, "", "")
+
+
+@responses.activate
+def test_login_con_cookie_exitoso(client):
+    responses.add(responses.GET, auth.HOME_URL, body='<a href="/users/logout">Log Out</a>', status=200)
+
+    auth.login_with_cookie(client, "una-cookie-valida")  # no debe levantar excepción
+
+    assert client.http_session.cookies.get(auth.SESSION_COOKIE_NAME) == "una-cookie-valida"
+
+
+@responses.activate
+def test_login_con_cookie_vencida(client):
+    responses.add(responses.GET, auth.HOME_URL, body='<a href="/users/login">Log In</a>', status=200)
+
+    with pytest.raises(auth.LoginError):
+        auth.login_with_cookie(client, "una-cookie-vencida")
+
+
+def test_login_con_cookie_vacia(client):
+    with pytest.raises(auth.LoginError):
+        auth.login_with_cookie(client, "")

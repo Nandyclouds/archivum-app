@@ -36,7 +36,10 @@ def _build_client(max_requests: int | None = None) -> RateLimitedClient:
 
 def _login_or_exit(client: RateLimitedClient) -> None:
     try:
-        auth.login(client, settings.ao3_username, settings.ao3_password)
+        if settings.ao3_session_cookie:
+            auth.login_with_cookie(client, settings.ao3_session_cookie)
+        else:
+            auth.login(client, settings.ao3_username, settings.ao3_password)
     except auth.LoginError as exc:
         typer.secho(f"Error de login en AO3: {exc}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
