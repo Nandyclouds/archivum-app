@@ -119,6 +119,38 @@ def test_download_fic_epub_fic_borrado_no_se_descarga(db, client, archivo_dir):
 
 
 @responses.activate
+def test_download_fic_epub_sin_fallback_levanta_error_si_no_hay_epub(db, client, archivo_dir):
+    fic = _importar_fic_1(db, client)
+
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page_sin_epub.html"),
+        status=200,
+    )
+
+    with pytest.raises(downloader.NoEpubDisponibleError):
+        downloader.download_fic_epub(db, client, fic, archivo_dir)
+
+
+@responses.activate
+def test_download_fic_epub_con_fallback_guarda_html_si_no_hay_epub(db, client, archivo_dir):
+    fic = _importar_fic_1(db, client)
+
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page_sin_epub.html"),
+        status=200,
+    )
+
+    archivo = downloader.download_fic_epub(db, client, fic, archivo_dir, fallback_html=True)
+
+    assert archivo.formato == "html"
+    assert Path(archivo.ruta_local).read_text(encoding="utf-8") == _read("work_page_sin_epub.html")
+
+
+@responses.activate
 def test_download_all_unarchived_salta_los_ya_descargados(db, client, archivo_dir):
     fic1 = _importar_fic_1(db, client)
 
@@ -167,3 +199,23 @@ def test_download_all_unarchived_salta_los_ya_descargados(db, client, archivo_di
     assert result.errores == 0
     archivo2 = db.query(Archivo).filter_by(fic_id=fic2.id, formato="epub").one()
     assert Path(archivo2.ruta_local).read_bytes() == b"contenido fic 2"
+
+
+@responses.activate
+def test_download_all_unarchived_guarda_html_si_ao3_no_ofrece_epub(db, client, archivo_dir):
+    fic = _importar_fic_1(db, client)
+
+    responses.add(
+        responses.GET,
+        "https://archiveofourown.org/works/1?view_adult=true&view_full_work=true",
+        body=_read("work_page_sin_epub.html"),
+        status=200,
+    )
+
+    result = downloader.download_all_unarchived(db, client, archivo_dir)
+
+    assert result.descargados == 0
+    assert result.guardados_como_html == 1
+    assert result.errores == 0
+    archivo = db.query(Archivo).filter_by(fic_id=fic.id, formato="html").one()
+    assert archivo.ruta_local is not None

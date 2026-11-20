@@ -235,7 +235,11 @@ def download_cmd(
     try:
         if all_unarchived:
             result = downloader.download_all_unarchived(db, client, ARCHIVO_DIR)
-            typer.echo(f"Descargados: {result.descargados}  Errores: {result.errores}")
+            typer.echo(
+                f"Descargados (EPUB): {result.descargados}  "
+                f"Guardados como HTML (AO3 no ofrece EPUB para esos): {result.guardados_como_html}  "
+                f"Errores: {result.errores}"
+            )
             for detalle in result.detalles_error:
                 typer.secho(f"  ! {detalle}", fg=typer.colors.YELLOW)
             if result.detenido_por_limite:

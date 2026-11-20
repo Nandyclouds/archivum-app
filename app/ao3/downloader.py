@@ -16,7 +16,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.ao3.client import RateLimitedClient, SessionRequestLimitReached
-from app.ao3.importer import WORK_URL
+from app.ao3.importer import WORK_URL, guardar_snapshot_html
 from app.ao3.parser import parse_work_page
 from app.models import Archivo, Fic
 
@@ -37,6 +37,7 @@ class NoEpubDisponibleError(DownloadError):
 @dataclass
 class DownloadRunResult:
     descargados: int = 0
+    guardados_como_html: int = 0
     errores: int = 0
     detalles_error: list[str] = field(default_factory=list)
     detenido_por_limite: bool = False
@@ -69,8 +70,18 @@ def guardar_epub(db: Session, fic: Fic, content: bytes, archivo_dir: Path) -> Ar
 
 
 def download_fic_epub(
-    db: Session, client: RateLimitedClient, fic: Fic, archivo_dir: Path
+    db: Session,
+    client: RateLimitedClient,
+    fic: Fic,
+    archivo_dir: Path,
+    *,
+    fallback_html: bool = False,
 ) -> Archivo:
+    """Si `fallback_html` y AO3 no ofrece EPUB para este fic (pasa con obras
+    de maquetado complejo que AO3 no logra convertir), guarda la copia HTML
+    de la página en vez de fallar — mismo mecanismo que el snapshot
+    automático del import (`guardar_snapshot_html`). El llamador puede
+    distinguir cuál se guardó mirando `archivo.formato`."""
     if fic.deleted_detected_at is not None:
         raise DownloadError(
             f"El fic {fic.ao3_id} está marcado como borrado en AO3; no se puede volver a descargar."
@@ -80,6 +91,8 @@ def download_fic_epub(
     page_response.raise_for_status()
     parsed = parse_work_page(page_response.text, fic.ao3_id)
     if parsed.epub_url is None:
+        if fallback_html:
+            return guardar_snapshot_html(db, fic, page_response.text, archivo_dir)
         raise NoEpubDisponibleError(fic.ao3_id)
 
     epub_response = client.get(parsed.epub_url)
@@ -103,9 +116,12 @@ def download_all_unarchived(
     try:
         for fic in fics:
             try:
-                download_fic_epub(db, client, fic, archivo_dir)
+                archivo = download_fic_epub(db, client, fic, archivo_dir, fallback_html=True)
                 db.commit()
-                result.descargados += 1
+                if archivo.formato == "epub":
+                    result.descargados += 1
+                else:
+                    result.guardados_como_html += 1
             except SessionRequestLimitReached:
                 db.rollback()
                 raise
